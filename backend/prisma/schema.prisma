@@ -1,0 +1,485 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  GIRL
+  CUSTOMER
+}
+
+enum PostStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  REJECTED
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  MOMO
+  ZALOPAY
+  VNPAY
+}
+
+enum ReportReason {
+  SPAM
+  INAPPROPRIATE
+  FAKE
+  HARASSMENT
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+  DISMISSED
+}
+
+enum NotificationType {
+  POST_APPROVED
+  POST_REJECTED
+  REVIEW_APPROVED
+  REVIEW_REJECTED
+  NEW_MESSAGE
+  VERIFICATION_APPROVED
+  VERIFICATION_REJECTED
+  BOOKING_CREATED
+  BOOKING_CONFIRMED
+  BOOKING_REJECTED
+  BOOKING_CANCELLED
+  BOOKING_COMPLETED
+  BOOKING_REMINDER
+  PAYMENT_RECEIVED
+  PAYMENT_FAILED
+  REPORT_PROCESSED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      UserRole @default(CUSTOMER)
+  fullName  String
+  phone     String?
+  avatarUrl String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  girl         Girl?
+  reviews      Review[]
+  sentMessages Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  notifications Notification[]
+  reports      Report[] @relation("Reporter")
+  reportedBy   Report[] @relation("ReportedUser")
+  blocks       Block[] @relation("Blocker")
+  blockedBy    Block[] @relation("Blocked")
+  favorites    Favorite[]
+  viewHistory  ViewHistory[]
+  bookings     Booking[] @relation("Customer")
+  payments     Payment[] @relation("Payments")
+  auditLogs    AuditLog[]
+  approvedPosts Post[] @relation("ApprovedBy")
+  approvedReviews Review[] @relation("ApprovedBy")
+  reviewedReports Report[] @relation("ReviewedBy")
+
+  @@map("users")
+}
+
+model Girl {
+  id                      String             @id @default(uuid())
+  userId                  String             @unique
+  bio                     String?
+  districts               String[] // Array of district IDs
+  ratingAverage           Float              @default(0)
+  totalReviews            Int                @default(0)
+  verificationStatus      VerificationStatus @default(PENDING)
+  verificationDocuments   String[] // Array of document URLs
+  verificationRequestedAt DateTime?
+  verificationVerifiedAt  DateTime?
+  viewCount               Int                @default(0)
+  favoriteCount           Int                @default(0)
+  isFeatured              Boolean            @default(false)
+  isPremium               Boolean            @default(false)
+  lastActiveAt            DateTime?
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+
+  // Relations
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  posts          Post[]
+  reviews        Review[]
+  favorites      Favorite[]
+  viewHistory    ViewHistory[]
+  bookings       Booking[] @relation("GirlBookings")
+  servicePackages ServicePackage[]
+  timeSlots      TimeSlot[]
+  blockedDates   BlockedDate[]
+
+  @@map("girls")
+}
+
+model Post {
+  id          String     @id @default(uuid())
+  girlId      String
+  title       String
+  content     String
+  images      String[] // Array of image URLs
+  status      PostStatus @default(PENDING)
+  approvedById String?
+  approvedAt  DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // Relations
+  girl        Girl      @relation(fields: [girlId], references: [id], onDelete: Cascade)
+  approvedBy  User?     @relation("ApprovedBy", fields: [approvedById], references: [id])
+
+  @@map("posts")
+}
+
+model Review {
+  id          String      @id @default(uuid())
+  customerId String
+  girlId      String
+  title       String
+  content     String
+  rating      Int // 1-5
+  images      String[] // Array of image URLs
+  status      ReviewStatus @default(PENDING)
+  approvedById String?
+  approvedAt  DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  customer    User       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  girl        Girl       @relation(fields: [girlId], references: [id], onDelete: Cascade)
+  approvedBy  User?      @relation("ApprovedBy", fields: [approvedById], references: [id])
+
+  @@map("reviews")
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  senderId   String
+  receiverId String
+  content    String
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  // Relations
+  sender   User   @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User   @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  message   String
+  data      Json? // Additional metadata
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model Report {
+  id              String       @id @default(uuid())
+  reporterId      String
+  reportedUserId  String?
+  reportedPostId  String?
+  reportedReviewId String?
+  reason          ReportReason
+  description     String
+  status          ReportStatus @default(PENDING)
+  reviewedById    String?
+  reviewedAt      DateTime?
+  createdAt       DateTime     @default(now())
+
+  // Relations
+  reporter      User  @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUser  User? @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: SetNull)
+  reviewedBy    User? @relation("ReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@map("reports")
+}
+
+model Block {
+  id        String   @id @default(uuid())
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+
+  // Relations
+  blocker User @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+  @@map("blocks")
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String
+  girlId    String
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  girl Girl @relation(fields: [girlId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, girlId])
+  @@map("favorites")
+}
+
+model ViewHistory {
+  id        String   @id @default(uuid())
+  userId    String
+  girlId    String
+  viewedAt  DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  girl Girl @relation(fields: [girlId], references: [id], onDelete: Cascade)
+
+  @@map("view_history")
+}
+
+model District {
+  id        String   @id @default(uuid())
+  name      String
+  province  String // Sài Gòn, Bình Dương, Đồng Nai
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("districts")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  adminId    String
+  action     String
+  targetType String // post, review, user, etc.
+  targetId   String
+  details    Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  // Relations
+  admin User @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@map("audit_logs")
+}
+
+model Setting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       Json
+  description String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("settings")
+}
+
+model EmailTemplate {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  subject   String
+  bodyHtml  String
+  bodyText  String
+  variables Json? // Available variables
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("email_templates")
+}
+
+// Booking Models
+model Booking {
+  id              String        @id @default(uuid())
+  customerId      String
+  girlId          String
+  servicePackageId String?
+  serviceType     String // drinking, dating, both
+  bookingDate      DateTime
+  duration        Int // hours
+  location        String? // venue/address
+  status          BookingStatus @default(PENDING)
+  totalPrice      Float
+  depositAmount   Float
+  paymentStatus   PaymentStatus @default(PENDING)
+  specialRequests String?
+  cancellationReason String?
+  cancelledAt    DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  customer       User          @relation("Customer", fields: [customerId], references: [id], onDelete: Cascade)
+  girl           Girl          @relation("GirlBookings", fields: [girlId], references: [id], onDelete: Cascade)
+  servicePackage ServicePackage? @relation(fields: [servicePackageId], references: [id])
+  payments       Payment[]
+  bookingHistory BookingHistory[]
+
+  @@map("bookings")
+}
+
+model ServicePackage {
+  id          String   @id @default(uuid())
+  girlId      String
+  name        String
+  description String?
+  duration    Int // hours
+  price       Float
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  girl     Girl      @relation(fields: [girlId], references: [id], onDelete: Cascade)
+  bookings Booking[]
+
+  @@map("service_packages")
+}
+
+model TimeSlot {
+  id          String   @id @default(uuid())
+  girlId      String
+  dayOfWeek   Int // 0-6 (Sunday-Saturday)
+  startTime   String // HH:mm format
+  endTime     String // HH:mm format
+  isAvailable Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  girl Girl @relation(fields: [girlId], references: [id], onDelete: Cascade)
+
+  @@map("time_slots")
+}
+
+model BlockedDate {
+  id        String   @id @default(uuid())
+  girlId    String
+  date      DateTime
+  reason    String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  girl Girl @relation(fields: [girlId], references: [id], onDelete: Cascade)
+
+  @@unique([girlId, date])
+  @@map("blocked_dates")
+}
+
+model BookingHistory {
+  id        String   @id @default(uuid())
+  bookingId String
+  status    BookingStatus
+  changedBy String?
+  notes     String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("booking_history")
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  bookingId     String
+  userId        String // Customer who made payment
+  amount        Float
+  paymentMethod PaymentMethod
+  paymentStatus PaymentStatus @default(PENDING)
+  transactionId String?
+  paymentDate   DateTime?
+  refundAmount  Float?
+  refundReason  String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // Relations
+  booking        Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  user           User            @relation("Payments", fields: [userId], references: [id], onDelete: Cascade)
+  paymentHistory PaymentHistory[]
+
+  @@map("payments")
+}
+
+model PaymentHistory {
+  id        String        @id @default(uuid())
+  paymentId String
+  status    PaymentStatus
+  amount    Float
+  notes     String?
+  createdAt DateTime      @default(now())
+
+  // Relations
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@map("payment_history")
+}
+
+model Venue {
+  id        String   @id @default(uuid())
+  name      String
+  address   String
+  districtId String?
+  latitude  Float?
+  longitude Float?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("venues")
+}
