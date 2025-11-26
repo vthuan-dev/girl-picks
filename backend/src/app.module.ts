@@ -9,6 +9,8 @@ import { ServicePackagesModule } from './modules/service-packages/service-packag
 import { TimeSlotsModule } from './modules/time-slots/time-slots.module';
 import { BlockedDatesModule } from './modules/blocked-dates/blocked-dates.module';
 import { PaymentsModule } from './modules/payments/payments.module';
+import { VenuesModule } from './modules/venues/venues.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -18,6 +20,8 @@ import { PaymentsModule } from './modules/payments/payments.module';
     TimeSlotsModule,
     BlockedDatesModule,
     PaymentsModule,
+    VenuesModule,
+    NotificationsModule,
     ThrottlerModule.forRoot([
       {
         ttl: 60000, // 1 minute

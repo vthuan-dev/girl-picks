@@ -1,11 +1,16 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { PaymentStatus, PaymentMethod } from '@prisma/client';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class PaymentsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject(forwardRef(() => NotificationsService))
+    private notificationsService: NotificationsService,
+  ) {}
 
   async create(userId: string, createPaymentDto: CreatePaymentDto) {
     const { bookingId, amount, paymentMethod } = createPaymentDto;
@@ -75,6 +80,15 @@ export class PaymentsService {
         paymentStatus: bookingPaymentStatus,
       },
     });
+
+    // Send notification if payment is completed (cash)
+    if (payment.paymentStatus === PaymentStatus.COMPLETED) {
+      try {
+        await this.notificationsService.notifyPaymentReceived(bookingId, payment.id, amount, userId);
+      } catch (error) {
+        console.error('Failed to send payment received notification:', error);
+      }
+    }
 
     return payment;
   }
@@ -217,6 +231,25 @@ export class PaymentsService {
             paymentStatus: bookingPaymentStatus,
           },
         });
+
+        // Send notification
+        try {
+          await this.notificationsService.notifyPaymentReceived(
+            payment.bookingId,
+            id,
+            payment.amount,
+            payment.userId,
+          );
+        } catch (error) {
+          console.error('Failed to send payment received notification:', error);
+        }
+      }
+    } else if (status === PaymentStatus.FAILED) {
+      // Send notification for failed payment
+      try {
+        await this.notificationsService.notifyPaymentFailed(payment.bookingId, id, payment.userId);
+      } catch (error) {
+        console.error('Failed to send payment failed notification:', error);
       }
     }
 

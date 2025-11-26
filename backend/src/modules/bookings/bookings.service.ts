@@ -1,13 +1,18 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
 import { BookingStatus, PaymentStatus } from '@prisma/client';
 import moment from 'moment';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class BookingsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject(forwardRef(() => NotificationsService))
+    private notificationsService: NotificationsService,
+  ) {}
 
   async create(userId: string, createBookingDto: CreateBookingDto) {
     const { girlId, bookingDate, duration, servicePackageId } = createBookingDto;
@@ -136,6 +141,14 @@ export class BookingsService {
         notes: 'Booking created',
       },
     });
+
+    // Send notifications
+    try {
+      await this.notificationsService.notifyBookingCreated(booking.id, userId, girlId);
+    } catch (error) {
+      // Log error but don't fail booking creation
+      console.error('Failed to send booking created notification:', error);
+    }
 
     return booking;
   }
@@ -352,6 +365,13 @@ export class BookingsService {
       },
     });
 
+    // Send notification
+    try {
+      await this.notificationsService.notifyBookingConfirmed(id, booking.customerId, booking.girlId);
+    } catch (error) {
+      console.error('Failed to send booking confirmed notification:', error);
+    }
+
     return updated;
   }
 
@@ -412,6 +432,13 @@ export class BookingsService {
         notes: `Rejected: ${reason}`,
       },
     });
+
+    // Send notification
+    try {
+      await this.notificationsService.notifyBookingRejected(id, booking.customerId, reason);
+    } catch (error) {
+      console.error('Failed to send booking rejected notification:', error);
+    }
 
     return updated;
   }
@@ -478,6 +505,22 @@ export class BookingsService {
       },
     });
 
+    // Send notification
+    try {
+      const girl = await this.prisma.girl.findUnique({
+        where: { id: booking.girlId },
+        include: { user: true },
+      });
+      await this.notificationsService.notifyBookingCancelled(
+        id,
+        booking.customerId,
+        booking.girlId,
+        userId,
+      );
+    } catch (error) {
+      console.error('Failed to send booking cancelled notification:', error);
+    }
+
     return updated;
   }
 
@@ -538,6 +581,13 @@ export class BookingsService {
         notes: 'Booking completed',
       },
     });
+
+    // Send notification
+    try {
+      await this.notificationsService.notifyBookingCompleted(id, booking.customerId);
+    } catch (error) {
+      console.error('Failed to send booking completed notification:', error);
+    }
 
     return updated;
   }
