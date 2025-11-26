@@ -4,10 +4,20 @@ import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
+import { BookingsModule } from './modules/bookings/bookings.module';
+import { ServicePackagesModule } from './modules/service-packages/service-packages.module';
+import { TimeSlotsModule } from './modules/time-slots/time-slots.module';
+import { BlockedDatesModule } from './modules/blocked-dates/blocked-dates.module';
+import { PaymentsModule } from './modules/payments/payments.module';
 
 @Module({
   imports: [
     PrismaModule,
+    BookingsModule,
+    ServicePackagesModule,
+    TimeSlotsModule,
+    BlockedDatesModule,
+    PaymentsModule,
     ThrottlerModule.forRoot([
       {
         ttl: 60000, // 1 minute
