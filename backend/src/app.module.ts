@@ -18,6 +18,7 @@ import { DistrictsModule } from './modules/districts/districts.module';
 import { PostsModule } from './modules/posts/posts.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { MessagesModule } from './modules/messages/messages.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { MessagesModule } from './modules/messages/messages.module';
     PostsModule,
     ReviewsModule,
     MessagesModule,
+    AdminModule,
     BookingsModule,
     ServicePackagesModule,
     TimeSlotsModule,
