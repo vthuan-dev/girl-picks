@@ -13,12 +13,14 @@ import { VenuesModule } from './modules/venues/venues.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
+import { GirlsModule } from './modules/girls/girls.module';
 
 @Module({
   imports: [
     PrismaModule,
     AuthModule,
     UsersModule,
+    GirlsModule,
     BookingsModule,
     ServicePackagesModule,
     TimeSlotsModule,
