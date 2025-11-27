@@ -17,6 +17,7 @@ import { GirlsModule } from './modules/girls/girls.module';
 import { DistrictsModule } from './modules/districts/districts.module';
 import { PostsModule } from './modules/posts/posts.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
+import { MessagesModule } from './modules/messages/messages.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { ReviewsModule } from './modules/reviews/reviews.module';
     DistrictsModule,
     PostsModule,
     ReviewsModule,
+    MessagesModule,
     BookingsModule,
     ServicePackagesModule,
     TimeSlotsModule,
