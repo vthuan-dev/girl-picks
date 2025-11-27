@@ -14,6 +14,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { GirlsModule } from './modules/girls/girls.module';
+import { DistrictsModule } from './modules/districts/districts.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { GirlsModule } from './modules/girls/girls.module';
     AuthModule,
     UsersModule,
     GirlsModule,
+    DistrictsModule,
     BookingsModule,
     ServicePackagesModule,
     TimeSlotsModule,
