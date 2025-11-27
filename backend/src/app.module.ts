@@ -12,11 +12,13 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { VenuesModule } from './modules/venues/venues.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
     PrismaModule,
     AuthModule,
+    UsersModule,
     BookingsModule,
     ServicePackagesModule,
     TimeSlotsModule,
