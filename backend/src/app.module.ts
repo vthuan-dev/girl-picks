@@ -19,6 +19,9 @@ import { PostsModule } from './modules/posts/posts.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { MessagesModule } from './modules/messages/messages.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { ReportsModule } from './modules/reports/reports.module';
+import { FavoritesModule } from './modules/favorites/favorites.module';
+import { SearchModule } from './modules/search/search.module';
 
 @Module({
   imports: [
@@ -31,6 +34,9 @@ import { AdminModule } from './modules/admin/admin.module';
     ReviewsModule,
     MessagesModule,
     AdminModule,
+    ReportsModule,
+    FavoritesModule,
+    SearchModule,
     BookingsModule,
     ServicePackagesModule,
     TimeSlotsModule,
