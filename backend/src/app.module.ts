@@ -11,10 +11,12 @@ import { BlockedDatesModule } from './modules/blocked-dates/blocked-dates.module
 import { PaymentsModule } from './modules/payments/payments.module';
 import { VenuesModule } from './modules/venues/venues.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
     PrismaModule,
+    AuthModule,
     BookingsModule,
     ServicePackagesModule,
     TimeSlotsModule,
