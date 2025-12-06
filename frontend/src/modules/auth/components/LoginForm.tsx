@@ -88,7 +88,6 @@ export default function LoginForm() {
                 : 'border-secondary/50 hover:border-secondary/70'
                 }
               `}
-            placeholder="email@example.com"
             />
         </div>
         {errors.email && (
@@ -125,7 +124,6 @@ export default function LoginForm() {
                 : 'border-secondary/50 hover:border-secondary/70'
                 }
               `}
-              placeholder="Nhập mật khẩu của bạn"
             />
             <button
               type="button"

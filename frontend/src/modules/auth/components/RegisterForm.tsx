@@ -79,14 +79,13 @@ export default function RegisterForm() {
                 id="email"
                 className={`
                 w-full pl-11 pr-4 py-3 bg-background border rounded-lg
-                text-text placeholder:text-text-muted/60
+                text-text placeholder:text-text-muted
                 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200
                   ${errors.email 
                   ? 'border-red-500 focus:border-red-500 focus:ring-red-500/50' 
                   : 'border-secondary/50 hover:border-secondary/70'
                   }
                 `}
-              placeholder="email@example.com"
               />
           </div>
           {errors.email && (
@@ -116,14 +115,13 @@ export default function RegisterForm() {
                 id="username"
                 className={`
                 w-full pl-11 pr-4 py-3 bg-background border rounded-lg
-                text-text placeholder:text-text-muted/60
+                text-text placeholder:text-text-muted
                 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200
                   ${errors.username 
                   ? 'border-red-500 focus:border-red-500 focus:ring-red-500/50' 
                   : 'border-secondary/50 hover:border-secondary/70'
                   }
                 `}
-                placeholder="username"
               />
           </div>
           {errors.username && (
@@ -154,14 +152,13 @@ export default function RegisterForm() {
               id="fullName"
               className={`
               w-full pl-11 pr-4 py-3 bg-background border rounded-lg
-              text-text placeholder:text-text-muted/60
+              text-text placeholder:text-text-muted
               focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200
                 ${errors.fullName 
                 ? 'border-red-500 focus:border-red-500 focus:ring-red-500/50' 
                 : 'border-secondary/50 hover:border-secondary/70'
                 }
               `}
-              placeholder="Nguyễn Văn A"
             />
         </div>
         {errors.fullName && (
@@ -189,8 +186,7 @@ export default function RegisterForm() {
               {...register('phone')}
               type="tel"
               id="phone"
-            className="w-full pl-11 pr-4 py-3 bg-background border border-secondary/50 rounded-lg text-text placeholder:text-text-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 hover:border-secondary/70"
-              placeholder="0123456789"
+              className="w-full pl-11 pr-4 py-3 bg-background border border-secondary/50 rounded-lg text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 hover:border-secondary/70"
             />
         </div>
       </div>
@@ -214,14 +210,13 @@ export default function RegisterForm() {
                 id="password"
                 className={`
                 w-full pl-11 pr-11 py-3 bg-background border rounded-lg
-                text-text placeholder:text-text-muted/60
+                text-text placeholder:text-text-muted
                 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200
                   ${errors.password 
                   ? 'border-red-500 focus:border-red-500 focus:ring-red-500/50' 
                   : 'border-secondary/50 hover:border-secondary/70'
                   }
                 `}
-                placeholder="Tối thiểu 8 ký tự"
               />
               <button
                 type="button"
@@ -268,14 +263,13 @@ export default function RegisterForm() {
                 id="confirmPassword"
                 className={`
                 w-full pl-11 pr-11 py-3 bg-background border rounded-lg
-                text-text placeholder:text-text-muted/60
+                text-text placeholder:text-text-muted
                 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200
                   ${errors.confirmPassword 
                   ? 'border-red-500 focus:border-red-500 focus:ring-red-500/50' 
                   : 'border-secondary/50 hover:border-secondary/70'
                   }
                 `}
-                placeholder="Nhập lại mật khẩu"
               />
               <button
                 type="button"
