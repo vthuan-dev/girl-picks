@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateTimeSlotDto } from './dto/create-time-slot.dto';
 import { UpdateTimeSlotDto } from './dto/update-time-slot.dto';
@@ -18,8 +24,12 @@ export class TimeSlotsService {
     }
 
     // Validate time range
-    const [startHours, startMinutes] = createTimeSlotDto.startTime.split(':').map(Number);
-    const [endHours, endMinutes] = createTimeSlotDto.endTime.split(':').map(Number);
+    const [startHours, startMinutes] = createTimeSlotDto.startTime
+      .split(':')
+      .map(Number);
+    const [endHours, endMinutes] = createTimeSlotDto.endTime
+      .split(':')
+      .map(Number);
     const startTotal = startHours * 60 + startMinutes;
     const endTotal = endHours * 60 + endMinutes;
 
@@ -37,8 +47,12 @@ export class TimeSlotsService {
     });
 
     for (const slot of existingSlots) {
-      const [existingStartHours, existingStartMinutes] = slot.startTime.split(':').map(Number);
-      const [existingEndHours, existingEndMinutes] = slot.endTime.split(':').map(Number);
+      const [existingStartHours, existingStartMinutes] = slot.startTime
+        .split(':')
+        .map(Number);
+      const [existingEndHours, existingEndMinutes] = slot.endTime
+        .split(':')
+        .map(Number);
       const existingStartTotal = existingStartHours * 60 + existingStartMinutes;
       const existingEndTotal = existingEndHours * 60 + existingEndMinutes;
 
@@ -61,7 +75,7 @@ export class TimeSlotsService {
   }
 
   async findAll(girlId?: string, isAvailable?: boolean) {
-    const where: any = {};
+    const where: Prisma.TimeSlotWhereInput = {};
 
     if (girlId) {
       where.girlId = girlId;
@@ -87,10 +101,7 @@ export class TimeSlotsService {
           },
         },
       },
-      orderBy: [
-        { dayOfWeek: 'asc' },
-        { startTime: 'asc' },
-      ],
+      orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
     });
   }
 
@@ -120,7 +131,11 @@ export class TimeSlotsService {
     return timeSlot;
   }
 
-  async update(id: string, userId: string, updateTimeSlotDto: UpdateTimeSlotDto) {
+  async update(
+    id: string,
+    userId: string,
+    updateTimeSlotDto: UpdateTimeSlotDto,
+  ) {
     const timeSlot = await this.findOne(id);
 
     // Check if user is the girl who owns this time slot
@@ -134,8 +149,12 @@ export class TimeSlotsService {
 
     // Validate time range if both times are provided
     if (updateTimeSlotDto.startTime && updateTimeSlotDto.endTime) {
-      const [startHours, startMinutes] = updateTimeSlotDto.startTime.split(':').map(Number);
-      const [endHours, endMinutes] = updateTimeSlotDto.endTime.split(':').map(Number);
+      const [startHours, startMinutes] = updateTimeSlotDto.startTime
+        .split(':')
+        .map(Number);
+      const [endHours, endMinutes] = updateTimeSlotDto.endTime
+        .split(':')
+        .map(Number);
       const startTotal = startHours * 60 + startMinutes;
       const endTotal = endHours * 60 + endMinutes;
 
@@ -167,4 +186,3 @@ export class TimeSlotsService {
     });
   }
 }
-

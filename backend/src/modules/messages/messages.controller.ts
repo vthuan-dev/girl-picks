@@ -15,7 +15,13 @@ import { MessagesService } from './messages.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 
 @ApiTags('Messages')
 @ApiBearerAuth()
@@ -27,7 +33,10 @@ export class MessagesController {
   @Post()
   @ApiOperation({ summary: 'Send a message' })
   @ApiResponse({ status: 201, description: 'Message sent' })
-  create(@CurrentUser('id') userId: string, @Body() createMessageDto: CreateMessageDto) {
+  create(
+    @CurrentUser('id') userId: string,
+    @Body() createMessageDto: CreateMessageDto,
+  ) {
     return this.messagesService.create(userId, createMessageDto);
   }
 
@@ -49,7 +58,12 @@ export class MessagesController {
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page?: number,
     @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit?: number,
   ) {
-    return this.messagesService.findConversation(userId, partnerId, page, limit);
+    return this.messagesService.findConversation(
+      userId,
+      partnerId,
+      page,
+      limit,
+    );
   }
 
   @Patch(':id/read')
@@ -62,7 +76,10 @@ export class MessagesController {
   @Patch('conversation/:partnerId/read')
   @ApiOperation({ summary: 'Mark all messages in conversation as read' })
   @ApiResponse({ status: 200, description: 'Messages marked as read' })
-  markConversationAsRead(@CurrentUser('id') userId: string, @Param('partnerId') partnerId: string) {
+  markConversationAsRead(
+    @CurrentUser('id') userId: string,
+    @Param('partnerId') partnerId: string,
+  ) {
     return this.messagesService.markConversationAsRead(userId, partnerId);
   }
 
@@ -80,4 +97,3 @@ export class MessagesController {
     return this.messagesService.deleteMessage(id, userId);
   }
 }
-

@@ -1,0 +1,13 @@
+.env
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+data/
+*.json
+venv/
+env/
+ENV/
+.venv
+

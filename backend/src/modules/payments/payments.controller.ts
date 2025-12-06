@@ -6,7 +6,6 @@ import {
   Param,
   UseGuards,
   Query,
-  Patch,
 } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
@@ -15,7 +14,12 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { UserRole, PaymentStatus } from '@prisma/client';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 
 @ApiTags('Payments')
 @ApiBearerAuth()
@@ -29,14 +33,20 @@ export class PaymentsController {
   @ApiResponse({ status: 201, description: 'Payment created' })
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
-  create(@CurrentUser('id') userId: string, @Body() createPaymentDto: CreatePaymentDto) {
+  create(
+    @CurrentUser('id') userId: string,
+    @Body() createPaymentDto: CreatePaymentDto,
+  ) {
     return this.paymentsService.create(userId, createPaymentDto);
   }
 
   @Get()
   @ApiOperation({ summary: 'Get all payments' })
   @ApiResponse({ status: 200, description: 'List of payments' })
-  findAll(@Query('bookingId') bookingId?: string, @Query('userId') userId?: string) {
+  findAll(
+    @Query('bookingId') bookingId?: string,
+    @Query('userId') userId?: string,
+  ) {
     return this.paymentsService.findAll(bookingId, userId);
   }
 
@@ -84,4 +94,3 @@ export class PaymentsController {
     return this.paymentsService.refund(id, refundAmount, reason, userId);
   }
 }
-

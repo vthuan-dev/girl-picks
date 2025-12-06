@@ -1,4 +1,11 @@
-import { IsString, IsInt, IsArray, IsOptional, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsInt,
+  IsArray,
+  IsOptional,
+  Min,
+  Max,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateReviewDto {
@@ -26,4 +33,3 @@ export class CreateReviewDto {
   @IsString({ each: true })
   images?: string[];
 }
-

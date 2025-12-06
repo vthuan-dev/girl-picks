@@ -22,6 +22,7 @@ import { AdminModule } from './modules/admin/admin.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { FavoritesModule } from './modules/favorites/favorites.module';
 import { SearchModule } from './modules/search/search.module';
+import { CrawlerModule } from './modules/crawler/crawler.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { SearchModule } from './modules/search/search.module';
     PaymentsModule,
     VenuesModule,
     NotificationsModule,
+    CrawlerModule,
     ThrottlerModule.forRoot([
       {
         ttl: 60000, // 1 minute

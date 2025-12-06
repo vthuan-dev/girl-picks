@@ -16,7 +16,13 @@ export class ValidationExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
     const status = exception.getStatus();
-    const exceptionResponse = exception.getResponse();
+    const exceptionResponse = exception.getResponse() as
+      | string
+      | { message?: string | string[] };
+    const errors =
+      typeof exceptionResponse === 'object' && exceptionResponse !== null
+        ? (exceptionResponse.message ?? exception.message)
+        : exception.message;
 
     const errorResponse = {
       success: false,
@@ -24,10 +30,7 @@ export class ValidationExceptionFilter implements ExceptionFilter {
       timestamp: new Date().toISOString(),
       path: request.url,
       message: 'Validation failed',
-      errors:
-        typeof exceptionResponse === 'object'
-          ? (exceptionResponse as any).message
-          : exception.message,
+      errors,
     };
 
     this.logger.warn(
@@ -38,4 +41,3 @@ export class ValidationExceptionFilter implements ExceptionFilter {
     response.status(status).json(errorResponse);
   }
 }
-

@@ -1,4 +1,13 @@
-import { IsString, IsDateString, IsInt, IsNumber, IsOptional, IsEnum, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsDateString,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsEnum,
+  Min,
+  Max,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum ServiceType {
@@ -21,7 +30,10 @@ export class CreateBookingDto {
   @IsEnum(ServiceType)
   serviceType: ServiceType;
 
-  @ApiProperty({ description: 'Booking date and time', example: '2024-12-25T18:00:00Z' })
+  @ApiProperty({
+    description: 'Booking date and time',
+    example: '2024-12-25T18:00:00Z',
+  })
   @IsDateString()
   bookingDate: string;
 
@@ -51,4 +63,3 @@ export class CreateBookingDto {
   @IsString()
   specialRequests?: string;
 }
-

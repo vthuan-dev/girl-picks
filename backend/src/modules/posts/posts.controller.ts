@@ -22,7 +22,13 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import { UserRole, PostStatus } from '@prisma/client';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 
 @ApiTags('Posts')
 @Controller('posts')
@@ -35,13 +41,18 @@ export class PostsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create post (Girl only)' })
   @ApiResponse({ status: 201, description: 'Post created' })
-  create(@CurrentUser('id') userId: string, @Body() createPostDto: CreatePostDto) {
+  create(
+    @CurrentUser('id') userId: string,
+    @Body() createPostDto: CreatePostDto,
+  ) {
     return this.postsService.create(userId, createPostDto);
   }
 
   @Get()
   @Public()
-  @ApiOperation({ summary: 'Get all posts (public - approved only, admin - all)' })
+  @ApiOperation({
+    summary: 'Get all posts (public - approved only, admin - all)',
+  })
   @ApiQuery({ name: 'status', required: false, enum: PostStatus })
   @ApiQuery({ name: 'girlId', required: false })
   @ApiQuery({ name: 'page', required: false, type: Number })
@@ -68,7 +79,10 @@ export class PostsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get own posts (Girl only)' })
   @ApiResponse({ status: 200, description: 'List of own posts' })
-  findMyPosts(@CurrentUser('id') userId: string, @Query('status') status?: PostStatus) {
+  findMyPosts(
+    @CurrentUser('id') userId: string,
+    @Query('status') status?: PostStatus,
+  ) {
     return this.postsService.findMyPosts(userId, status);
   }
 
@@ -143,4 +157,3 @@ export class PostsController {
     return this.postsService.reject(id, adminId, rejectDto.reason);
   }
 }
-

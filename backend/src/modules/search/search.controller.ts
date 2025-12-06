@@ -32,7 +32,8 @@ export class SearchController {
   searchGirls(
     @Query('query') query?: string,
     @Query('districts') districts?: string | string[],
-    @Query('minRating', new DefaultValuePipe(0), ParseFloatPipe) minRating?: number,
+    @Query('minRating', new DefaultValuePipe(0), ParseFloatPipe)
+    minRating?: number,
     @Query('maxPrice') maxPrice?: number,
     @Query('verification') verification?: VerificationStatus,
     @Query('isFeatured') isFeatured?: string,
@@ -52,8 +53,14 @@ export class SearchController {
       minRating: minRating > 0 ? minRating : undefined,
       maxPrice: maxPrice ? Number(maxPrice) : undefined,
       verification,
-      isFeatured: isFeatured === 'true' ? true : isFeatured === 'false' ? false : undefined,
-      isPremium: isPremium === 'true' ? true : isPremium === 'false' ? false : undefined,
+      isFeatured:
+        isFeatured === 'true'
+          ? true
+          : isFeatured === 'false'
+            ? false
+            : undefined,
+      isPremium:
+        isPremium === 'true' ? true : isPremium === 'false' ? false : undefined,
       page,
       limit,
     });
@@ -104,4 +111,3 @@ export class SearchController {
     return this.searchService.globalSearch(query, page, limit);
   }
 }
-

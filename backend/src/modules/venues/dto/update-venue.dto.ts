@@ -9,4 +9,3 @@ export class UpdateVenueDto extends PartialType(CreateVenueDto) {
   @IsBoolean()
   isActive?: boolean;
 }
-

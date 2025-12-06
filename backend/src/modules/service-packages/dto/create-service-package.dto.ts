@@ -21,4 +21,3 @@ export class CreateServicePackageDto {
   @Min(0)
   price: number;
 }
-

@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateVenueDto } from './dto/create-venue.dto';
 import { UpdateVenueDto } from './dto/update-venue.dto';
@@ -14,7 +15,7 @@ export class VenuesService {
   }
 
   async findAll(districtId?: string, isActive?: boolean) {
-    const where: any = {};
+    const where: Prisma.VenueWhereInput = {};
 
     if (districtId) {
       where.districtId = districtId;
@@ -61,7 +62,11 @@ export class VenuesService {
     });
   }
 
-  async searchByLocation(latitude: number, longitude: number, radiusKm: number = 5) {
+  async searchByLocation(
+    latitude: number,
+    longitude: number,
+    radiusKm: number = 5,
+  ) {
     // Simple distance calculation (Haversine formula would be better for production)
     // For now, return all active venues
     // In production, use PostGIS or calculate distance in application
@@ -96,7 +101,12 @@ export class VenuesService {
     return venuesWithDistance;
   }
 
-  private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  private calculateDistance(
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number,
+  ): number {
     const R = 6371; // Radius of the Earth in km
     const dLat = this.deg2rad(lat2 - lat1);
     const dLon = this.deg2rad(lon2 - lon1);
@@ -115,4 +125,3 @@ export class VenuesService {
     return deg * (Math.PI / 180);
   }
 }
-

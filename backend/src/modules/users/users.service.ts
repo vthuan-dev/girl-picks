@@ -1,16 +1,24 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
-import { hashPassword, comparePassword } from '../../common/utils/password.util';
-import { UserRole } from '@prisma/client';
+import {
+  hashPassword,
+  comparePassword,
+} from '../../common/utils/password.util';
+import { Prisma, UserRole } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
   async findAll(role?: UserRole, isActive?: boolean, page = 1, limit = 20) {
-    const where: any = {};
+    const where: Prisma.UserWhereInput = {};
 
     if (role) {
       where.role = role;
@@ -113,8 +121,13 @@ export class UsersService {
     });
   }
 
-  async update(id: string, userId: string, userRole: UserRole, updateUserDto: UpdateUserDto) {
-    const user = await this.findOne(id);
+  async update(
+    id: string,
+    userId: string,
+    userRole: UserRole,
+    updateUserDto: UpdateUserDto,
+  ) {
+    await this.findOne(id);
 
     // Only admins can update other users, users can update themselves
     if (id !== userId && userRole !== UserRole.ADMIN) {
@@ -159,7 +172,10 @@ export class UsersService {
     }
 
     // Verify current password
-    const isPasswordValid = await comparePassword(changePasswordDto.currentPassword, user.password);
+    const isPasswordValid = await comparePassword(
+      changePasswordDto.currentPassword,
+      user.password,
+    );
 
     if (!isPasswordValid) {
       throw new BadRequestException('Current password is incorrect');
@@ -211,4 +227,3 @@ export class UsersService {
     });
   }
 }
-

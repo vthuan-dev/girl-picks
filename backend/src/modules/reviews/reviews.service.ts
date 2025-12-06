@@ -1,10 +1,18 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
-import { ReviewStatus, UserRole } from '@prisma/client';
+import { Prisma, ReviewStatus, UserRole } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { GirlsService } from '../girls/girls.service';
+import { CreateReviewCommentDto } from './dto/create-review-comment.dto';
 
 @Injectable()
 export class ReviewsService {
@@ -67,6 +75,12 @@ export class ReviewsService {
             },
           },
         },
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
+          },
+        },
       },
     });
   }
@@ -80,7 +94,7 @@ export class ReviewsService {
   }) {
     const { status, girlId, customerId, page = 1, limit = 20 } = filters || {};
 
-    const where: any = {};
+    const where: Prisma.ReviewWhereInput = {};
 
     if (status) {
       where.status = status;
@@ -171,6 +185,12 @@ export class ReviewsService {
             fullName: true,
           },
         },
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
+          },
+        },
       },
     });
 
@@ -182,7 +202,7 @@ export class ReviewsService {
   }
 
   async findByGirl(girlId: string, status?: ReviewStatus) {
-    const where: any = { girlId };
+    const where: Prisma.ReviewWhereInput = { girlId };
 
     if (status) {
       where.status = status;
@@ -198,6 +218,12 @@ export class ReviewsService {
             avatarUrl: true,
           },
         },
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',
@@ -206,7 +232,7 @@ export class ReviewsService {
   }
 
   async findMyReviews(userId: string, status?: ReviewStatus) {
-    const where: any = { customerId: userId };
+    const where: Prisma.ReviewWhereInput = { customerId: userId };
 
     if (status) {
       where.status = status;
@@ -224,6 +250,12 @@ export class ReviewsService {
                 avatarUrl: true,
               },
             },
+          },
+        },
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
           },
         },
       },
@@ -374,5 +406,153 @@ export class ReviewsService {
 
     return updated;
   }
-}
 
+  async toggleLike(reviewId: string, userId: string) {
+    const review = await this.prisma.review.findUnique({
+      where: { id: reviewId },
+      select: { status: true },
+    });
+
+    if (!review) {
+      throw new NotFoundException('Review not found');
+    }
+
+    if (review.status !== ReviewStatus.APPROVED) {
+      throw new BadRequestException('Only approved reviews can be liked');
+    }
+
+    const existing = await this.prisma.reviewLike.findUnique({
+      where: {
+        reviewId_userId: {
+          reviewId,
+          userId,
+        },
+      },
+    });
+
+    if (existing) {
+      await this.prisma.reviewLike.delete({
+        where: { id: existing.id },
+      });
+      const likesCount = await this.prisma.reviewLike.count({
+        where: { reviewId },
+      });
+      return {
+        liked: false,
+        likesCount,
+      };
+    }
+
+    await this.prisma.reviewLike.create({
+      data: {
+        reviewId,
+        userId,
+      },
+    });
+
+    const likesCount = await this.prisma.reviewLike.count({
+      where: { reviewId },
+    });
+
+    return {
+      liked: true,
+      likesCount,
+    };
+  }
+
+  async getLikes(reviewId: string) {
+    const review = await this.prisma.review.findUnique({
+      where: { id: reviewId },
+      select: { id: true },
+    });
+
+    if (!review) {
+      throw new NotFoundException('Review not found');
+    }
+
+    const likesCount = await this.prisma.reviewLike.count({
+      where: { reviewId },
+    });
+
+    return {
+      reviewId,
+      likesCount,
+    };
+  }
+
+  async addComment(
+    reviewId: string,
+    userId: string,
+    createReviewCommentDto: CreateReviewCommentDto,
+  ) {
+    const review = await this.prisma.review.findUnique({
+      where: { id: reviewId },
+      select: { status: true },
+    });
+
+    if (!review) {
+      throw new NotFoundException('Review not found');
+    }
+
+    if (review.status !== ReviewStatus.APPROVED) {
+      throw new BadRequestException('Only approved reviews can be commented');
+    }
+
+    return this.prisma.reviewComment.create({
+      data: {
+        reviewId,
+        userId,
+        content: createReviewCommentDto.content,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    });
+  }
+
+  async getComments(reviewId: string, page = 1, limit = 20) {
+    const review = await this.prisma.review.findUnique({
+      where: { id: reviewId },
+      select: { id: true },
+    });
+
+    if (!review) {
+      throw new NotFoundException('Review not found');
+    }
+
+    const [comments, total] = await Promise.all([
+      this.prisma.reviewComment.findMany({
+        where: { reviewId },
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              avatarUrl: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.reviewComment.count({ where: { reviewId } }),
+    ]);
+
+    return {
+      data: comments,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+}

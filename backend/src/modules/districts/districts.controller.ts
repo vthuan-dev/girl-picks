@@ -17,7 +17,13 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import { UserRole } from '@prisma/client';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 
 @ApiTags('Districts')
 @Controller('districts')
@@ -40,7 +46,10 @@ export class DistrictsController {
   @ApiQuery({ name: 'province', required: false })
   @ApiQuery({ name: 'isActive', required: false, type: Boolean })
   @ApiResponse({ status: 200, description: 'List of districts' })
-  findAll(@Query('province') province?: string, @Query('isActive') isActive?: string) {
+  findAll(
+    @Query('province') province?: string,
+    @Query('isActive') isActive?: string,
+  ) {
     return this.districtsService.findAll(
       province,
       isActive === 'true' ? true : isActive === 'false' ? false : undefined,
@@ -77,7 +86,10 @@ export class DistrictsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update district (Admin only)' })
   @ApiResponse({ status: 200, description: 'District updated' })
-  update(@Param('id') id: string, @Body() updateDistrictDto: UpdateDistrictDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateDistrictDto: UpdateDistrictDto,
+  ) {
     return this.districtsService.update(id, updateDistrictDto);
   }
 
@@ -91,4 +103,3 @@ export class DistrictsController {
     return this.districtsService.remove(id);
   }
 }
-

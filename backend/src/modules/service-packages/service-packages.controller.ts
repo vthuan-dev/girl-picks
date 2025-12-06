@@ -17,14 +17,21 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { UserRole } from '@prisma/client';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 
 @ApiTags('Service Packages')
 @ApiBearerAuth()
 @Controller('service-packages')
 @UseGuards(JwtAuthGuard)
 export class ServicePackagesController {
-  constructor(private readonly servicePackagesService: ServicePackagesService) {}
+  constructor(
+    private readonly servicePackagesService: ServicePackagesService,
+  ) {}
 
   @Post()
   @UseGuards(RolesGuard)
@@ -42,7 +49,10 @@ export class ServicePackagesController {
   @Get()
   @ApiOperation({ summary: 'Get all service packages' })
   @ApiResponse({ status: 200, description: 'List of service packages' })
-  findAll(@Query('girlId') girlId?: string, @Query('isActive') isActive?: string) {
+  findAll(
+    @Query('girlId') girlId?: string,
+    @Query('isActive') isActive?: string,
+  ) {
     return this.servicePackagesService.findAll(
       girlId,
       isActive === 'true' ? true : isActive === 'false' ? false : undefined,
@@ -51,7 +61,10 @@ export class ServicePackagesController {
 
   @Get('girl/:girlId')
   @ApiOperation({ summary: 'Get service packages by girl ID' })
-  @ApiResponse({ status: 200, description: 'List of service packages for girl' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of service packages for girl',
+  })
   findGirlPackages(@Param('girlId') girlId: string) {
     return this.servicePackagesService.findAll(girlId, true);
   }
@@ -75,7 +88,11 @@ export class ServicePackagesController {
     @CurrentUser('id') userId: string,
     @Body() updateServicePackageDto: UpdateServicePackageDto,
   ) {
-    return this.servicePackagesService.update(id, userId, updateServicePackageDto);
+    return this.servicePackagesService.update(
+      id,
+      userId,
+      updateServicePackageDto,
+    );
   }
 
   @Delete(':id')
@@ -88,4 +105,3 @@ export class ServicePackagesController {
     return this.servicePackagesService.remove(id, userId);
   }
 }
-

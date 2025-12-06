@@ -16,4 +16,3 @@ export class CreatePostDto {
   @IsString({ each: true })
   images?: string[];
 }
-

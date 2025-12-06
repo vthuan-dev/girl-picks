@@ -1,16 +1,14 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
 import { ReportsService } from './reports.service';
 import { CreateReportDto } from './dto/create-report.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 
 @ApiTags('Reports')
 @ApiBearerAuth()
@@ -22,7 +20,10 @@ export class ReportsController {
   @Post()
   @ApiOperation({ summary: 'Create a report' })
   @ApiResponse({ status: 201, description: 'Report created' })
-  create(@CurrentUser('id') userId: string, @Body() createReportDto: CreateReportDto) {
+  create(
+    @CurrentUser('id') userId: string,
+    @Body() createReportDto: CreateReportDto,
+  ) {
     return this.reportsService.create(userId, createReportDto);
   }
 
@@ -40,4 +41,3 @@ export class ReportsController {
     return this.reportsService.findOne(id);
   }
 }
-

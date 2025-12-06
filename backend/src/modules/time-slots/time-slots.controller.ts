@@ -17,7 +17,12 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { UserRole } from '@prisma/client';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 
 @ApiTags('Time Slots')
 @ApiBearerAuth()
@@ -31,19 +36,32 @@ export class TimeSlotsController {
   @Roles(UserRole.GIRL)
   @ApiOperation({ summary: 'Create a new time slot (Girl only)' })
   @ApiResponse({ status: 201, description: 'Time slot created' })
-  @ApiResponse({ status: 400, description: 'Bad request - overlapping or invalid time' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - overlapping or invalid time',
+  })
   @ApiResponse({ status: 403, description: 'Forbidden' })
-  create(@CurrentUser('id') userId: string, @Body() createTimeSlotDto: CreateTimeSlotDto) {
+  create(
+    @CurrentUser('id') userId: string,
+    @Body() createTimeSlotDto: CreateTimeSlotDto,
+  ) {
     return this.timeSlotsService.create(userId, createTimeSlotDto);
   }
 
   @Get()
   @ApiOperation({ summary: 'Get all time slots' })
   @ApiResponse({ status: 200, description: 'List of time slots' })
-  findAll(@Query('girlId') girlId?: string, @Query('isAvailable') isAvailable?: string) {
+  findAll(
+    @Query('girlId') girlId?: string,
+    @Query('isAvailable') isAvailable?: string,
+  ) {
     return this.timeSlotsService.findAll(
       girlId,
-      isAvailable === 'true' ? true : isAvailable === 'false' ? false : undefined,
+      isAvailable === 'true'
+        ? true
+        : isAvailable === 'false'
+          ? false
+          : undefined,
     );
   }
 
@@ -86,4 +104,3 @@ export class TimeSlotsController {
     return this.timeSlotsService.remove(id, userId);
   }
 }
-

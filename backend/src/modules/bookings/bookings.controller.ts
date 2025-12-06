@@ -8,7 +8,7 @@ import {
   Delete,
   UseGuards,
   Query,
-  ParseEnumPipe,
+  NotImplementedException,
 } from '@nestjs/common';
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
@@ -22,7 +22,20 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { UserRole, BookingStatus } from '@prisma/client';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
+
+type BookingQueryFilters = {
+  customerId?: string;
+  girlId?: string;
+  status?: BookingStatus;
+  startDate?: Date;
+  endDate?: Date;
+};
 
 @ApiTags('Bookings')
 @ApiBearerAuth()
@@ -35,8 +48,14 @@ export class BookingsController {
   @ApiOperation({ summary: 'Create a new booking' })
   @ApiResponse({ status: 201, description: 'Booking created successfully' })
   @ApiResponse({ status: 400, description: 'Bad request' })
-  @ApiResponse({ status: 404, description: 'Girl or service package not found' })
-  create(@CurrentUser('id') userId: string, @Body() createBookingDto: CreateBookingDto) {
+  @ApiResponse({
+    status: 404,
+    description: 'Girl or service package not found',
+  })
+  create(
+    @CurrentUser('id') userId: string,
+    @Body() createBookingDto: CreateBookingDto,
+  ) {
     return this.bookingsService.create(userId, createBookingDto);
   }
 
@@ -55,7 +74,7 @@ export class BookingsController {
     // Customers can only see their own bookings
     // Girls can only see their own bookings
     // Admins can see all
-    const filters: any = {};
+    const filters: BookingQueryFilters = {};
 
     if (userRole === UserRole.CUSTOMER) {
       filters.customerId = userId;
@@ -90,8 +109,11 @@ export class BookingsController {
   @Get('me')
   @ApiOperation({ summary: 'Get current user bookings' })
   @ApiResponse({ status: 200, description: 'List of user bookings' })
-  findMyBookings(@CurrentUser('id') userId: string, @CurrentUser('role') userRole: UserRole) {
-    const filters: any = {};
+  findMyBookings(
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: UserRole,
+  ) {
+    const filters: BookingQueryFilters = {};
 
     if (userRole === UserRole.CUSTOMER) {
       filters.customerId = userId;
@@ -113,7 +135,11 @@ export class BookingsController {
   @ApiOperation({ summary: 'Get available time slots for a girl' })
   @ApiResponse({ status: 200, description: 'List of available time slots' })
   getAvailableSlots(@Query() query: AvailableSlotsDto) {
-    return this.bookingsService.getAvailableSlots(query.girlId, query.startDate, query.endDate);
+    return this.bookingsService.getAvailableSlots(
+      query.girlId,
+      query.startDate,
+      query.endDate,
+    );
   }
 
   @Get(':id')
@@ -191,10 +217,9 @@ export class BookingsController {
   @ApiOperation({ summary: 'Delete booking (only pending bookings)' })
   @ApiResponse({ status: 200, description: 'Booking deleted' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
-  remove(@Param('id') id: string, @CurrentUser('id') userId: string) {
-    // Only allow deletion of pending bookings
-    // This could be implemented if needed
-    throw new Error('Delete not implemented - use cancel instead');
+  remove(@Param('id') id: string, @CurrentUser('id') userId: string): never {
+    throw new NotImplementedException(
+      `Delete not implemented for booking ${id} (user ${userId}). Use cancel instead.`,
+    );
   }
 }
-

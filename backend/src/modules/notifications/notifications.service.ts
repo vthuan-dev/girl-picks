@@ -78,7 +78,11 @@ export class NotificationsService {
   }
 
   // Booking-specific notification helpers
-  async notifyBookingCreated(bookingId: string, customerId: string, girlId: string) {
+  async notifyBookingCreated(
+    bookingId: string,
+    customerId: string,
+    girlId: string,
+  ) {
     // Notify girl
     const girl = await this.prisma.girl.findUnique({
       where: { id: girlId },
@@ -103,7 +107,11 @@ export class NotificationsService {
     );
   }
 
-  async notifyBookingConfirmed(bookingId: string, customerId: string, girlId: string) {
+  async notifyBookingConfirmed(
+    bookingId: string,
+    customerId: string,
+    girlId: string,
+  ) {
     await this.create(
       customerId,
       NotificationType.BOOKING_CONFIRMED,
@@ -112,7 +120,11 @@ export class NotificationsService {
     );
   }
 
-  async notifyBookingRejected(bookingId: string, customerId: string, reason: string) {
+  async notifyBookingRejected(
+    bookingId: string,
+    customerId: string,
+    reason: string,
+  ) {
     await this.create(
       customerId,
       NotificationType.BOOKING_REJECTED,
@@ -121,7 +133,12 @@ export class NotificationsService {
     );
   }
 
-  async notifyBookingCancelled(bookingId: string, customerId: string, girlId: string, cancelledBy: string) {
+  async notifyBookingCancelled(
+    bookingId: string,
+    customerId: string,
+    girlId: string,
+    cancelledBy: string,
+  ) {
     const isCustomer = cancelledBy === customerId;
     const targetUserId = isCustomer ? girlId : customerId;
     const message = isCustomer
@@ -152,7 +169,12 @@ export class NotificationsService {
     );
   }
 
-  async notifyPaymentReceived(bookingId: string, paymentId: string, amount: number, userId: string) {
+  async notifyPaymentReceived(
+    bookingId: string,
+    paymentId: string,
+    amount: number,
+    userId: string,
+  ) {
     await this.create(
       userId,
       NotificationType.PAYMENT_RECEIVED,
@@ -161,7 +183,11 @@ export class NotificationsService {
     );
   }
 
-  async notifyPaymentFailed(bookingId: string, paymentId: string, userId: string) {
+  async notifyPaymentFailed(
+    bookingId: string,
+    paymentId: string,
+    userId: string,
+  ) {
     await this.create(
       userId,
       NotificationType.PAYMENT_FAILED,
@@ -170,4 +196,3 @@ export class NotificationsService {
     );
   }
 }
-

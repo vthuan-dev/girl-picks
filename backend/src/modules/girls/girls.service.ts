@@ -1,7 +1,11 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+import { Prisma, VerificationStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UpdateGirlDto } from './dto/update-girl.dto';
-import { VerificationStatus, UserRole } from '@prisma/client';
 
 @Injectable()
 export class GirlsService {
@@ -26,10 +30,11 @@ export class GirlsService {
       limit = 20,
     } = filters || {};
 
-    const where: any = {
+    const where: Prisma.GirlWhereInput = {
       user: {
         isActive: true,
       },
+      isActive: true,
     };
 
     if (districts && districts.length > 0) {
@@ -38,7 +43,7 @@ export class GirlsService {
       };
     }
 
-    if (rating) {
+    if (typeof rating === 'number') {
       where.ratingAverage = {
         gte: rating,
       };
@@ -100,8 +105,8 @@ export class GirlsService {
   }
 
   async findOne(id: string) {
-    const girl = await this.prisma.girl.findUnique({
-      where: { id },
+    const girl = await this.prisma.girl.findFirst({
+      where: { id, isActive: true },
       include: {
         user: {
           select: {
@@ -215,7 +220,12 @@ export class GirlsService {
     });
   }
 
-  async requestVerification(userId: string, documents: string[], notes?: string) {
+  async requestVerification(
+    userId: string,
+    documents: string[],
+    notes?: string,
+  ) {
+    void notes;
     const girl = await this.findByUserId(userId);
 
     if (girl.verificationStatus === VerificationStatus.VERIFIED) {
@@ -237,7 +247,14 @@ export class GirlsService {
   }
 
   async approveVerification(id: string, adminId: string) {
-    const girl = await this.findOne(id);
+    void adminId;
+    const girl = await this.prisma.girl.findUnique({
+      where: { id },
+    });
+
+    if (!girl) {
+      throw new NotFoundException('Girl not found');
+    }
 
     if (girl.verificationStatus === VerificationStatus.VERIFIED) {
       throw new BadRequestException('Already verified');
@@ -256,7 +273,15 @@ export class GirlsService {
   }
 
   async rejectVerification(id: string, adminId: string, reason: string) {
-    const girl = await this.findOne(id);
+    void adminId;
+    void reason;
+    const girl = await this.prisma.girl.findUnique({
+      where: { id },
+    });
+
+    if (!girl) {
+      throw new NotFoundException('Girl not found');
+    }
 
     const updated = await this.prisma.girl.update({
       where: { id },
@@ -273,41 +298,42 @@ export class GirlsService {
   async getAnalytics(userId: string) {
     const girl = await this.findByUserId(userId);
 
-    const [bookingsCount, reviewsCount, postsCount, favoritesCount, earnings] = await Promise.all([
-      this.prisma.booking.count({
-        where: {
-          girlId: girl.id,
-          status: 'COMPLETED',
-        },
-      }),
-      this.prisma.review.count({
-        where: {
-          girlId: girl.id,
-          status: 'APPROVED',
-        },
-      }),
-      this.prisma.post.count({
-        where: {
-          girlId: girl.id,
-          status: 'APPROVED',
-        },
-      }),
-      this.prisma.favorite.count({
-        where: {
-          girlId: girl.id,
-        },
-      }),
-      this.prisma.booking.aggregate({
-        where: {
-          girlId: girl.id,
-          status: 'COMPLETED',
-          paymentStatus: 'COMPLETED',
-        },
-        _sum: {
-          totalPrice: true,
-        },
-      }),
-    ]);
+    const [bookingsCount, reviewsCount, postsCount, favoritesCount, earnings] =
+      await Promise.all([
+        this.prisma.booking.count({
+          where: {
+            girlId: girl.id,
+            status: 'COMPLETED',
+          },
+        }),
+        this.prisma.review.count({
+          where: {
+            girlId: girl.id,
+            status: 'APPROVED',
+          },
+        }),
+        this.prisma.post.count({
+          where: {
+            girlId: girl.id,
+            status: 'APPROVED',
+          },
+        }),
+        this.prisma.favorite.count({
+          where: {
+            girlId: girl.id,
+          },
+        }),
+        this.prisma.booking.aggregate({
+          where: {
+            girlId: girl.id,
+            status: 'COMPLETED',
+            paymentStatus: 'COMPLETED',
+          },
+          _sum: {
+            totalPrice: true,
+          },
+        }),
+      ]);
 
     // Get bookings trend (last 12 months)
     const lastYear = new Date();
@@ -352,7 +378,9 @@ export class GirlsService {
 
     const totalReviews = reviews.length;
     const ratingAverage =
-      totalReviews > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews : 0;
+      totalReviews > 0
+        ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
+        : 0;
 
     return this.prisma.girl.update({
       where: { id: girlId },
@@ -362,5 +390,56 @@ export class GirlsService {
       },
     });
   }
-}
 
+  async addImages(girlId: string, imageUrls: string[]) {
+    const girl = await this.prisma.girl.findUnique({
+      where: { id: girlId },
+      select: { images: true },
+    });
+
+    if (!girl) {
+      throw new NotFoundException('Girl not found');
+    }
+
+    const uniqueImages = Array.from(
+      new Set([...girl.images, ...imageUrls.filter((url) => !!url)]),
+    );
+
+    return this.prisma.girl.update({
+      where: { id: girlId },
+      data: {
+        images: {
+          set: uniqueImages,
+        },
+      },
+      select: {
+        id: true,
+        images: true,
+      },
+    });
+  }
+
+  async removeImage(girlId: string, imageUrl: string) {
+    const girl = await this.prisma.girl.findUnique({
+      where: { id: girlId },
+      select: { images: true },
+    });
+
+    if (!girl) {
+      throw new NotFoundException('Girl not found');
+    }
+
+    return this.prisma.girl.update({
+      where: { id: girlId },
+      data: {
+        images: {
+          set: girl.images.filter((url) => url !== imageUrl),
+        },
+      },
+      select: {
+        id: true,
+        images: true,
+      },
+    });
+  }
+}

@@ -7,4 +7,3 @@ export class RejectBookingDto {
   @IsNotEmpty()
   reason: string;
 }
-

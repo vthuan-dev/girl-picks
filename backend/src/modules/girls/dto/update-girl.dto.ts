@@ -7,9 +7,11 @@ export class UpdateGirlDto {
   @IsString()
   bio?: string;
 
-  @ApiPropertyOptional({ description: 'Districts (array of district IDs)', type: [String] })
+  @ApiPropertyOptional({
+    description: 'Districts (array of district IDs)',
+    type: [String],
+  })
   @IsOptional()
   @IsArray()
   districts?: string[];
 }
-

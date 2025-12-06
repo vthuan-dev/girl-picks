@@ -7,4 +7,3 @@ export class RejectPostDto {
   @IsNotEmpty()
   reason: string;
 }
-

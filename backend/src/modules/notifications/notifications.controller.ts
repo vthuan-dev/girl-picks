@@ -1,8 +1,20 @@
-import { Controller, Get, Post, Param, UseGuards, Query, Patch } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  UseGuards,
+  Query,
+  Patch,
+} from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 
 @ApiTags('Notifications')
 @ApiBearerAuth()
@@ -49,4 +61,3 @@ export class NotificationsController {
     return this.notificationsService.markAllAsRead(userId);
   }
 }
-

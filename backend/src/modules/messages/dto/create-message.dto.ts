@@ -12,4 +12,3 @@ export class CreateMessageDto {
   @IsNotEmpty()
   content: string;
 }
-

@@ -16,4 +16,3 @@ import { GirlsModule } from '../girls/girls.module';
   exports: [ReviewsService],
 })
 export class ReviewsModule {}
-

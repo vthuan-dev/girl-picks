@@ -16,4 +16,3 @@ export class CreatePaymentDto {
   @IsEnum(PaymentMethod)
   paymentMethod: PaymentMethod;
 }
-

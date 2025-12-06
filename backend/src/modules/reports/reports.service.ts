@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateReportDto } from './dto/create-report.dto';
 import { ReportStatus } from '@prisma/client';
@@ -8,8 +12,13 @@ export class ReportsService {
   constructor(private prisma: PrismaService) {}
 
   async create(reporterId: string, createReportDto: CreateReportDto) {
-    const { reportedUserId, reportedPostId, reportedReviewId, reason, description } =
-      createReportDto;
+    const {
+      reportedUserId,
+      reportedPostId,
+      reportedReviewId,
+      reason,
+      description,
+    } = createReportDto;
 
     // Must report at least one thing
     if (!reportedUserId && !reportedPostId && !reportedReviewId) {
@@ -18,21 +27,27 @@ export class ReportsService {
 
     // Validate reported items exist
     if (reportedUserId) {
-      const user = await this.prisma.user.findUnique({ where: { id: reportedUserId } });
+      const user = await this.prisma.user.findUnique({
+        where: { id: reportedUserId },
+      });
       if (!user) {
         throw new NotFoundException('Reported user not found');
       }
     }
 
     if (reportedPostId) {
-      const post = await this.prisma.post.findUnique({ where: { id: reportedPostId } });
+      const post = await this.prisma.post.findUnique({
+        where: { id: reportedPostId },
+      });
       if (!post) {
         throw new NotFoundException('Reported post not found');
       }
     }
 
     if (reportedReviewId) {
-      const review = await this.prisma.review.findUnique({ where: { id: reportedReviewId } });
+      const review = await this.prisma.review.findUnique({
+        where: { id: reportedReviewId },
+      });
       if (!review) {
         throw new NotFoundException('Reported review not found');
       }
@@ -180,4 +195,3 @@ export class ReportsService {
     return report;
   }
 }
-

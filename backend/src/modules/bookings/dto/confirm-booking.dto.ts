@@ -7,4 +7,3 @@ export class ConfirmBookingDto {
   @IsString()
   notes?: string;
 }
-

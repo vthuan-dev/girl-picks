@@ -19,7 +19,13 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UserRole } from '@prisma/client';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -95,7 +101,10 @@ export class UsersController {
   @Post('me/avatar')
   @ApiOperation({ summary: 'Update avatar' })
   @ApiResponse({ status: 200, description: 'Avatar updated' })
-  updateAvatar(@CurrentUser('id') userId: string, @Body('avatarUrl') avatarUrl: string) {
+  updateAvatar(
+    @CurrentUser('id') userId: string,
+    @Body('avatarUrl') avatarUrl: string,
+  ) {
     return this.usersService.updateAvatar(userId, avatarUrl);
   }
 
@@ -103,7 +112,10 @@ export class UsersController {
   @ApiOperation({ summary: 'Change password' })
   @ApiResponse({ status: 200, description: 'Password changed' })
   @ApiResponse({ status: 400, description: 'Invalid current password' })
-  changePassword(@CurrentUser('id') userId: string, @Body() changePasswordDto: ChangePasswordDto) {
+  changePassword(
+    @CurrentUser('id') userId: string,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ) {
     return this.usersService.changePassword(userId, changePasswordDto);
   }
 
@@ -134,4 +146,3 @@ export class UsersController {
     return this.usersService.delete(id);
   }
 }
-

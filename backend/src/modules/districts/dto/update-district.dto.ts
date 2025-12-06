@@ -9,4 +9,3 @@ export class UpdateDistrictDto extends PartialType(CreateDistrictDto) {
   @IsBoolean()
   isActive?: boolean;
 }
-

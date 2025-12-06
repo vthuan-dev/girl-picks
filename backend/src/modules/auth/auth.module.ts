@@ -26,4 +26,3 @@ const config = jwtConfig();
   exports: [AuthService],
 })
 export class AuthModule {}
-

@@ -53,4 +53,3 @@ export class BookingResponseDto {
   @ApiProperty()
   updatedAt: Date;
 }
-

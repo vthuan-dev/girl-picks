@@ -3,9 +3,13 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PrismaService } from '../../../prisma/prisma.service';
 import jwtConfig from '../../../config/jwt.config';
+import { TokenPayload } from '../../../common/utils/jwt.util';
 
 @Injectable()
-export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
+export class JwtRefreshStrategy extends PassportStrategy(
+  Strategy,
+  'jwt-refresh',
+) {
   constructor(private prisma: PrismaService) {
     const config = jwtConfig();
     super({
@@ -15,10 +19,10 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
     });
   }
 
-  async validate(payload: any) {
-      const user = await this.prisma['user'].findUnique({
-        where: { id: payload.sub },
-      });
+  async validate(payload: TokenPayload) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+    });
 
     if (!user || !user.isActive) {
       throw new UnauthorizedException('User not found or inactive');
@@ -31,4 +35,3 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
     };
   }
 }
-

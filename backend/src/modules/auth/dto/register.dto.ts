@@ -1,4 +1,11 @@
-import { IsString, IsEmail, IsEnum, IsOptional, MinLength, Matches } from 'class-validator';
+import {
+  IsString,
+  IsEmail,
+  IsEnum,
+  IsOptional,
+  MinLength,
+  Matches,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 
@@ -7,11 +14,16 @@ export class RegisterDto {
   @IsEmail()
   email: string;
 
-  @ApiProperty({ description: 'Password (min 8 characters, must contain uppercase, lowercase, number)', minLength: 8 })
+  @ApiProperty({
+    description:
+      'Password (min 8 characters, must contain uppercase, lowercase, number)',
+    minLength: 8,
+  })
   @IsString()
   @MinLength(8)
   @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
-    message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number',
+    message:
+      'Password must contain at least one uppercase letter, one lowercase letter, and one number',
   })
   password: string;
 
@@ -24,7 +36,11 @@ export class RegisterDto {
   @IsString()
   phone?: string;
 
-  @ApiProperty({ description: 'User role', enum: UserRole, default: UserRole.CUSTOMER })
+  @ApiProperty({
+    description: 'User role',
+    enum: UserRole,
+    default: UserRole.CUSTOMER,
+  })
   @IsEnum(UserRole)
   role: UserRole;
 
@@ -37,4 +53,3 @@ export class RegisterDto {
   @IsOptional()
   districts?: string[];
 }
-

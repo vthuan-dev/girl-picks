@@ -23,4 +23,3 @@ const config = jwtConfig();
   exports: [MessagesService, MessagesGateway],
 })
 export class MessagesModule {}
-

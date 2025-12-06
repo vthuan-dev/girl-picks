@@ -6,13 +6,14 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
 }
 
 enum UserRole {
   ADMIN
   GIRL
   CUSTOMER
+  STAFF_UPLOAD
 }
 
 enum PostStatus {
@@ -115,6 +116,8 @@ model User {
   blockedBy    Block[] @relation("Blocked")
   favorites    Favorite[]
   viewHistory  ViewHistory[]
+  reviewLikes  ReviewLike[]
+  reviewComments ReviewComment[]
   bookings     Booking[] @relation("Customer")
   payments     Payment[] @relation("Payments")
   auditLogs    AuditLog[]
@@ -128,18 +131,22 @@ model User {
 model Girl {
   id                      String             @id @default(uuid())
   userId                  String             @unique
+  name                    String?
+  age                     Int?
   bio                     String?
-  districts               String[] // Array of district IDs
+  districts               Json              @default("[]") // Array of district IDs stored as JSON
   ratingAverage           Float              @default(0)
   totalReviews            Int                @default(0)
   verificationStatus      VerificationStatus @default(PENDING)
-  verificationDocuments   String[] // Array of document URLs
+  verificationDocuments   Json              @default("[]") // Array of document URLs stored as JSON
   verificationRequestedAt DateTime?
   verificationVerifiedAt  DateTime?
   viewCount               Int                @default(0)
   favoriteCount           Int                @default(0)
   isFeatured              Boolean            @default(false)
   isPremium               Boolean            @default(false)
+  isActive                Boolean            @default(true)
+  images                  Json              @default("[]") // Array of image URLs stored as JSON
   lastActiveAt            DateTime?
   createdAt               DateTime            @default(now())
   updatedAt               DateTime            @updatedAt
@@ -163,7 +170,7 @@ model Post {
   girlId      String
   title       String
   content     String
-  images      String[] // Array of image URLs
+  images      Json              @default("[]") // Array of image URLs stored as JSON
   status      PostStatus @default(PENDING)
   approvedById String?
   approvedAt  DateTime?
@@ -184,7 +191,7 @@ model Review {
   title       String
   content     String
   rating      Int // 1-5
-  images      String[] // Array of image URLs
+  images      Json              @default("[]") // Array of image URLs stored as JSON
   status      ReviewStatus @default(PENDING)
   approvedById String?
   approvedAt  DateTime?
@@ -195,6 +202,8 @@ model Review {
   customer    User       @relation(fields: [customerId], references: [id], onDelete: Cascade)
   girl        Girl       @relation(fields: [girlId], references: [id], onDelete: Cascade)
   approvedBy  User?      @relation("ApprovedBy", fields: [approvedById], references: [id])
+  likes       ReviewLike[]
+  comments    ReviewComment[]
 
   @@map("reviews")
 }
@@ -227,6 +236,32 @@ model Notification {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notifications")
+}
+
+model ReviewLike {
+  id        String   @id @default(uuid())
+  reviewId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, userId])
+  @@map("review_likes")
+}
+
+model ReviewComment {
+  id        String   @id @default(uuid())
+  reviewId  String
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("review_comments")
 }
 
 model Report {

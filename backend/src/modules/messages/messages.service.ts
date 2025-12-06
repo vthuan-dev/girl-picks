@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 
@@ -89,30 +94,54 @@ export class MessagesService {
     });
 
     // Group by conversation partner
-    const conversationsMap = new Map();
+    type ConversationSummary = {
+      user: {
+        id: string;
+        fullName: string;
+        avatarUrl: string | null;
+        role: string;
+      };
+      lastMessage: typeof messages[number];
+      unreadCount: number;
+    };
+
+    const conversationsMap = new Map<string, ConversationSummary>();
 
     messages.forEach((message) => {
-      const partnerId = message.senderId === userId ? message.receiverId : message.senderId;
-      const partner = message.senderId === userId ? message.receiver : message.sender;
+      const partnerId =
+        message.senderId === userId ? message.receiverId : message.senderId;
+      const partner =
+        message.senderId === userId ? message.receiver : message.sender;
 
-      if (!conversationsMap.has(partnerId)) {
+      const existing = conversationsMap.get(partnerId);
+
+      if (!existing) {
         conversationsMap.set(partnerId, {
           user: partner,
           lastMessage: message,
           unreadCount: 0,
         });
+      } else if (message.createdAt > existing.lastMessage.createdAt) {
+        existing.lastMessage = message;
       }
 
-      // Count unread messages from this partner
       if (message.receiverId === userId && !message.isRead) {
-        conversationsMap.get(partnerId).unreadCount++;
+        const conversation = conversationsMap.get(partnerId);
+        if (conversation) {
+          conversation.unreadCount += 1;
+        }
       }
     });
 
     return Array.from(conversationsMap.values());
   }
 
-  async findConversation(userId: string, partnerId: string, page = 1, limit = 50) {
+  async findConversation(
+    userId: string,
+    partnerId: string,
+    page = 1,
+    limit = 50,
+  ) {
     const where = {
       OR: [
         { senderId: userId, receiverId: partnerId },
@@ -170,7 +199,9 @@ export class MessagesService {
 
     // Only receiver can mark as read
     if (message.receiverId !== userId) {
-      throw new ForbiddenException('You can only mark received messages as read');
+      throw new ForbiddenException(
+        'You can only mark received messages as read',
+      );
     }
 
     return this.prisma.message.update({
@@ -219,5 +250,15 @@ export class MessagesService {
       where: { id },
     });
   }
-}
 
+  async findMessageById(id: string) {
+    return this.prisma.message.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        senderId: true,
+        receiverId: true,
+      },
+    });
+  }
+}

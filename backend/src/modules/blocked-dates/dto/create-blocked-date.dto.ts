@@ -11,4 +11,3 @@ export class CreateBlockedDateDto {
   @IsString()
   reason?: string;
 }
-

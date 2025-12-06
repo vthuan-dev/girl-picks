@@ -2,7 +2,10 @@ import { IsArray, IsString, IsOptional } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class VerificationRequestDto {
-  @ApiProperty({ description: 'Verification document URLs (CMND/CCCD)', type: [String] })
+  @ApiProperty({
+    description: 'Verification document URLs (CMND/CCCD)',
+    type: [String],
+  })
   @IsArray()
   @IsString({ each: true })
   documents: string[];
@@ -12,4 +15,3 @@ export class VerificationRequestDto {
   @IsString()
   notes?: string;
 }
-

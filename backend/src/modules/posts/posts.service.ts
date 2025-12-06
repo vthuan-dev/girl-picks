@@ -1,8 +1,15 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
-import { PostStatus, UserRole } from '@prisma/client';
+import { PostStatus, UserRole, Prisma } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
@@ -54,7 +61,7 @@ export class PostsService {
   }) {
     const { status, girlId, page = 1, limit = 20 } = filters || {};
 
-    const where: any = {};
+    const where: Prisma.PostWhereInput = {};
 
     if (status) {
       where.status = status;
@@ -138,7 +145,7 @@ export class PostsService {
   }
 
   async findByGirl(girlId: string, status?: PostStatus) {
-    const where: any = { girlId };
+    const where: Prisma.PostWhereInput = { girlId };
 
     if (status) {
       where.status = status;
@@ -294,4 +301,3 @@ export class PostsService {
     return updated;
   }
 }
-

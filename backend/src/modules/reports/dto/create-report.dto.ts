@@ -27,4 +27,3 @@ export class CreateReportDto {
   @IsNotEmpty()
   description: string;
 }
-

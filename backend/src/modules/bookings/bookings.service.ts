@@ -1,8 +1,15 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
-import { BookingStatus, PaymentStatus } from '@prisma/client';
+import { BookingStatus, PaymentStatus, Prisma } from '@prisma/client';
 import moment from 'moment';
 import { NotificationsService } from '../notifications/notifications.service';
 
@@ -15,7 +22,8 @@ export class BookingsService {
   ) {}
 
   async create(userId: string, createBookingDto: CreateBookingDto) {
-    const { girlId, bookingDate, duration, servicePackageId } = createBookingDto;
+    const { girlId, bookingDate, duration, servicePackageId } =
+      createBookingDto;
 
     // Check if girl exists
     const girl = await this.prisma.girl.findUnique({
@@ -48,7 +56,9 @@ export class BookingsService {
 
     // Check for time conflicts
     const bookingDateTime = new Date(bookingDate);
-    const endDateTime = new Date(bookingDateTime.getTime() + duration * 60 * 60 * 1000);
+    const endDateTime = new Date(
+      bookingDateTime.getTime() + duration * 60 * 60 * 1000,
+    );
 
     const conflictingBooking = await this.prisma.booking.findFirst({
       where: {
@@ -144,7 +154,11 @@ export class BookingsService {
 
     // Send notifications
     try {
-      await this.notificationsService.notifyBookingCreated(booking.id, userId, girlId);
+      await this.notificationsService.notifyBookingCreated(
+        booking.id,
+        userId,
+        girlId,
+      );
     } catch (error) {
       // Log error but don't fail booking creation
       console.error('Failed to send booking created notification:', error);
@@ -160,7 +174,7 @@ export class BookingsService {
     startDate?: Date;
     endDate?: Date;
   }) {
-    const where: any = {};
+    const where: Prisma.BookingWhereInput = {};
 
     if (filters?.customerId) {
       where.customerId = filters.customerId;
@@ -175,13 +189,10 @@ export class BookingsService {
     }
 
     if (filters?.startDate || filters?.endDate) {
-      where.bookingDate = {};
-      if (filters.startDate) {
-        where.bookingDate.gte = filters.startDate;
-      }
-      if (filters.endDate) {
-        where.bookingDate.lte = filters.endDate;
-      }
+      where.bookingDate = {
+        ...(filters?.startDate ? { gte: filters.startDate } : {}),
+        ...(filters?.endDate ? { lte: filters.endDate } : {}),
+      };
     }
 
     return this.prisma.booking.findMany({
@@ -367,7 +378,11 @@ export class BookingsService {
 
     // Send notification
     try {
-      await this.notificationsService.notifyBookingConfirmed(id, booking.customerId, booking.girlId);
+      await this.notificationsService.notifyBookingConfirmed(
+        id,
+        booking.customerId,
+        booking.girlId,
+      );
     } catch (error) {
       console.error('Failed to send booking confirmed notification:', error);
     }
@@ -435,7 +450,11 @@ export class BookingsService {
 
     // Send notification
     try {
-      await this.notificationsService.notifyBookingRejected(id, booking.customerId, reason);
+      await this.notificationsService.notifyBookingRejected(
+        id,
+        booking.customerId,
+        reason,
+      );
     } catch (error) {
       console.error('Failed to send booking rejected notification:', error);
     }
@@ -457,7 +476,10 @@ export class BookingsService {
       throw new ForbiddenException('You can only cancel your own bookings');
     }
 
-    if (booking.status === BookingStatus.CANCELLED || booking.status === BookingStatus.COMPLETED) {
+    if (
+      booking.status === BookingStatus.CANCELLED ||
+      booking.status === BookingStatus.COMPLETED
+    ) {
       throw new BadRequestException('Cannot cancel this booking');
     }
 
@@ -507,10 +529,6 @@ export class BookingsService {
 
     // Send notification
     try {
-      const girl = await this.prisma.girl.findUnique({
-        where: { id: booking.girlId },
-        include: { user: true },
-      });
       await this.notificationsService.notifyBookingCancelled(
         id,
         booking.customerId,
@@ -533,7 +551,9 @@ export class BookingsService {
     });
 
     if (!girl || girl.id !== booking.girlId) {
-      throw new ForbiddenException('Only the girl can mark bookings as completed');
+      throw new ForbiddenException(
+        'Only the girl can mark bookings as completed',
+      );
     }
 
     if (booking.status !== BookingStatus.CONFIRMED) {
@@ -584,7 +604,10 @@ export class BookingsService {
 
     // Send notification
     try {
-      await this.notificationsService.notifyBookingCompleted(id, booking.customerId);
+      await this.notificationsService.notifyBookingCompleted(
+        id,
+        booking.customerId,
+      );
     } catch (error) {
       console.error('Failed to send booking completed notification:', error);
     }
@@ -612,7 +635,9 @@ export class BookingsService {
       },
     });
 
-    const blockedDateStrings = blockedDates.map((bd) => bd.date.toISOString().split('T')[0]);
+    const blockedDateStrings = blockedDates.map(
+      (bd) => bd.date.toISOString().split('T')[0],
+    );
 
     // Get existing bookings
     const existingBookings = await this.prisma.booking.findMany({
@@ -629,11 +654,20 @@ export class BookingsService {
     });
 
     // Generate available slots
-    const slots: Array<{ date: string; startTime: string; endTime: string; available: boolean }> = [];
+    const slots: Array<{
+      date: string;
+      startTime: string;
+      endTime: string;
+      available: boolean;
+    }> = [];
     const start = moment(startDate);
     const end = moment(endDate);
 
-    for (let date = start.clone(); date.isSameOrBefore(end); date.add(1, 'day')) {
+    for (
+      let date = start.clone();
+      date.isSameOrBefore(end);
+      date.add(1, 'day')
+    ) {
       const dateString = date.format('YYYY-MM-DD');
       const dayOfWeek = date.day(); // 0 = Sunday, 6 = Saturday
 
@@ -652,12 +686,18 @@ export class BookingsService {
         // Check if slot conflicts with existing bookings
         const hasConflict = existingBookings.some((booking) => {
           const bookingStart = moment(booking.bookingDate);
-          const bookingEnd = moment(bookingStart).add(booking.duration, 'hours');
+          const bookingEnd = moment(bookingStart).add(
+            booking.duration,
+            'hours',
+          );
 
           return (
-            (slotDateTime.isSameOrAfter(bookingStart) && slotDateTime.isBefore(bookingEnd)) ||
-            (slotEndDateTime.isAfter(bookingStart) && slotEndDateTime.isSameOrBefore(bookingEnd)) ||
-            (slotDateTime.isBefore(bookingStart) && slotEndDateTime.isAfter(bookingEnd))
+            (slotDateTime.isSameOrAfter(bookingStart) &&
+              slotDateTime.isBefore(bookingEnd)) ||
+            (slotEndDateTime.isAfter(bookingStart) &&
+              slotEndDateTime.isSameOrBefore(bookingEnd)) ||
+            (slotDateTime.isBefore(bookingStart) &&
+              slotEndDateTime.isAfter(bookingEnd))
           );
         });
 
@@ -673,4 +713,3 @@ export class BookingsService {
     return slots;
   }
 }
-

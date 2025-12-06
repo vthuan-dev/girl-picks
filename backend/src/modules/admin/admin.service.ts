@@ -1,6 +1,22 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { PostStatus, ReviewStatus, VerificationStatus, BookingStatus, ReportStatus } from '@prisma/client';
+import {
+  Prisma,
+  PostStatus,
+  ReviewStatus,
+  VerificationStatus,
+  BookingStatus,
+  ReportStatus,
+  UserRole,
+} from '@prisma/client';
+import { hashPassword } from '../../common/utils/password.util';
+import { CreateGirlDto } from './dto/create-girl.dto';
+import { UpdateGirlAdminDto } from './dto/update-girl-admin.dto';
+import { CreateStaffDto } from './dto/create-staff.dto';
 
 @Injectable()
 export class AdminService {
@@ -37,7 +53,9 @@ export class AdminService {
       // Pending items
       this.prisma.post.count({ where: { status: PostStatus.PENDING } }),
       this.prisma.review.count({ where: { status: ReviewStatus.PENDING } }),
-      this.prisma.girl.count({ where: { verificationStatus: VerificationStatus.PENDING } }),
+      this.prisma.girl.count({
+        where: { verificationStatus: VerificationStatus.PENDING },
+      }),
       this.prisma.report.count({ where: { status: ReportStatus.PENDING } }),
 
       // Active stats
@@ -218,7 +236,9 @@ export class AdminService {
         take: limit,
         orderBy: { verificationRequestedAt: 'asc' },
       }),
-      this.prisma.girl.count({ where: { verificationStatus: VerificationStatus.PENDING } }),
+      this.prisma.girl.count({
+        where: { verificationStatus: VerificationStatus.PENDING },
+      }),
     ]);
 
     return {
@@ -239,7 +259,7 @@ export class AdminService {
   }) {
     const { status, page = 1, limit = 20 } = filters || {};
 
-    const where: any = {};
+    const where: Prisma.ReportWhereInput = {};
 
     if (status) {
       where.status = status;
@@ -300,13 +320,18 @@ export class AdminService {
     };
   }
 
-  async processReport(reportId: string, adminId: string, action: 'RESOLVED' | 'DISMISSED', notes?: string) {
+  async processReport(
+    reportId: string,
+    adminId: string,
+    action: 'RESOLVED' | 'DISMISSED',
+    notes?: string,
+  ) {
     const report = await this.prisma.report.findUnique({
       where: { id: reportId },
     });
 
     if (!report) {
-      throw new Error('Report not found');
+      throw new NotFoundException('Report not found');
     }
 
     return this.prisma.report.update({
@@ -350,6 +375,182 @@ export class AdminService {
     };
   }
 
+  async createGirl(dto: CreateGirlDto) {
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+
+    if (existingUser) {
+      throw new ConflictException('Email already exists');
+    }
+
+    const hashedPassword = await hashPassword(dto.password);
+
+    const user = await this.prisma.user.create({
+      data: {
+        email: dto.email,
+        password: hashedPassword,
+        fullName: dto.fullName,
+        phone: dto.phone,
+        role: UserRole.GIRL,
+      },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        phone: true,
+        role: true,
+        createdAt: true,
+      },
+    });
+
+    const girl = await this.prisma.girl.create({
+      data: {
+        userId: user.id,
+        bio: dto.bio || null,
+        districts: dto.districts || [],
+        images: dto.images || [],
+        age: dto.age,
+        name: dto.fullName,
+      },
+    });
+
+    return {
+      user,
+      girl,
+    };
+  }
+
+  async updateGirlProfile(id: string, dto: UpdateGirlAdminDto) {
+    const girl = await this.prisma.girl.findUnique({
+      where: { id },
+    });
+
+    if (!girl) {
+      throw new NotFoundException('Girl not found');
+    }
+
+    return this.prisma.girl.update({
+      where: { id },
+      data: dto,
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            phone: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    });
+  }
+
+  async toggleGirlStatus(id: string, isActive: boolean) {
+    const girl = await this.prisma.girl.findUnique({
+      where: { id },
+    });
+
+    if (!girl) {
+      throw new NotFoundException('Girl not found');
+    }
+
+    return this.prisma.girl.update({
+      where: { id },
+      data: { isActive },
+      select: {
+        id: true,
+        isActive: true,
+      },
+    });
+  }
+
+  async createStaff(dto: CreateStaffDto) {
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+
+    if (existingUser) {
+      throw new ConflictException('Email already exists');
+    }
+
+    const hashedPassword = await hashPassword(dto.password);
+
+    return this.prisma.user.create({
+      data: {
+        email: dto.email,
+        password: hashedPassword,
+        fullName: dto.fullName,
+        phone: dto.phone,
+        role: UserRole.STAFF_UPLOAD,
+      },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        phone: true,
+        role: true,
+        isActive: true,
+        createdAt: true,
+      },
+    });
+  }
+
+  async getStaffList(page = 1, limit = 20) {
+    const where: Prisma.UserWhereInput = {
+      role: UserRole.STAFF_UPLOAD,
+    };
+
+    const [staff, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          email: true,
+          fullName: true,
+          phone: true,
+          role: true,
+          isActive: true,
+          createdAt: true,
+        },
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+
+    return {
+      data: staff,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async setStaffStatus(staffId: string, isActive: boolean) {
+    const staff = await this.prisma.user.findUnique({
+      where: { id: staffId, role: UserRole.STAFF_UPLOAD },
+    });
+
+    if (!staff) {
+      throw new NotFoundException('Staff not found');
+    }
+
+    return this.prisma.user.update({
+      where: { id: staffId },
+      data: { isActive },
+      select: {
+        id: true,
+        isActive: true,
+      },
+    });
+  }
+
   async getAllUsers(filters?: {
     role?: string;
     isActive?: boolean;
@@ -358,10 +559,10 @@ export class AdminService {
   }) {
     const { role, isActive, page = 1, limit = 20 } = filters || {};
 
-    const where: any = {};
+    const where: Prisma.UserWhereInput = {};
 
     if (role) {
-      where.role = role;
+      where.role = role as UserRole;
     }
 
     if (isActive !== undefined) {
@@ -441,4 +642,3 @@ export class AdminService {
     return user;
   }
 }
-

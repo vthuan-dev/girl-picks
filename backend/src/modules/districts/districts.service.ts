@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateDistrictDto } from './dto/create-district.dto';
 import { UpdateDistrictDto } from './dto/update-district.dto';
@@ -14,7 +15,7 @@ export class DistrictsService {
   }
 
   async findAll(province?: string, isActive?: boolean) {
-    const where: any = {};
+    const where: Prisma.DistrictWhereInput = {};
 
     if (province) {
       where.province = province;
@@ -88,4 +89,3 @@ export class DistrictsService {
     });
   }
 }
-

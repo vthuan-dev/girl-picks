@@ -8,11 +8,30 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { hashPassword, comparePassword } from '../../common/utils/password.util';
+import {
+  hashPassword,
+  comparePassword,
+} from '../../common/utils/password.util';
 import { generateTokens, TokenPayload } from '../../common/utils/jwt.util';
 import jwtConfig from '../../config/jwt.config';
-import { UserRole } from '@prisma/client';
+import { UserRole, User } from '@prisma/client';
 import * as crypto from 'crypto';
+
+type ResetTokenValue = {
+  token: string;
+  expiry: string | Date;
+};
+
+const isResetTokenValue = (value: unknown): value is ResetTokenValue => {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  return (
+    'token' in value &&
+    typeof (value as { token: unknown }).token === 'string' &&
+    'expiry' in value
+  );
+};
 
 @Injectable()
 export class AuthService {
@@ -22,7 +41,8 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto) {
-    const { email, password, fullName, phone, role, bio, districts } = registerDto;
+    const { email, password, fullName, phone, role, bio, districts } =
+      registerDto;
 
     // Check if user already exists
     const existingUser = await this.prisma.user.findUnique({
@@ -54,6 +74,8 @@ export class AuthService {
           userId: user.id,
           bio: bio || null,
           districts: districts || [],
+          name: fullName,
+          images: [],
         },
       });
     }
@@ -149,13 +171,15 @@ export class AuthService {
         phone: user.phone,
         role: user.role,
         avatarUrl: user.avatarUrl,
-        girl: user.girl ? {
-          id: user.girl.id,
-          bio: user.girl.bio,
-          districts: user.girl.districts,
-          ratingAverage: user.girl.ratingAverage,
-          verificationStatus: user.girl.verificationStatus,
-        } : null,
+        girl: user.girl
+          ? {
+              id: user.girl.id,
+              bio: user.girl.bio,
+              districts: user.girl.districts,
+              ratingAverage: user.girl.ratingAverage,
+              verificationStatus: user.girl.verificationStatus,
+            }
+          : null,
       },
       ...tokens,
     };
@@ -164,9 +188,12 @@ export class AuthService {
   async refreshToken(refreshToken: string) {
     try {
       const config = jwtConfig();
-      const payload = await this.jwtService.verifyAsync(refreshToken, {
-        secret: config.jwt.refreshSecret || 'refresh-secret',
-      });
+      const payload = await this.jwtService.verifyAsync<TokenPayload>(
+        refreshToken,
+        {
+          secret: config.jwt.refreshSecret || 'refresh-secret',
+        },
+      );
 
       const user = await this.prisma.user.findUnique({
         where: { id: payload.sub },
@@ -193,7 +220,7 @@ export class AuthService {
       );
 
       return tokens;
-    } catch (error) {
+    } catch {
       throw new UnauthorizedException('Invalid refresh token');
     }
   }
@@ -205,7 +232,9 @@ export class AuthService {
 
     if (!user) {
       // Don't reveal if user exists for security
-      return { message: 'If the email exists, a password reset link has been sent' };
+      return {
+        message: 'If the email exists, a password reset link has been sent',
+      };
     }
 
     // Generate reset token
@@ -251,13 +280,17 @@ export class AuthService {
       },
     });
 
-    let user = null;
-    let resetTokenData = null;
+    let user: User | null = null;
 
     for (const setting of settings) {
-      const data = setting.value as any;
-      if (data.token === token) {
-        if (new Date(data.expiry) < new Date()) {
+      if (!isResetTokenValue(setting.value)) {
+        continue;
+      }
+
+      const tokenData = setting.value;
+
+      if (tokenData.token === token) {
+        if (new Date(tokenData.expiry) < new Date()) {
           throw new BadRequestException('Reset token has expired');
         }
 
@@ -267,7 +300,6 @@ export class AuthService {
         });
 
         if (user) {
-          resetTokenData = data;
           break;
         }
       }
@@ -289,26 +321,31 @@ export class AuthService {
     });
 
     // Delete reset token
-    await this.prisma.setting.delete({
-      where: { key: `reset_token_${user.id}` },
-    }).catch(() => {
-      // Ignore if already deleted
-    });
+    await this.prisma.setting
+      .delete({
+        where: { key: `reset_token_${user.id}` },
+      })
+      .catch(() => {
+        // Ignore if already deleted
+      });
 
     return { message: 'Password reset successfully' };
   }
 
-  async validateUser(email: string, password: string): Promise<any> {
+  async validateUser(
+    email: string,
+    password: string,
+  ): Promise<Omit<User, 'password'> | null> {
     const user = await this.prisma.user.findUnique({
       where: { email },
     });
 
     if (user && (await comparePassword(password, user.password))) {
-      const { password: _, ...result } = user;
+      const { password: _password, ...result } = user;
+      void _password;
       return result;
     }
 
     return null;
   }
 }
-

@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateServicePackageDto } from './dto/create-service-package.dto';
 import { UpdateServicePackageDto } from './dto/update-service-package.dto';
@@ -7,7 +12,10 @@ import { UpdateServicePackageDto } from './dto/update-service-package.dto';
 export class ServicePackagesService {
   constructor(private prisma: PrismaService) {}
 
-  async create(userId: string, createServicePackageDto: CreateServicePackageDto) {
+  async create(
+    userId: string,
+    createServicePackageDto: CreateServicePackageDto,
+  ) {
     // Get girl from user
     const girl = await this.prisma.girl.findUnique({
       where: { userId },
@@ -26,7 +34,7 @@ export class ServicePackagesService {
   }
 
   async findAll(girlId?: string, isActive?: boolean) {
-    const where: any = {};
+    const where: Prisma.ServicePackageWhereInput = {};
 
     if (girlId) {
       where.girlId = girlId;
@@ -84,7 +92,11 @@ export class ServicePackagesService {
     return servicePackage;
   }
 
-  async update(id: string, userId: string, updateServicePackageDto: UpdateServicePackageDto) {
+  async update(
+    id: string,
+    userId: string,
+    updateServicePackageDto: UpdateServicePackageDto,
+  ) {
     const servicePackage = await this.findOne(id);
 
     // Check if user is the girl who owns this package
@@ -93,7 +105,9 @@ export class ServicePackagesService {
     });
 
     if (!girl || girl.id !== servicePackage.girlId) {
-      throw new ForbiddenException('You can only update your own service packages');
+      throw new ForbiddenException(
+        'You can only update your own service packages',
+      );
     }
 
     return this.prisma.servicePackage.update({
@@ -111,7 +125,9 @@ export class ServicePackagesService {
     });
 
     if (!girl || girl.id !== servicePackage.girlId) {
-      throw new ForbiddenException('You can only delete your own service packages');
+      throw new ForbiddenException(
+        'You can only delete your own service packages',
+      );
     }
 
     return this.prisma.servicePackage.delete({
@@ -119,4 +135,3 @@ export class ServicePackagesService {
     });
   }
 }
-

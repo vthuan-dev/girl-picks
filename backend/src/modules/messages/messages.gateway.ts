@@ -9,9 +9,15 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { MessagesService } from './messages.service';
-import { UseGuards } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import jwtConfig from '../../config/jwt.config';
+import { TokenPayload } from '../../common/utils/jwt.util';
+
+type ClientSocket = Socket & {
+  data: {
+    userId?: string;
+  };
+};
 
 @WebSocketGateway({
   cors: {
@@ -19,7 +25,9 @@ import jwtConfig from '../../config/jwt.config';
     credentials: true,
   },
 })
-export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class MessagesGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server: Server;
 
@@ -30,19 +38,17 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
     private jwtService: JwtService,
   ) {}
 
-  async handleConnection(client: Socket) {
+  async handleConnection(client: ClientSocket) {
     try {
-      // Get token from handshake
-      const token = client.handshake.auth.token || client.handshake.headers.authorization?.split(' ')[1];
+      const token = this.extractToken(client);
 
       if (!token) {
         client.disconnect();
         return;
       }
 
-      // Verify token
       const config = jwtConfig();
-      const payload = await this.jwtService.verifyAsync(token, {
+      const payload = await this.jwtService.verifyAsync<TokenPayload>(token, {
         secret: config.jwt.secret,
       });
 
@@ -54,13 +60,15 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
       client.join(`user:${payload.sub}`);
 
       console.log(`User ${payload.sub} connected: ${client.id}`);
-    } catch (error) {
-      console.error('WebSocket auth error:', error);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'WebSocket auth error';
+      console.error('WebSocket auth error:', message);
       client.disconnect();
     }
   }
 
-  handleDisconnect(client: Socket) {
+  handleDisconnect(client: ClientSocket) {
     if (client.data.userId) {
       this.connectedUsers.delete(client.data.userId);
       console.log(`User ${client.data.userId} disconnected: ${client.id}`);
@@ -70,7 +78,7 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
   @SubscribeMessage('sendMessage')
   async handleMessage(
     @MessageBody() data: { receiverId: string; content: string },
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() client: ClientSocket,
   ) {
     const senderId = client.data.userId;
 
@@ -89,17 +97,23 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
 
       // Send confirmation to sender
       return { success: true, message };
-    } catch (error) {
-      return { error: error.message };
+    } catch (error: unknown) {
+      return {
+        error:
+          error instanceof Error ? error.message : 'Failed to send message',
+      };
     }
   }
 
   @SubscribeMessage('joinConversation')
   handleJoinConversation(
     @MessageBody() data: { partnerId: string },
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() client: ClientSocket,
   ) {
     const userId = client.data.userId;
+    if (!userId) {
+      return { error: 'Unauthorized' };
+    }
     const roomId = this.getConversationRoomId(userId, data.partnerId);
 
     client.join(roomId);
@@ -111,9 +125,12 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
   @SubscribeMessage('leaveConversation')
   handleLeaveConversation(
     @MessageBody() data: { partnerId: string },
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() client: ClientSocket,
   ) {
     const userId = client.data.userId;
+    if (!userId) {
+      return { error: 'Unauthorized' };
+    }
     const roomId = this.getConversationRoomId(userId, data.partnerId);
 
     client.leave(roomId);
@@ -125,9 +142,12 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
   @SubscribeMessage('typing')
   handleTyping(
     @MessageBody() data: { receiverId: string; isTyping: boolean },
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() client: ClientSocket,
   ) {
     const senderId = client.data.userId;
+    if (!senderId) {
+      return { error: 'Unauthorized' };
+    }
 
     // Send typing indicator to receiver
     this.server.to(`user:${data.receiverId}`).emit('userTyping', {
@@ -141,15 +161,20 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
   @SubscribeMessage('markAsRead')
   async handleMarkAsRead(
     @MessageBody() data: { messageId: string },
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() client: ClientSocket,
   ) {
     const userId = client.data.userId;
+    if (!userId) {
+      return { error: 'Unauthorized' };
+    }
 
     try {
       await this.messagesService.markAsRead(data.messageId, userId);
 
       // Notify sender that message was read
-      const message = await this.messagesService['findOne'](data.messageId);
+      const message = await this.messagesService.findMessageById(
+        data.messageId,
+      );
       if (message) {
         this.server.to(`user:${message.senderId}`).emit('messageRead', {
           messageId: data.messageId,
@@ -158,8 +183,11 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
       }
 
       return { success: true };
-    } catch (error) {
-      return { error: error.message };
+    } catch (error: unknown) {
+      return {
+        error:
+          error instanceof Error ? error.message : 'Failed to mark as read',
+      };
     }
   }
 
@@ -169,8 +197,21 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
   }
 
   // Helper to send notification to specific user
-  sendToUser(userId: string, event: string, data: any) {
+  sendToUser<T>(userId: string, event: string, data: T) {
     this.server.to(`user:${userId}`).emit(event, data);
   }
-}
 
+  private extractToken(client: Socket): string | undefined {
+    const authToken = client.handshake.auth?.token;
+    if (typeof authToken === 'string' && authToken.length > 0) {
+      return authToken;
+    }
+
+    const header = client.handshake.headers.authorization;
+    if (typeof header === 'string' && header.startsWith('Bearer ')) {
+      return header.split(' ')[1];
+    }
+
+    return undefined;
+  }
+}

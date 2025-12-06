@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Param, Delete, UseGuards, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  UseGuards,
+  Query,
+} from '@nestjs/common';
 import { BlockedDatesService } from './blocked-dates.service';
 import { CreateBlockedDateDto } from './dto/create-blocked-date.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -6,7 +15,12 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { UserRole } from '@prisma/client';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 
 @ApiTags('Blocked Dates')
 @ApiBearerAuth()
@@ -22,7 +36,10 @@ export class BlockedDatesController {
   @ApiResponse({ status: 201, description: 'Date blocked' })
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
-  create(@CurrentUser('id') userId: string, @Body() createBlockedDateDto: CreateBlockedDateDto) {
+  create(
+    @CurrentUser('id') userId: string,
+    @Body() createBlockedDateDto: CreateBlockedDateDto,
+  ) {
     return this.blockedDatesService.create(userId, createBlockedDateDto);
   }
 
@@ -58,4 +75,3 @@ export class BlockedDatesController {
     return this.blockedDatesService.remove(id, userId);
   }
 }
-

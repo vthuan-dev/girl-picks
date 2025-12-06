@@ -8,15 +8,26 @@ import {
   UseGuards,
   ParseIntPipe,
   DefaultValuePipe,
+  Patch,
 } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { ProcessReportDto } from './dto/process-report.dto';
+import { CreateGirlDto } from './dto/create-girl.dto';
+import { UpdateGirlAdminDto } from './dto/update-girl-admin.dto';
+import { UpdateGirlStatusDto } from './dto/update-girl-status.dto';
+import { CreateStaffDto } from './dto/create-staff.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UserRole, ReportStatus } from '@prisma/client';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 
 @ApiTags('Admin')
 @ApiBearerAuth()
@@ -83,6 +94,64 @@ export class AdminController {
     return this.adminService.getReports({ status, page, limit });
   }
 
+  @Post('girls')
+  @ApiOperation({ summary: 'Create girl profile (Admin only)' })
+  @ApiResponse({ status: 201, description: 'Girl created' })
+  createGirl(@Body() createGirlDto: CreateGirlDto) {
+    return this.adminService.createGirl(createGirlDto);
+  }
+
+  @Patch('girls/:id')
+  @ApiOperation({ summary: 'Update girl profile (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Girl updated' })
+  updateGirl(
+    @Param('id') id: string,
+    @Body() updateGirlDto: UpdateGirlAdminDto,
+  ) {
+    return this.adminService.updateGirlProfile(id, updateGirlDto);
+  }
+
+  @Patch('girls/:id/status')
+  @ApiOperation({ summary: 'Toggle girl active status (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Status updated' })
+  toggleGirlStatus(
+    @Param('id') id: string,
+    @Body() statusDto: UpdateGirlStatusDto,
+  ) {
+    return this.adminService.toggleGirlStatus(id, statusDto.isActive);
+  }
+
+  @Post('staff')
+  @ApiOperation({ summary: 'Create staff upload account (Admin only)' })
+  @ApiResponse({ status: 201, description: 'Staff created' })
+  createStaff(@Body() createStaffDto: CreateStaffDto) {
+    return this.adminService.createStaff(createStaffDto);
+  }
+
+  @Get('staff')
+  @ApiOperation({ summary: 'List staff accounts (Admin only)' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'List of staff accounts' })
+  listStaff(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page?: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
+  ) {
+    return this.adminService.getStaffList(page, limit);
+  }
+
+  @Patch('staff/:id/activate')
+  @ApiOperation({ summary: 'Activate staff account (Admin only)' })
+  activateStaff(@Param('id') id: string) {
+    return this.adminService.setStaffStatus(id, true);
+  }
+
+  @Patch('staff/:id/deactivate')
+  @ApiOperation({ summary: 'Deactivate staff account (Admin only)' })
+  deactivateStaff(@Param('id') id: string) {
+    return this.adminService.setStaffStatus(id, false);
+  }
+
   @Post('reports/:id/process')
   @ApiOperation({ summary: 'Process report (Admin only)' })
   @ApiResponse({ status: 200, description: 'Report processed' })
@@ -91,7 +160,12 @@ export class AdminController {
     @CurrentUser('id') adminId: string,
     @Body() processReportDto: ProcessReportDto,
   ) {
-    return this.adminService.processReport(id, adminId, processReportDto.action, processReportDto.notes);
+    return this.adminService.processReport(
+      id,
+      adminId,
+      processReportDto.action,
+      processReportDto.notes,
+    );
   }
 
   @Get('audit-logs')
@@ -121,7 +195,8 @@ export class AdminController {
   ) {
     return this.adminService.getAllUsers({
       role,
-      isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
+      isActive:
+        isActive === 'true' ? true : isActive === 'false' ? false : undefined,
       page,
       limit,
     });
@@ -134,4 +209,3 @@ export class AdminController {
     return this.adminService.getUserDetails(id);
   }
 }
-

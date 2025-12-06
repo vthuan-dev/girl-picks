@@ -14,13 +14,20 @@ import {
 import { ReviewsService } from './reviews.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
+import { CreateReviewCommentDto } from './dto/create-review-comment.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import { UserRole, ReviewStatus } from '@prisma/client';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 
 @ApiTags('Reviews')
 @Controller('reviews')
@@ -33,7 +40,10 @@ export class ReviewsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create review (Customer only)' })
   @ApiResponse({ status: 201, description: 'Review created' })
-  create(@CurrentUser('id') userId: string, @Body() createReviewDto: CreateReviewDto) {
+  create(
+    @CurrentUser('id') userId: string,
+    @Body() createReviewDto: CreateReviewDto,
+  ) {
     return this.reviewsService.create(userId, createReviewDto);
   }
 
@@ -65,7 +75,10 @@ export class ReviewsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get own reviews (Customer only)' })
   @ApiResponse({ status: 200, description: 'List of own reviews' })
-  findMyReviews(@CurrentUser('id') userId: string, @Query('status') status?: ReviewStatus) {
+  findMyReviews(
+    @CurrentUser('id') userId: string,
+    @Query('status') status?: ReviewStatus,
+  ) {
     return this.reviewsService.findMyReviews(userId, status);
   }
 
@@ -89,7 +102,9 @@ export class ReviewsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.CUSTOMER)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update review (Customer only, pending reviews only)' })
+  @ApiOperation({
+    summary: 'Update review (Customer only, pending reviews only)',
+  })
   @ApiResponse({ status: 200, description: 'Review updated' })
   update(
     @Param('id') id: string,
@@ -139,5 +154,47 @@ export class ReviewsController {
   ) {
     return this.reviewsService.reject(id, adminId, reason);
   }
-}
 
+  @Post(':id/like')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.CUSTOMER, UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Toggle like on a review (Customer/Admin)' })
+  @ApiResponse({ status: 200, description: 'Like toggled' })
+  toggleLike(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    return this.reviewsService.toggleLike(id, userId);
+  }
+
+  @Get(':id/likes')
+  @Public()
+  @ApiOperation({ summary: 'Get likes count for a review' })
+  getLikes(@Param('id') id: string) {
+    return this.reviewsService.getLikes(id);
+  }
+
+  @Post(':id/comments')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.CUSTOMER, UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Add comment to a review' })
+  addComment(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Body() createReviewCommentDto: CreateReviewCommentDto,
+  ) {
+    return this.reviewsService.addComment(id, userId, createReviewCommentDto);
+  }
+
+  @Get(':id/comments')
+  @Public()
+  @ApiOperation({ summary: 'Get comments for a review' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  getComments(
+    @Param('id') id: string,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page?: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
+  ) {
+    return this.reviewsService.getComments(id, page, limit);
+  }
+}

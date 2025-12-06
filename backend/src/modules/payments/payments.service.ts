@@ -1,4 +1,11 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { PaymentStatus, PaymentMethod } from '@prisma/client';
@@ -26,7 +33,9 @@ export class PaymentsService {
 
     // Only customer can create payment for their booking
     if (booking.customerId !== userId) {
-      throw new ForbiddenException('You can only create payments for your own bookings');
+      throw new ForbiddenException(
+        'You can only create payments for your own bookings',
+      );
     }
 
     // Check if booking is confirmed
@@ -39,7 +48,9 @@ export class PaymentsService {
     const remainingAmount = booking.totalPrice - totalPaid;
 
     if (amount > remainingAmount) {
-      throw new BadRequestException(`Payment amount exceeds remaining balance. Remaining: ${remainingAmount}`);
+      throw new BadRequestException(
+        `Payment amount exceeds remaining balance. Remaining: ${remainingAmount}`,
+      );
     }
 
     // Create payment
@@ -49,7 +60,10 @@ export class PaymentsService {
         userId,
         amount,
         paymentMethod,
-        paymentStatus: paymentMethod === PaymentMethod.CASH ? PaymentStatus.COMPLETED : PaymentStatus.PENDING,
+        paymentStatus:
+          paymentMethod === PaymentMethod.CASH
+            ? PaymentStatus.COMPLETED
+            : PaymentStatus.PENDING,
         paymentDate: paymentMethod === PaymentMethod.CASH ? new Date() : null,
       },
     });
@@ -84,7 +98,12 @@ export class PaymentsService {
     // Send notification if payment is completed (cash)
     if (payment.paymentStatus === PaymentStatus.COMPLETED) {
       try {
-        await this.notificationsService.notifyPaymentReceived(bookingId, payment.id, amount, userId);
+        await this.notificationsService.notifyPaymentReceived(
+          bookingId,
+          payment.id,
+          amount,
+          userId,
+        );
       } catch (error) {
         console.error('Failed to send payment received notification:', error);
       }
@@ -185,7 +204,11 @@ export class PaymentsService {
     return payment;
   }
 
-  async processPayment(id: string, transactionId: string, status: PaymentStatus) {
+  async processPayment(
+    id: string,
+    transactionId: string,
+    status: PaymentStatus,
+  ) {
     const payment = await this.findOne(id);
 
     if (payment.paymentStatus === PaymentStatus.COMPLETED) {
@@ -197,7 +220,8 @@ export class PaymentsService {
       data: {
         paymentStatus: status,
         transactionId,
-        paymentDate: status === PaymentStatus.COMPLETED ? new Date() : payment.paymentDate,
+        paymentDate:
+          status === PaymentStatus.COMPLETED ? new Date() : payment.paymentDate,
       },
     });
 
@@ -247,7 +271,11 @@ export class PaymentsService {
     } else if (status === PaymentStatus.FAILED) {
       // Send notification for failed payment
       try {
-        await this.notificationsService.notifyPaymentFailed(payment.bookingId, id, payment.userId);
+        await this.notificationsService.notifyPaymentFailed(
+          payment.bookingId,
+          id,
+          payment.userId,
+        );
       } catch (error) {
         console.error('Failed to send payment failed notification:', error);
       }
@@ -256,7 +284,12 @@ export class PaymentsService {
     return updated;
   }
 
-  async refund(id: string, refundAmount: number, reason: string, userId: string) {
+  async refund(
+    id: string,
+    refundAmount: number,
+    reason: string,
+    userId: string,
+  ) {
     const payment = await this.findOne(id);
 
     if (payment.paymentStatus !== PaymentStatus.COMPLETED) {
@@ -264,7 +297,9 @@ export class PaymentsService {
     }
 
     if (refundAmount > payment.amount) {
-      throw new BadRequestException('Refund amount cannot exceed payment amount');
+      throw new BadRequestException(
+        'Refund amount cannot exceed payment amount',
+      );
     }
 
     const updated = await this.prisma.payment.update({
@@ -300,4 +335,3 @@ export class PaymentsService {
     return payments.reduce((total, payment) => total + payment.amount, 0);
   }
 }
-

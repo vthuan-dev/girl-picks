@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateBlockedDateDto } from './dto/create-blocked-date.dto';
 
@@ -66,7 +72,7 @@ export class BlockedDatesService {
   }
 
   async findAll(girlId?: string) {
-    const where: any = {};
+    const where: Prisma.BlockedDateWhereInput = {};
 
     if (girlId) {
       where.girlId = girlId;
@@ -129,7 +135,9 @@ export class BlockedDatesService {
     });
 
     if (!girl || girl.id !== blockedDate.girlId) {
-      throw new ForbiddenException('You can only delete your own blocked dates');
+      throw new ForbiddenException(
+        'You can only delete your own blocked dates',
+      );
     }
 
     return this.prisma.blockedDate.delete({
@@ -137,4 +145,3 @@ export class BlockedDatesService {
     });
   }
 }
-

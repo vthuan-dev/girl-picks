@@ -10,4 +10,3 @@ export class CreateDistrictDto {
   @IsString()
   province: string;
 }
-

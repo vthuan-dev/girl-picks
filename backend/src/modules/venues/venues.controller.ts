@@ -16,7 +16,12 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { UserRole } from '@prisma/client';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 
 @ApiTags('Venues')
 @ApiBearerAuth()
@@ -38,7 +43,10 @@ export class VenuesController {
   @Get()
   @ApiOperation({ summary: 'Get all venues' })
   @ApiResponse({ status: 200, description: 'List of venues' })
-  findAll(@Query('districtId') districtId?: string, @Query('isActive') isActive?: string) {
+  findAll(
+    @Query('districtId') districtId?: string,
+    @Query('isActive') isActive?: string,
+  ) {
     return this.venuesService.findAll(
       districtId,
       isActive === 'true' ? true : isActive === 'false' ? false : undefined,
@@ -88,4 +96,3 @@ export class VenuesController {
     return this.venuesService.remove(id);
   }
 }
-

@@ -1,8 +1,20 @@
-import { IsInt, IsString, IsBoolean, IsOptional, Min, Max, Matches } from 'class-validator';
+import {
+  IsInt,
+  IsString,
+  IsBoolean,
+  IsOptional,
+  Min,
+  Max,
+  Matches,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateTimeSlotDto {
-  @ApiProperty({ description: 'Day of week (0=Sunday, 6=Saturday)', minimum: 0, maximum: 6 })
+  @ApiProperty({
+    description: 'Day of week (0=Sunday, 6=Saturday)',
+    minimum: 0,
+    maximum: 6,
+  })
   @IsInt()
   @Min(0)
   @Max(6)
@@ -27,4 +39,3 @@ export class CreateTimeSlotDto {
   @IsBoolean()
   isAvailable?: boolean;
 }
-

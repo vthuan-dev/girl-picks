@@ -1,0 +1,822 @@
+// Enhanced Prisma Schema for Girl Pick Project
+// Based on crawled data from gaigu1.net
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum UserRole {
+  ADMIN
+  GIRL
+  CUSTOMER
+  STAFF_UPLOAD
+}
+
+enum PostStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  REJECTED
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  MOMO
+  ZALOPAY
+  VNPAY
+}
+
+enum ReportReason {
+  SPAM
+  INAPPROPRIATE
+  FAKE
+  HARASSMENT
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+  DISMISSED
+}
+
+enum NotificationType {
+  POST_APPROVED
+  POST_REJECTED
+  REVIEW_APPROVED
+  REVIEW_REJECTED
+  NEW_MESSAGE
+  VERIFICATION_APPROVED
+  VERIFICATION_REJECTED
+  BOOKING_CREATED
+  BOOKING_CONFIRMED
+  BOOKING_REJECTED
+  BOOKING_CANCELLED
+  BOOKING_COMPLETED
+  BOOKING_REMINDER
+  PAYMENT_RECEIVED
+  PAYMENT_FAILED
+  REPORT_PROCESSED
+}
+
+enum MovieStatus {
+  ACTIVE
+  INACTIVE
+  DELETED
+}
+
+enum VideoQualityEnum {
+  SD
+  HD
+  FHD
+  UHD
+}
+
+// ============================================
+// USER & AUTHENTICATION
+// ============================================
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  username  String?  @unique
+  password  String
+  role      UserRole @default(CUSTOMER)
+  fullName  String
+  phone     String?
+  avatarUrl String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  girl         Girl?
+  reviews      Review[]
+  sentMessages Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  notifications Notification[]
+  reports      Report[] @relation("Reporter")
+  reportedBy   Report[] @relation("ReportedUser")
+  blocks       Block[] @relation("Blocker")
+  blockedBy    Block[] @relation("Blocked")
+  favorites    Favorite[]
+  viewHistory  ViewHistory[]
+  reviewLikes  ReviewLike[]
+  reviewComments ReviewComment[]
+  bookings     Booking[] @relation("Customer")
+  payments     Payment[] @relation("Payments")
+  auditLogs    AuditLog[]
+  approvedPosts Post[] @relation("ApprovedBy")
+  approvedReviews Review[] @relation("ApprovedBy")
+  reviewedReports Report[] @relation("ReviewedBy")
+
+  @@map("users")
+  @@index([email])
+  @@index([username])
+  @@index([role])
+}
+
+// ============================================
+// GIRL PROFILE (Enhanced with crawled data)
+// ============================================
+
+model Girl {
+  id                      String             @id @default(uuid())
+  userId                  String             @unique
+  
+  // Basic Info (from listing)
+  name                    String
+  age                     Int?
+  bio                     String?            @db.Text
+  price                   String?            // e.g., "300K", "600K"
+  isAvailable             Boolean            @default(true)
+  
+  // Location Info
+  location                String?            // e.g., "Quận 12", "Bình Dương/Thủ Dầu Một"
+  province                String?            // e.g., "Sài Gòn", "Bình Dương"
+  districtId              String?
+  
+  // Rating & Reviews
+  rating                  Float              @default(0)
+  totalReviews            Int                @default(0)
+  views                   Int                @default(0)
+  
+  // Verification
+  verified                Boolean            @default(false)
+  verificationStatus      VerificationStatus @default(PENDING)
+  verificationDocuments   Json              @default("[]") // Array of document URLs
+  verificationRequestedAt DateTime?
+  verificationVerifiedAt  DateTime?
+  
+  // Detail Info (from detail page)
+  phone                   String?
+  password                String?            // Password to access contact
+  birthYear               Int?
+  height                  String?            // e.g., "158cm"
+  weight                  String?            // e.g., "50kg"
+  measurements            String?            // e.g., "90-61-91"
+  origin                  String?            // e.g., "Miền Bắc", "Miền Nam"
+  address                 String?            @db.Text
+  workingHours            String?            // e.g., "24/24 nghe máy là làm"
+  
+  // Media
+  images                  Json              @default("[]") // Array of image URLs
+  thumbnail               String?           // Main thumbnail image
+  
+  // External
+  detailUrl               String?            @unique // URL from source site
+  sourceId                String?            // ID from source site (e.g., "30277")
+  
+  // Status
+  isFeatured              Boolean            @default(false)
+  isPremium               Boolean            @default(false)
+  isActive                Boolean            @default(true)
+  lastActiveAt            DateTime?
+  
+  // Timestamps
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
+  crawledAt               DateTime?          // When data was crawled
+
+  // Relations
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  district       District?         @relation(fields: [districtId], references: [id])
+  posts          Post[]
+  reviews        Review[]
+  favorites      Favorite[]
+  viewHistory    ViewHistory[]
+  bookings       Booking[]         @relation("GirlBookings")
+  servicePackages ServicePackage[]
+  timeSlots      TimeSlot[]
+  blockedDates   BlockedDate[]
+  girlTags       GirlTag[]
+  girlServices   GirlService[]
+
+  @@map("girls")
+  @@index([province])
+  @@index([districtId])
+  @@index([isAvailable])
+  @@index([verified])
+  @@index([isFeatured])
+  @@index([rating])
+  @@index([views])
+  @@index([detailUrl])
+  @@index([sourceId])
+}
+
+// ============================================
+// TAGS & SERVICES (Many-to-Many)
+// ============================================
+
+model Tag {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  slug      String   @unique
+  category  String?  // e.g., "location", "feature", "service"
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  girlTags  GirlTag[]
+  movieTags MovieTag[]
+
+  @@map("tags")
+  @@index([slug])
+  @@index([category])
+}
+
+model GirlTag {
+  id        String   @id @default(uuid())
+  girlId    String
+  tagId     String
+  createdAt DateTime @default(now())
+
+  girl Girl @relation(fields: [girlId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([girlId, tagId])
+  @@map("girl_tags")
+  @@index([girlId])
+  @@index([tagId])
+}
+
+model Service {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?  @db.Text
+  icon        String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  girlServices GirlService[]
+
+  @@map("services")
+  @@index([slug])
+}
+
+model GirlService {
+  id        String   @id @default(uuid())
+  girlId    String
+  serviceId String
+  createdAt DateTime @default(now())
+
+  girl    Girl    @relation(fields: [girlId], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([girlId, serviceId])
+  @@map("girl_services")
+  @@index([girlId])
+  @@index([serviceId])
+}
+
+// ============================================
+// MOVIES (Phim Sex)
+// ============================================
+
+model Movie {
+  id          String      @id @default(uuid())
+  
+  // Basic Info (from listing)
+  title       String
+  thumbnail   String?
+  duration    String?     // e.g., "02:20"
+  views       Int         @default(0)
+  rating      String?     // e.g., "100%"
+  category    String?
+  
+  // Detail Info (from detail page)
+  description String?     @db.Text
+  poster      String?
+  
+  // Video Info
+  videoUrl    String?     // Main video URL
+  videoSources Json?      // Array of video sources with quality
+  
+  // External
+  detailUrl   String?     @unique
+  sourceId    String?     // ID from source site
+  
+  // Status
+  status      MovieStatus @default(ACTIVE)
+  isFeatured  Boolean     @default(false)
+  isActive    Boolean     @default(true)
+  
+  // Timestamps
+  uploadDate  DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime   @updatedAt
+  crawledAt   DateTime?
+
+  // Relations
+  movieTags   MovieTag[]
+  videoQualities VideoQuality[]
+
+  @@map("movies")
+  @@index([status])
+  @@index([isFeatured])
+  @@index([views])
+  @@index([detailUrl])
+  @@index([sourceId])
+  @@index([uploadDate])
+}
+
+model MovieTag {
+  id        String   @id @default(uuid())
+  movieId   String
+  tagId     String
+  createdAt DateTime @default(now())
+
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  tag   Tag   @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([movieId, tagId])
+  @@map("movie_tags")
+  @@index([movieId])
+  @@index([tagId])
+}
+
+model VideoQuality {
+  id        String       @id @default(uuid())
+  movieId   String
+  url       String
+  quality   VideoQualityEnum
+  label     String?      // e.g., "SD", "HD"
+  resolution String?     // e.g., "360", "720", "1080"
+  type      String?      // e.g., "video/mp4"
+  size      BigInt?      // File size in bytes
+  createdAt DateTime     @default(now())
+
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@map("video_qualities")
+  @@index([movieId])
+  @@index([quality])
+}
+
+// ============================================
+// LOCATION & DISTRICTS
+// ============================================
+
+model District {
+  id        String   @id @default(uuid())
+  name      String
+  province  String
+  slug      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  girls Girl[]
+
+  @@unique([province, slug])
+  @@map("districts")
+  @@index([province])
+  @@index([slug])
+}
+
+model Province {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  slug      String   @unique
+  code      String?  @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("provinces")
+  @@index([slug])
+}
+
+// ============================================
+// POSTS & REVIEWS
+// ============================================
+
+model Post {
+  id          String     @id @default(uuid())
+  girlId      String
+  title       String
+  content     String     @db.Text
+  images      Json       @default("[]") // Array of image URLs
+  status      PostStatus @default(PENDING)
+  approvedById String?
+  approvedAt  DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  girl       Girl      @relation(fields: [girlId], references: [id], onDelete: Cascade)
+  approvedBy User?     @relation("ApprovedBy", fields: [approvedById], references: [id])
+
+  @@map("posts")
+  @@index([girlId])
+  @@index([status])
+}
+
+model Review {
+  id          String      @id @default(uuid())
+  customerId String
+  girlId      String
+  title       String
+  content     String      @db.Text
+  rating      Int         // 1-5
+  images      Json        @default("[]") // Array of image URLs
+  status      ReviewStatus @default(PENDING)
+  approvedById String?
+  approvedAt  DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  customer    User       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  girl        Girl       @relation(fields: [girlId], references: [id], onDelete: Cascade)
+  approvedBy  User?      @relation("ApprovedBy", fields: [approvedById], references: [id])
+  likes       ReviewLike[]
+  comments    ReviewComment[]
+
+  @@map("reviews")
+  @@index([girlId])
+  @@index([customerId])
+  @@index([status])
+  @@index([rating])
+}
+
+// ============================================
+// MESSAGING & NOTIFICATIONS
+// ============================================
+
+model Message {
+  id         String   @id @default(uuid())
+  senderId   String
+  receiverId String
+  content    String   @db.Text
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  sender   User   @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User   @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([isRead])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  message   String
+  data      Json?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+  @@index([userId])
+  @@index([isRead])
+  @@index([type])
+}
+
+// ============================================
+// SOCIAL FEATURES
+// ============================================
+
+model ReviewLike {
+  id        String   @id @default(uuid())
+  reviewId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, userId])
+  @@map("review_likes")
+  @@index([reviewId])
+  @@index([userId])
+}
+
+model ReviewComment {
+  id        String   @id @default(uuid())
+  reviewId  String
+  userId    String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("review_comments")
+  @@index([reviewId])
+  @@index([userId])
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String
+  girlId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  girl Girl @relation(fields: [girlId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, girlId])
+  @@map("favorites")
+  @@index([userId])
+  @@index([girlId])
+}
+
+model ViewHistory {
+  id        String   @id @default(uuid())
+  userId    String
+  girlId    String
+  viewedAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  girl Girl @relation(fields: [girlId], references: [id], onDelete: Cascade)
+
+  @@map("view_history")
+  @@index([userId])
+  @@index([girlId])
+  @@index([viewedAt])
+}
+
+// ============================================
+// REPORTS & MODERATION
+// ============================================
+
+model Report {
+  id              String       @id @default(uuid())
+  reporterId      String
+  reportedUserId  String?
+  reportedPostId  String?
+  reportedReviewId String?
+  reason          ReportReason
+  description     String       @db.Text
+  status          ReportStatus @default(PENDING)
+  reviewedById    String?
+  reviewedAt      DateTime?
+  createdAt       DateTime     @default(now())
+
+  reporter      User  @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUser  User? @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: SetNull)
+  reviewedBy    User? @relation("ReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@map("reports")
+  @@index([reporterId])
+  @@index([status])
+}
+
+model Block {
+  id        String   @id @default(uuid())
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+
+  blocker User @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+  @@map("blocks")
+  @@index([blockerId])
+  @@index([blockedId])
+}
+
+// ============================================
+// BOOKINGS & PAYMENTS
+// ============================================
+
+model Booking {
+  id              String        @id @default(uuid())
+  customerId      String
+  girlId          String
+  servicePackageId String?
+  serviceType     String
+  bookingDate      DateTime
+  duration        Int
+  location        String?
+  status          BookingStatus @default(PENDING)
+  totalPrice      Float
+  depositAmount   Float
+  paymentStatus   PaymentStatus @default(PENDING)
+  specialRequests String?       @db.Text
+  cancellationReason String?    @db.Text
+  cancelledAt    DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  customer       User          @relation("Customer", fields: [customerId], references: [id], onDelete: Cascade)
+  girl           Girl          @relation("GirlBookings", fields: [girlId], references: [id], onDelete: Cascade)
+  servicePackage ServicePackage? @relation(fields: [servicePackageId], references: [id])
+  payments       Payment[]
+  bookingHistory BookingHistory[]
+
+  @@map("bookings")
+  @@index([customerId])
+  @@index([girlId])
+  @@index([status])
+  @@index([bookingDate])
+}
+
+model ServicePackage {
+  id          String   @id @default(uuid())
+  girlId      String
+  name        String
+  description String?  @db.Text
+  duration    Int
+  price       Float
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  girl     Girl      @relation(fields: [girlId], references: [id], onDelete: Cascade)
+  bookings Booking[]
+
+  @@map("service_packages")
+  @@index([girlId])
+}
+
+model TimeSlot {
+  id          String   @id @default(uuid())
+  girlId      String
+  dayOfWeek   Int
+  startTime   String
+  endTime     String
+  isAvailable Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  girl Girl @relation(fields: [girlId], references: [id], onDelete: Cascade)
+
+  @@map("time_slots")
+  @@index([girlId])
+  @@index([dayOfWeek])
+}
+
+model BlockedDate {
+  id        String   @id @default(uuid())
+  girlId    String
+  date      DateTime
+  reason    String?
+  createdAt DateTime @default(now())
+
+  girl Girl @relation(fields: [girlId], references: [id], onDelete: Cascade)
+
+  @@unique([girlId, date])
+  @@map("blocked_dates")
+  @@index([girlId])
+  @@index([date])
+}
+
+model BookingHistory {
+  id        String   @id @default(uuid())
+  bookingId String
+  status    BookingStatus
+  changedBy String?
+  notes     String?  @db.Text
+  createdAt DateTime @default(now())
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("booking_history")
+  @@index([bookingId])
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  bookingId     String
+  userId        String
+  amount        Float
+  paymentMethod PaymentMethod
+  paymentStatus PaymentStatus @default(PENDING)
+  transactionId String?
+  paymentDate   DateTime?
+  refundAmount  Float?
+  refundReason  String?       @db.Text
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  booking        Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  user           User            @relation("Payments", fields: [userId], references: [id], onDelete: Cascade)
+  paymentHistory PaymentHistory[]
+
+  @@map("payments")
+  @@index([bookingId])
+  @@index([userId])
+  @@index([paymentStatus])
+}
+
+model PaymentHistory {
+  id        String        @id @default(uuid())
+  paymentId String
+  status    PaymentStatus
+  amount    Float
+  notes     String?       @db.Text
+  createdAt DateTime      @default(now())
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@map("payment_history")
+  @@index([paymentId])
+}
+
+// ============================================
+// SYSTEM & ADMIN
+// ============================================
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  adminId    String
+  action     String
+  targetType String
+  targetId   String
+  details    Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  admin User @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@map("audit_logs")
+  @@index([adminId])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+}
+
+model Setting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       Json
+  description String?  @db.Text
+  updatedAt   DateTime @updatedAt
+
+  @@map("settings")
+}
+
+model EmailTemplate {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  subject   String
+  bodyHtml  String   @db.Text
+  bodyText  String   @db.Text
+  variables Json?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("email_templates")
+}
+
+model Venue {
+  id        String   @id @default(uuid())
+  name      String
+  address   String
+  districtId String?
+  latitude  Float?
+  longitude Float?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("venues")
+  @@index([districtId])
+}
+

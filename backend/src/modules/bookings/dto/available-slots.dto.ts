@@ -28,4 +28,3 @@ export class TimeSlotResponse {
   @ApiProperty()
   available: boolean;
 }
-

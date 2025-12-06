@@ -1,6 +1,5 @@
-import { IsString, IsDateString, IsInt, IsNumber, IsOptional, Min, Max } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { PartialType } from '@nestjs/swagger';
+import { IsString, IsOptional } from 'class-validator';
+import { ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import { CreateBookingDto } from './create-booking.dto';
 
 export class UpdateBookingDto extends PartialType(CreateBookingDto) {
@@ -14,4 +13,3 @@ export class UpdateBookingDto extends PartialType(CreateBookingDto) {
   @IsString()
   specialRequests?: string;
 }
-

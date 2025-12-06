@@ -7,4 +7,3 @@ export class ApprovePostDto {
   @IsString()
   notes?: string;
 }
-

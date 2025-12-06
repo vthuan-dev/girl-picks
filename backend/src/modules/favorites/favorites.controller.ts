@@ -9,7 +9,12 @@ import {
 import { FavoritesService } from './favorites.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 
 @ApiTags('Favorites')
 @ApiBearerAuth()
@@ -42,8 +47,10 @@ export class FavoritesController {
   @Get('check/:girlId')
   @ApiOperation({ summary: 'Check if girl is favorited' })
   @ApiResponse({ status: 200, description: 'Favorite status' })
-  isFavorited(@CurrentUser('id') userId: string, @Param('girlId') girlId: string) {
+  isFavorited(
+    @CurrentUser('id') userId: string,
+    @Param('girlId') girlId: string,
+  ) {
     return this.favoritesService.isFavorited(userId, girlId);
   }
 }
-
