@@ -3,10 +3,19 @@
 import { useAuthStore } from '@/store/auth.store';
 import StatsCard from '@/components/dashboard/StatsCard';
 
+interface Stat {
+  title: string;
+  value: string;
+  change: string;
+  trend: 'up' | 'down';
+  icon: React.ReactNode;
+  color: 'primary' | 'accent' | 'yellow' | 'green';
+}
+
 export default function GirlDashboard() {
   const { user } = useAuthStore();
 
-  const stats = [
+  const stats: Stat[] = [
     {
       title: 'Tổng đặt lịch',
       value: '24',

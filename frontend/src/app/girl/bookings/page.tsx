@@ -3,12 +3,26 @@
 import { useState } from 'react';
 import BookingCard from '@/components/bookings/BookingCard';
 
+interface Booking {
+  id: string;
+  customerName: string;
+  customerAvatar: string | null;
+  date: string;
+  time: string;
+  duration: number;
+  service: string;
+  price: number;
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  location: string;
+  notes: string;
+}
+
 const bookingStatuses = ['Tất cả', 'Đang chờ', 'Đã xác nhận', 'Đã hoàn thành', 'Đã hủy'];
 
 export default function GirlBookingsPage() {
   const [selectedStatus, setSelectedStatus] = useState('Tất cả');
 
-  const bookings = [
+  const bookings: Booking[] = [
     {
       id: '1',
       customerName: 'Nguyễn Văn A',
