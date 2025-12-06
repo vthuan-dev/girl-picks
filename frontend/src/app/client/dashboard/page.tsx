@@ -94,7 +94,7 @@ export default function ClientDashboard() {
           </Link>
 
           <Link
-            href="/bookings"
+            href="/customer/bookings"
             className="p-6 bg-background-light rounded-lg border border-secondary/30 hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/10 group"
           >
             <div className="w-12 h-12 bg-accent/20 rounded-lg flex items-center justify-center mb-4 group-hover:bg-accent/30 transition-colors">
@@ -107,7 +107,7 @@ export default function ClientDashboard() {
           </Link>
 
           <Link
-            href="/messages"
+            href="/customer/messages"
             className="p-6 bg-background-light rounded-lg border border-secondary/30 hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/10 group"
           >
             <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center mb-4 group-hover:bg-green-500/30 transition-colors">
@@ -124,7 +124,7 @@ export default function ClientDashboard() {
         <div className="bg-background-light rounded-lg border border-secondary/30 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-text">Đặt lịch gần đây</h2>
-            <Link href="/bookings" className="text-primary hover:text-primary-hover text-sm font-medium">
+            <Link href="/customer/bookings" className="text-primary hover:text-primary-hover text-sm font-medium">
               Xem tất cả
             </Link>
           </div>
@@ -148,7 +148,7 @@ export default function ClientDashboard() {
                     Đang chờ
                   </span>
                   <Link
-                    href={`/bookings/${item}`}
+                    href={`/customer/bookings/${item}`}
                     className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors text-sm"
                   >
                     Xem chi tiết
