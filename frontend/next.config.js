@@ -6,16 +6,16 @@ const nextConfig = {
     NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:8000',
   },
   images: {
-    domains: ['res.cloudinary.com', 'images.unsplash.com', 'gaigu1.net'],
+    domains: ['res.cloudinary.com', 'images.unsplash.com', 'gaigo1.net'],
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'gaigu1.net',
+        hostname: 'gaigo1.net',
         pathname: '/images/**',
       },
       {
         protocol: 'https',
-        hostname: 'gaigu1.net',
+        hostname: 'gaigo1.net',
         pathname: '/media/**',
       },
       {

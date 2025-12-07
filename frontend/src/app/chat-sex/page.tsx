@@ -23,7 +23,7 @@ const generateMockChatGirls = () => {
     id: `${i + 1}`,
     title: titles[i % titles.length] + (i >= titles.length ? ` ${Math.floor(i / titles.length) + 1}` : ''),
     thumbnail: i < 4
-      ? `https://gaigu1.net/media/videos/tmb2/777${34 - (i % 4)}/1.jpg`
+      ? `https://gaigo1.net/media/videos/tmb2/777${34 - (i % 4)}/1.jpg`
       : 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=300&fit=crop',
     year: 2003 + (i % 3),
     rating: 4.5 + Math.random() * 0.5,

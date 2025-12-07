@@ -65,7 +65,7 @@ export default function AnhSexPage() {
     setCurrentPage(1);
   }, [selectedCategory]);
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gaigu1.net';
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gaigo1.net';
 
   return (
     <>

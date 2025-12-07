@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import StructuredData from '@/components/seo/StructuredData';
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gaigu1.net';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gaigo1.net';
 
 export const metadata: Metadata = {
   title: 'Gái Chat - Chat sex trực tuyến với gái gọi',
@@ -50,7 +50,7 @@ export default function ChatSexLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gaigu1.net';
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gaigo1.net';
 
   return (
     <>

@@ -8,7 +8,7 @@ import ReviewsSection from '@/components/girls/ReviewsSection';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import { Girl } from '@/types/girl';
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gaigu1.net';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gaigo1.net';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';

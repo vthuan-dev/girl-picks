@@ -36,7 +36,7 @@ const generateMockMovies = () => {
     id: `${i + 1}`,
     title: titles[i % titles.length] + ` ${Math.floor(i / titles.length) + 1}`,
     thumbnail: i < 2 
-      ? `https://gaigu1.net/media/videos/tmb2/777${34 - i}/1.jpg`
+      ? `https://gaigo1.net/media/videos/tmb2/777${34 - i}/1.jpg`
       : 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=400&h=300&fit=crop',
     duration: `${Math.floor(Math.random() * 30) + 10}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}`,
     views: Math.floor(Math.random() * 50000) + 10000,
@@ -44,7 +44,7 @@ const generateMockMovies = () => {
     detailUrl: '#',
     category: categories[i % categories.length],
     poster: i < 2 
-      ? `https://gaigu1.net/media/videos/tmb2/777${34 - i}/default.jpg`
+      ? `https://gaigo1.net/media/videos/tmb2/777${34 - i}/default.jpg`
       : undefined,
   }));
 };
@@ -75,7 +75,7 @@ export default function PhimSexPage() {
     setCurrentPage(1);
   }, [selectedCategory]);
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gaigu1.net';
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gaigo1.net';
 
   return (
     <>

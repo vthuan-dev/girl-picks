@@ -1,4 +1,4 @@
-# robots.txt for gaigu1.net
+# robots.txt for gaigo1.net
 
 User-agent: *
 Allow: /
@@ -18,7 +18,7 @@ Allow: /anh-sex
 Allow: /chat-sex
 
 # Sitemap
-Sitemap: https://gaigu1.net/sitemap.xml
+Sitemap: https://gaigo1.net/sitemap.xml
 
 # Crawl-delay (optional, adjust as needed)
 Crawl-delay: 1

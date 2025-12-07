@@ -5,7 +5,7 @@
 1. Vào: https://search.google.com/search-console
 2. Click **"Add Property"**
 3. **Chọn "URL prefix"** (khuyến nghị - dễ verify hơn)
-4. Nhập: `https://gaigu1.net` (không có www, không có dấu / ở cuối)
+4. Nhập: `https://gaigo1.net` (không có www, không có dấu / ở cuối)
 5. Click **"CONTINUE"**
 
 ## Bước 2: Verify Website (10 phút)
@@ -49,11 +49,11 @@
 ## Bước 4: Kiểm tra Index (1 phút)
 
 1. Vào **"URL Inspection"** (thanh tìm kiếm trên cùng)
-2. Nhập: `https://gaigu1.net`
+2. Nhập: `https://gaigo1.net`
 3. Click **"Test Live URL"**
 4. Nếu thấy **"URL is on Google"** = ✅ Đã index!
 
-Hoặc tìm trên Google: `site:gaigu1.net`
+Hoặc tìm trên Google: `site:gaigo1.net`
 
 ## ⏱️ Timeline
 
@@ -71,7 +71,7 @@ Hoặc tìm trên Google: `site:gaigu1.net`
 ## ⚠️ Lưu ý quan trọng
 
 - ✅ Website phải đã deploy và có thể truy cập được
-- ✅ Sitemap phải accessible tại: `https://gaigu1.net/sitemap.xml`
+- ✅ Sitemap phải accessible tại: `https://gaigo1.net/sitemap.xml`
 - ✅ Robots.txt không chặn các trang quan trọng
 - ✅ Đợi ít nhất 1 tuần để Google crawl và index
 

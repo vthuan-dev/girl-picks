@@ -19,7 +19,7 @@
 
 ### Bước 2: Chọn loại property
 - Chọn **"URL prefix"** (khuyến nghị)
-- Nhập URL: `https://gaigu1.net`
+- Nhập URL: `https://gaigo1.net`
 - Click **"Continue"**
 
 ---
@@ -64,7 +64,7 @@ Có nhiều cách để verify, khuyến nghị dùng **HTML tag method**:
 
 1. Download file HTML từ Google Search Console
 2. Upload file đó vào thư mục `frontend/public/`
-3. Đảm bảo file có thể truy cập tại: `https://gaigu1.net/google1234567890.html`
+3. Đảm bảo file có thể truy cập tại: `https://gaigo1.net/google1234567890.html`
 4. Click **"Verify"**
 
 ---
@@ -72,7 +72,7 @@ Có nhiều cách để verify, khuyến nghị dùng **HTML tag method**:
 ## 3. Submit Sitemap
 
 ### Bước 1: Kiểm tra sitemap hoạt động
-1. Truy cập: `https://gaigu1.net/sitemap.xml`
+1. Truy cập: `https://gaigo1.net/sitemap.xml`
 2. Đảm bảo sitemap hiển thị đúng (có các URL)
 
 ### Bước 2: Submit trong Google Search Console
@@ -99,14 +99,14 @@ Có nhiều cách để verify, khuyến nghị dùng **HTML tag method**:
 
 ### Cách 2: Sử dụng URL Inspection Tool
 1. Vào **"URL Inspection"** ở thanh tìm kiếm trên cùng
-2. Nhập URL cần kiểm tra: `https://gaigu1.net/girls`
+2. Nhập URL cần kiểm tra: `https://gaigo1.net/girls`
 3. Click **"Test Live URL"**
 4. Xem kết quả:
    - ✅ **"URL is on Google"** = Đã được index
    - ❌ **"URL is not on Google"** = Chưa được index
 
 ### Cách 3: Tìm kiếm trên Google
-- Tìm: `site:gaigu1.net`
+- Tìm: `site:gaigo1.net`
 - Xem danh sách các trang đã được index
 
 ---
@@ -135,7 +135,7 @@ Nếu có nhiều hơn 50,000 URLs, tạo sitemap index:
 <?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex>
   <sitemap>
-    <loc>https://gaigu1.net/sitemap.xml</loc>
+    <loc>https://gaigo1.net/sitemap.xml</loc>
   </sitemap>
 </sitemapindex>
 ```
@@ -170,7 +170,7 @@ Nếu có nhiều hơn 50,000 URLs, tạo sitemap index:
    ```
    Allow: /sitemap.xml
    ```
-2. Kiểm tra sitemap có thể truy cập: `https://gaigu1.net/sitemap.xml`
+2. Kiểm tra sitemap có thể truy cập: `https://gaigo1.net/sitemap.xml`
 3. Kiểm tra format XML đúng
 4. Đảm bảo không có lỗi trong sitemap (quá nhiều URLs, invalid URLs)
 
@@ -210,7 +210,7 @@ Sau khi hoàn thành, kiểm tra:
 - [ ] Đã submit sitemap.xml
 - [ ] Sitemap status = "Success"
 - [ ] Đã kiểm tra ít nhất 1 URL bằng URL Inspection
-- [ ] Đã tìm `site:gaigu1.net` trên Google
+- [ ] Đã tìm `site:gaigo1.net` trên Google
 - [ ] Đã thêm Google verification code vào layout.tsx
 - [ ] Robots.txt không chặn các trang quan trọng
 - [ ] Tất cả trang có metadata đầy đủ

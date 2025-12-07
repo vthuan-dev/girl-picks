@@ -3,7 +3,7 @@ import GirlList from '@/modules/girls/components/GirlList';
 import LocationFilters from '@/components/sections/LocationFilters';
 import PopularTags from '@/components/sections/PopularTags';
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gaigu1.net';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gaigo1.net';
 
 export const metadata: Metadata = {
   title: 'Danh sách Gái gọi',

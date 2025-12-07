@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 import { getGirls } from '@/lib/api/server-client';
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gaigu1.net';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gaigo1.net';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseRoutes: MetadataRoute.Sitemap = [
