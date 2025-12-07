@@ -50,7 +50,7 @@ export class SearchController {
     return this.searchService.searchGirls({
       query,
       districts: districtsArray,
-      minRating: minRating > 0 ? minRating : undefined,
+      minRating: minRating && minRating > 0 ? minRating : undefined,
       maxPrice: maxPrice ? Number(maxPrice) : undefined,
       verification,
       isFeatured:

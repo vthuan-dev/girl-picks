@@ -8,7 +8,8 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { UploadService, UploadImageDto, UploadMultipleImagesDto } from './upload.service';
+import { UploadService } from './upload.service';
+import type { UploadImageDto, UploadMultipleImagesDto } from './upload.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -24,7 +25,7 @@ export class UploadController {
    * POST /api/upload/image
    */
   @Post('image')
-  @Roles(UserRole.ADMIN, UserRole.GIRL)
+  @Roles(UserRole.ADMIN, UserRole.GIRL, UserRole.STAFF_UPLOAD)
   async uploadImage(@Body() dto: UploadImageDto) {
     return this.uploadService.uploadImageFromUrl(dto);
   }
@@ -34,7 +35,7 @@ export class UploadController {
    * POST /api/upload/images
    */
   @Post('images')
-  @Roles(UserRole.ADMIN, UserRole.GIRL)
+  @Roles(UserRole.ADMIN, UserRole.GIRL, UserRole.STAFF_UPLOAD)
   async uploadMultipleImages(@Body() dto: UploadMultipleImagesDto) {
     return this.uploadService.uploadMultipleImagesFromUrls(dto);
   }
@@ -44,7 +45,7 @@ export class UploadController {
    * DELETE /api/upload/image/:publicId
    */
   @Delete('image/:publicId')
-  @Roles(UserRole.ADMIN, UserRole.GIRL)
+  @Roles(UserRole.ADMIN, UserRole.GIRL, UserRole.STAFF_UPLOAD)
   async deleteImage(@Param('publicId') publicId: string) {
     return this.uploadService.deleteImage(publicId);
   }

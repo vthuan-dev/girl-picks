@@ -38,15 +38,16 @@ export class PostsController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.GIRL)
+  @Roles(UserRole.GIRL, UserRole.CUSTOMER)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create post (Girl only)' })
+  @ApiOperation({ summary: 'Create post (Girl/Customer)' })
   @ApiResponse({ status: 201, description: 'Post created' })
   create(
     @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: UserRole,
     @Body() createPostDto: CreatePostDto,
   ) {
-    return this.postsService.create(userId, createPostDto);
+    return this.postsService.create(userId, createPostDto, userRole);
   }
 
   @Get()
@@ -65,9 +66,11 @@ export class PostsController {
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page?: number,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
   ) {
-    // Public users only see approved posts
+    // If status is explicitly provided, use it
+    // If status is undefined and no query param, default to APPROVED for public
+    // Admin can pass status query param to filter, or omit to see all (will be handled in service)
     return this.postsService.findAll({
-      status: status || PostStatus.APPROVED,
+      status,
       girlId,
       page,
       limit,
@@ -76,9 +79,9 @@ export class PostsController {
 
   @Get('me')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.GIRL)
+  @Roles(UserRole.GIRL, UserRole.CUSTOMER)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get own posts (Girl only)' })
+  @ApiOperation({ summary: 'Get own posts (Girl/Customer)' })
   @ApiResponse({ status: 200, description: 'List of own posts' })
   findMyPosts(
     @CurrentUser('id') userId: string,
@@ -105,9 +108,9 @@ export class PostsController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.GIRL)
+  @Roles(UserRole.GIRL, UserRole.CUSTOMER)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update post (Girl only, pending posts only)' })
+  @ApiOperation({ summary: 'Update post (Girl/Customer only, pending posts only)' })
   @ApiResponse({ status: 200, description: 'Post updated' })
   update(
     @Param('id') id: string,

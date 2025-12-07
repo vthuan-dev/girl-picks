@@ -66,7 +66,7 @@ export class GirlsController {
 
     return this.girlsService.findAll({
       districts: districtsArray,
-      rating: rating > 0 ? rating : undefined,
+      rating: rating && rating > 0 ? rating : undefined,
       verification,
       isFeatured:
         isFeatured === 'true'

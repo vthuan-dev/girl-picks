@@ -7,10 +7,11 @@ export enum UserRole {
 export interface User {
   id: string;
   email: string;
-  username: string;
+  username?: string; // Optional - backend doesn't have this field
   fullName: string;
   role: UserRole;
   avatar?: string;
+  avatarUrl?: string; // Backend uses avatarUrl
   phone?: string;
   isActive: boolean;
   createdAt: string;

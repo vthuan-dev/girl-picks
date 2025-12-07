@@ -11,6 +11,7 @@ cloudinary.config({
 export interface UploadOptions {
   folder?: string;
   publicId?: string;
+  publicIdPrefix?: string;
   transformation?: any[];
   resourceType?: 'image' | 'video' | 'raw' | 'auto';
 }
@@ -87,6 +88,8 @@ export async function uploadMultipleImagesFromUrls(
       ...options,
       publicId: options.publicId
         ? `${options.publicId}_${index}`
+        : options.publicIdPrefix
+        ? `${options.publicIdPrefix}_${index}`
         : undefined,
     }),
   );

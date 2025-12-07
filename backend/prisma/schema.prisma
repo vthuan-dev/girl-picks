@@ -3,10 +3,12 @@
 
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = []
 }
 
 datasource db {
   provider = "mysql"
+  url      = env("DATABASE_URL")
 }
 
 enum UserRole {
@@ -105,27 +107,28 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  girl         Girl?
-  reviews      Review[]
-  sentMessages Message[] @relation("SentMessages")
-  receivedMessages Message[] @relation("ReceivedMessages")
-  notifications Notification[]
-  reports      Report[] @relation("Reporter")
-  reportedBy   Report[] @relation("ReportedUser")
-  blocks       Block[] @relation("Blocker")
-  blockedBy    Block[] @relation("Blocked")
-  favorites    Favorite[]
-  viewHistory  ViewHistory[]
-  reviewLikes  ReviewLike[]
-  reviewComments ReviewComment[]
-  postLikes    PostLike[]
-  postComments PostComment[]
-  bookings     Booking[] @relation("Customer")
-  payments     Payment[] @relation("Payments")
-  auditLogs    AuditLog[]
-  approvedPosts Post[] @relation("ApprovedBy")
-  approvedReviews Review[] @relation("ApprovedBy")
-  reviewedReports Report[] @relation("ReviewedBy")
+  girl             Girl?
+  reviews          Review[]
+  sentMessages     Message[]       @relation("SentMessages")
+  receivedMessages Message[]       @relation("ReceivedMessages")
+  notifications    Notification[]
+  reports          Report[]        @relation("Reporter")
+  reportedBy       Report[]        @relation("ReportedUser")
+  blocks           Block[]         @relation("Blocker")
+  blockedBy        Block[]         @relation("Blocked")
+  favorites        Favorite[]
+  viewHistory      ViewHistory[]
+  reviewLikes      ReviewLike[]
+  reviewComments   ReviewComment[]
+  postLikes        PostLike[]
+  postComments     PostComment[]
+  posts            Post[]          @relation("PostAuthor")
+  bookings         Booking[]       @relation("Customer")
+  payments         Payment[]       @relation("Payments")
+  auditLogs        AuditLog[]
+  approvedPosts    Post[]          @relation("ApprovedBy")
+  approvedReviews  Review[]        @relation("ApprovedBy")
+  reviewedReports  Report[]        @relation("ReviewedBy")
 
   @@map("users")
 }
@@ -136,11 +139,11 @@ model Girl {
   name                    String?
   age                     Int?
   bio                     String?
-  districts               Json              @default("[]") // Array of district IDs stored as JSON
+  districts               Json               @default("[]") // Array of district IDs stored as JSON
   ratingAverage           Float              @default(0)
   totalReviews            Int                @default(0)
   verificationStatus      VerificationStatus @default(PENDING)
-  verificationDocuments   Json              @default("[]") // Array of document URLs stored as JSON
+  verificationDocuments   Json               @default("[]") // Array of document URLs stored as JSON
   verificationRequestedAt DateTime?
   verificationVerifiedAt  DateTime?
   viewCount               Int                @default(0)
@@ -148,66 +151,68 @@ model Girl {
   isFeatured              Boolean            @default(false)
   isPremium               Boolean            @default(false)
   isActive                Boolean            @default(true)
-  images                  Json              @default("[]") // Array of image URLs stored as JSON
+  images                  Json               @default("[]") // Array of image URLs stored as JSON
   lastActiveAt            DateTime?
-  createdAt               DateTime            @default(now())
-  updatedAt               DateTime            @updatedAt
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
 
   // Relations
-  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  posts          Post[]
-  reviews        Review[]
-  favorites      Favorite[]
-  viewHistory    ViewHistory[]
-  bookings       Booking[] @relation("GirlBookings")
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  posts           Post[]
+  reviews         Review[]
+  favorites       Favorite[]
+  viewHistory     ViewHistory[]
+  bookings        Booking[]        @relation("GirlBookings")
   servicePackages ServicePackage[]
-  timeSlots      TimeSlot[]
-  blockedDates   BlockedDate[]
+  timeSlots       TimeSlot[]
+  blockedDates    BlockedDate[]
 
   @@map("girls")
 }
 
 model Post {
-  id          String     @id @default(uuid())
-  girlId      String
-  title       String
-  content     String
-  images      Json              @default("[]") // Array of image URLs stored as JSON
-  status      PostStatus @default(PENDING)
+  id           String     @id @default(uuid())
+  authorId     String     // User ID who created the post (can be GIRL or CUSTOMER)
+  girlId       String?    // Optional: if post is related to a specific girl
+  title        String
+  content      String
+  images       Json       @default("[]") // Array of image URLs stored as JSON
+  status       PostStatus @default(PENDING)
   approvedById String?
-  approvedAt  DateTime?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  approvedAt   DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
   // Relations
-  girl        Girl      @relation(fields: [girlId], references: [id], onDelete: Cascade)
-  approvedBy  User?     @relation("ApprovedBy", fields: [approvedById], references: [id])
-  likes       PostLike[]
-  comments    PostComment[]
+  author     User         @relation("PostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  girl       Girl?        @relation(fields: [girlId], references: [id], onDelete: SetNull)
+  approvedBy User?        @relation("ApprovedBy", fields: [approvedById], references: [id])
+  likes      PostLike[]
+  comments   PostComment[]
 
   @@map("posts")
 }
 
 model Review {
-  id          String      @id @default(uuid())
-  customerId String
-  girlId      String
-  title       String
-  content     String
-  rating      Int // 1-5
-  images      Json              @default("[]") // Array of image URLs stored as JSON
-  status      ReviewStatus @default(PENDING)
+  id           String       @id @default(uuid())
+  customerId   String
+  girlId       String
+  title        String
+  content      String
+  rating       Int // 1-5
+  images       Json         @default("[]") // Array of image URLs stored as JSON
+  status       ReviewStatus @default(PENDING)
   approvedById String?
-  approvedAt  DateTime?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  approvedAt   DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 
   // Relations
-  customer    User       @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  girl        Girl       @relation(fields: [girlId], references: [id], onDelete: Cascade)
-  approvedBy  User?      @relation("ApprovedBy", fields: [approvedById], references: [id])
-  likes       ReviewLike[]
-  comments    ReviewComment[]
+  customer   User            @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  girl       Girl            @relation(fields: [girlId], references: [id], onDelete: Cascade)
+  approvedBy User?           @relation("ApprovedBy", fields: [approvedById], references: [id])
+  likes      ReviewLike[]
+  comments   ReviewComment[]
 
   @@map("reviews")
 }
@@ -221,8 +226,8 @@ model Message {
   createdAt  DateTime @default(now())
 
   // Relations
-  sender   User   @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
-  receiver User   @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  sender   User @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
 
   @@map("messages")
 }
@@ -295,22 +300,22 @@ model PostComment {
 }
 
 model Report {
-  id              String       @id @default(uuid())
-  reporterId      String
-  reportedUserId  String?
-  reportedPostId  String?
+  id               String       @id @default(uuid())
+  reporterId       String
+  reportedUserId   String?
+  reportedPostId   String?
   reportedReviewId String?
-  reason          ReportReason
-  description     String
-  status          ReportStatus @default(PENDING)
-  reviewedById    String?
-  reviewedAt      DateTime?
-  createdAt       DateTime     @default(now())
+  reason           ReportReason
+  description      String
+  status           ReportStatus @default(PENDING)
+  reviewedById     String?
+  reviewedAt       DateTime?
+  createdAt        DateTime     @default(now())
 
   // Relations
-  reporter      User  @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
-  reportedUser  User? @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: SetNull)
-  reviewedBy    User? @relation("ReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reporter     User  @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUser User? @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: SetNull)
+  reviewedBy   User? @relation("ReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
 
   @@map("reports")
 }
@@ -344,10 +349,10 @@ model Favorite {
 }
 
 model ViewHistory {
-  id        String   @id @default(uuid())
-  userId    String
-  girlId    String
-  viewedAt  DateTime @default(now())
+  id       String   @id @default(uuid())
+  userId   String
+  girlId   String
+  viewedAt DateTime @default(now())
 
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -409,28 +414,28 @@ model EmailTemplate {
 
 // Booking Models
 model Booking {
-  id              String        @id @default(uuid())
-  customerId      String
-  girlId          String
-  servicePackageId String?
-  serviceType     String // drinking, dating, both
-  bookingDate      DateTime
-  duration        Int // hours
-  location        String? // venue/address
-  status          BookingStatus @default(PENDING)
-  totalPrice      Float
-  depositAmount   Float
-  paymentStatus   PaymentStatus @default(PENDING)
-  specialRequests String?
+  id                 String        @id @default(uuid())
+  customerId         String
+  girlId             String
+  servicePackageId   String?
+  serviceType        String // drinking, dating, both
+  bookingDate        DateTime
+  duration           Int // hours
+  location           String? // venue/address
+  status             BookingStatus @default(PENDING)
+  totalPrice         Float
+  depositAmount      Float
+  paymentStatus      PaymentStatus @default(PENDING)
+  specialRequests    String?
   cancellationReason String?
-  cancelledAt    DateTime?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  cancelledAt        DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
 
   // Relations
-  customer       User          @relation("Customer", fields: [customerId], references: [id], onDelete: Cascade)
-  girl           Girl          @relation("GirlBookings", fields: [girlId], references: [id], onDelete: Cascade)
-  servicePackage ServicePackage? @relation(fields: [servicePackageId], references: [id])
+  customer       User             @relation("Customer", fields: [customerId], references: [id], onDelete: Cascade)
+  girl           Girl             @relation("GirlBookings", fields: [girlId], references: [id], onDelete: Cascade)
+  servicePackage ServicePackage?  @relation(fields: [servicePackageId], references: [id])
   payments       Payment[]
   bookingHistory BookingHistory[]
 
@@ -486,12 +491,12 @@ model BlockedDate {
 }
 
 model BookingHistory {
-  id        String   @id @default(uuid())
+  id        String        @id @default(uuid())
   bookingId String
   status    BookingStatus
   changedBy String?
   notes     String?
-  createdAt DateTime @default(now())
+  createdAt DateTime      @default(now())
 
   // Relations
   booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
@@ -514,8 +519,8 @@ model Payment {
   updatedAt     DateTime      @updatedAt
 
   // Relations
-  booking        Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  user           User            @relation("Payments", fields: [userId], references: [id], onDelete: Cascade)
+  booking        Booking          @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  user           User             @relation("Payments", fields: [userId], references: [id], onDelete: Cascade)
   paymentHistory PaymentHistory[]
 
   @@map("payments")
@@ -536,15 +541,15 @@ model PaymentHistory {
 }
 
 model Venue {
-  id        String   @id @default(uuid())
-  name      String
-  address   String
+  id         String   @id @default(uuid())
+  name       String
+  address    String
   districtId String?
-  latitude  Float?
-  longitude Float?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  latitude   Float?
+  longitude  Float?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@map("venues")
 }

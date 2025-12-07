@@ -14,7 +14,7 @@ const config = jwtConfig();
     JwtModule.register({
       secret: config.jwt.secret,
       signOptions: {
-        expiresIn: config.jwt.expiresIn,
+        expiresIn: config.jwt.expiresIn as any,
       },
     }),
   ],

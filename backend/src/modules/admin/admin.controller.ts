@@ -9,6 +9,7 @@ import {
   ParseIntPipe,
   DefaultValuePipe,
   Patch,
+  Delete,
 } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { ProcessReportDto } from './dto/process-report.dto';
@@ -207,5 +208,26 @@ export class AdminController {
   @ApiResponse({ status: 200, description: 'User details' })
   getUserDetails(@Param('id') id: string) {
     return this.adminService.getUserDetails(id);
+  }
+
+  @Patch('users/:id/activate')
+  @ApiOperation({ summary: 'Activate user (Admin only)' })
+  @ApiResponse({ status: 200, description: 'User activated' })
+  activateUser(@Param('id') id: string) {
+    return this.adminService.toggleUserStatus(id, true);
+  }
+
+  @Patch('users/:id/deactivate')
+  @ApiOperation({ summary: 'Deactivate user (Admin only)' })
+  @ApiResponse({ status: 200, description: 'User deactivated' })
+  deactivateUser(@Param('id') id: string) {
+    return this.adminService.toggleUserStatus(id, false);
+  }
+
+  @Delete('users/:id')
+  @ApiOperation({ summary: 'Delete user (Admin only)' })
+  @ApiResponse({ status: 200, description: 'User deleted' })
+  deleteUser(@Param('id') id: string) {
+    return this.adminService.deleteUser(id);
   }
 }

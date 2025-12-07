@@ -1,101 +1,143 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import Button from '@/components/admin/Button';
+import IconButton from '@/components/admin/IconButton';
+import { reportsApi, Report, ReportStatus, ReportReason } from '@/modules/admin/api/reports.api';
+import toast from 'react-hot-toast';
+import { format } from 'date-fns';
+import { vi } from 'date-fns/locale';
 
 export default function AdminReportsPage() {
-  const [statusFilter, setStatusFilter] = useState('Tất cả');
+  const [statusFilter, setStatusFilter] = useState<string>('Tất cả');
+  const [reports, setReports] = useState<Report[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [stats, setStats] = useState({
+    total: 0,
+    pending: 0,
+    resolved: 0,
+  });
 
-  const reports = [
-    {
-      id: '1',
-      reporterName: 'Nguyễn Văn A',
-      reportedName: 'Trần Thị B',
-      type: 'inappropriate_content',
-      reason: 'Nội dung không phù hợp',
-      description: 'Bài viết có nội dung không phù hợp với quy định',
-      status: 'pending',
-      createdAt: '2024-12-06T10:00:00',
-    },
-    {
-      id: '2',
-      reporterName: 'Lê Văn C',
-      reportedName: 'Nguyễn Thị D',
-      type: 'spam',
-      reason: 'Spam',
-      description: 'Người dùng này đang spam tin nhắn',
-      status: 'resolved',
-      createdAt: '2024-12-05T14:30:00',
-    },
-    {
-      id: '3',
-      reporterName: 'Phạm Văn E',
-      reportedName: 'Hoàng Thị F',
-      type: 'harassment',
-      reason: 'Quấy rối',
-      description: 'Người dùng này đang quấy rối tôi',
-      status: 'dismissed',
-      createdAt: '2024-12-04T09:15:00',
-    },
-  ];
+  const statuses: (string | ReportStatus)[] = ['Tất cả', 'PENDING', 'RESOLVED', 'DISMISSED'];
 
-  const statuses = ['Tất cả', 'pending', 'resolved', 'dismissed'];
+  useEffect(() => {
+    loadReports();
+  }, [statusFilter, page]);
 
-  const getStatusColor = (status: string) => {
+  const loadReports = async () => {
+    setIsLoading(true);
+    try {
+      const status = statusFilter === 'Tất cả' ? undefined : statusFilter as ReportStatus;
+      const response = await reportsApi.getAll(status, page, 20);
+      
+      const reportsData = Array.isArray(response.data) ? response.data : [];
+      setReports(reportsData);
+      setTotalPages(response.meta?.totalPages || 1);
+
+      // Calculate stats
+      const total = reportsData.length;
+      const pending = reportsData.filter(r => r.status === 'PENDING').length;
+      const resolved = reportsData.filter(r => r.status === 'RESOLVED').length;
+      setStats({ total, pending, resolved });
+    } catch (error: any) {
+      console.error('Error loading reports:', error);
+      toast.error(error.response?.data?.message || 'Không thể tải danh sách báo cáo');
+      setReports([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleProcess = async (id: string, action: 'RESOLVED' | 'DISMISSED') => {
+    const notes = action === 'RESOLVED' 
+      ? prompt('Nhập ghi chú xử lý (tùy chọn):') || undefined
+      : prompt('Nhập lý do bỏ qua (tùy chọn):') || undefined;
+
+    try {
+      await reportsApi.process(id, action, notes);
+      toast.success(action === 'RESOLVED' ? 'Xử lý báo cáo thành công' : 'Bỏ qua báo cáo thành công');
+      loadReports();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Không thể xử lý báo cáo');
+    }
+  };
+
+  const getStatusColor = (status: ReportStatus) => {
     switch (status) {
-      case 'resolved':
+      case 'RESOLVED':
         return 'bg-green-500/20 text-green-500';
-      case 'pending':
+      case 'PENDING':
         return 'bg-yellow-500/20 text-yellow-500';
-      case 'dismissed':
+      case 'DISMISSED':
         return 'bg-gray-500/20 text-gray-400';
       default:
         return 'bg-gray-500/20 text-gray-400';
     }
   };
 
-  const getStatusText = (status: string) => {
+  const getStatusText = (status: ReportStatus) => {
     switch (status) {
-      case 'resolved':
+      case 'RESOLVED':
         return 'Đã xử lý';
-      case 'pending':
+      case 'PENDING':
         return 'Chờ xử lý';
-      case 'dismissed':
+      case 'DISMISSED':
         return 'Đã bỏ qua';
       default:
         return status;
     }
   };
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'inappropriate_content':
+  const getTypeColor = (reason: ReportReason) => {
+    switch (reason) {
+      case 'INAPPROPRIATE_CONTENT':
         return 'bg-red-500/20 text-red-500';
-      case 'spam':
+      case 'SPAM':
         return 'bg-yellow-500/20 text-yellow-500';
-      case 'harassment':
+      case 'HARASSMENT':
         return 'bg-orange-500/20 text-orange-500';
+      case 'FAKE_PROFILE':
+        return 'bg-purple-500/20 text-purple-500';
+      case 'SCAM':
+        return 'bg-pink-500/20 text-pink-500';
       default:
         return 'bg-gray-500/20 text-gray-400';
     }
   };
 
-  const getTypeText = (type: string) => {
-    switch (type) {
-      case 'inappropriate_content':
+  const getTypeText = (reason: ReportReason) => {
+    switch (reason) {
+      case 'INAPPROPRIATE_CONTENT':
         return 'Nội dung không phù hợp';
-      case 'spam':
+      case 'SPAM':
         return 'Spam';
-      case 'harassment':
+      case 'HARASSMENT':
         return 'Quấy rối';
+      case 'FAKE_PROFILE':
+        return 'Hồ sơ giả';
+      case 'SCAM':
+        return 'Lừa đảo';
+      case 'OTHER':
+        return 'Khác';
       default:
-        return type;
+        return reason;
     }
   };
 
-  const filteredReports = reports.filter(report => {
-    const matchesStatus = statusFilter === 'Tất cả' || report.status === statusFilter;
-    return matchesStatus;
-  });
+  const getReportedItemInfo = (report: Report) => {
+    if (report.reportedPostId) {
+      return { type: 'Bài viết', id: report.reportedPostId };
+    }
+    if (report.reportedReviewId) {
+      return { type: 'Đánh giá', id: report.reportedReviewId };
+    }
+    if (report.reportedUserId) {
+      return { type: 'Người dùng', id: report.reportedUserId };
+    }
+    return null;
+  };
 
   return (
     <div className="space-y-6">
@@ -109,58 +151,61 @@ export default function AdminReportsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-background-light rounded-lg border border-secondary/30 p-4">
+        <div className="bg-background-light rounded-xl border border-secondary/30 p-5">
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm text-text-muted">Tổng báo cáo</p>
-            <div className="w-8 h-8 bg-red-500/20 rounded-lg flex items-center justify-center">
-              <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-10 h-10 bg-red-500/20 rounded-xl flex items-center justify-center">
+              <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
           </div>
-          <p className="text-2xl font-bold text-text">{reports.length}</p>
+          <p className="text-2xl font-bold text-text">{stats.total}</p>
         </div>
-        <div className="bg-background-light rounded-lg border border-secondary/30 p-4">
+        <div className="bg-background-light rounded-xl border border-secondary/30 p-5">
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm text-text-muted">Chờ xử lý</p>
-            <div className="w-8 h-8 bg-yellow-500/20 rounded-lg flex items-center justify-center">
-              <svg className="w-4 h-4 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-10 h-10 bg-yellow-500/20 rounded-xl flex items-center justify-center">
+              <svg className="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
           </div>
-          <p className="text-2xl font-bold text-text">{reports.filter(r => r.status === 'pending').length}</p>
+          <p className="text-2xl font-bold text-text">{stats.pending}</p>
         </div>
-        <div className="bg-background-light rounded-lg border border-secondary/30 p-4">
+        <div className="bg-background-light rounded-xl border border-secondary/30 p-5">
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm text-text-muted">Đã xử lý</p>
-            <div className="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center">
-              <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-10 h-10 bg-green-500/20 rounded-xl flex items-center justify-center">
+              <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
           </div>
-          <p className="text-2xl font-bold text-text">{reports.filter(r => r.status === 'resolved').length}</p>
+          <p className="text-2xl font-bold text-text">{stats.resolved}</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-background-light rounded-lg border border-secondary/30 p-4">
+      <div className="bg-background-light rounded-xl border border-secondary/30 p-5">
         <div className="flex gap-2 flex-wrap">
           {statuses.map((status) => (
             <button
               key={status}
-              onClick={() => setStatusFilter(status)}
+              onClick={() => {
+                setStatusFilter(status);
+                setPage(1);
+              }}
               className={`
-                px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer
+                px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer
                 ${
                   statusFilter === status
-                    ? 'bg-primary text-white'
+                    ? 'bg-primary text-white shadow-md'
                     : 'bg-background border border-secondary/50 text-text hover:bg-primary/10 hover:border-primary/50'
                 }
               `}
             >
-              {status === 'Tất cả' ? status : getStatusText(status)}
+              {status === 'Tất cả' ? status : getStatusText(status as ReportStatus)}
             </button>
           ))}
         </div>
@@ -168,54 +213,125 @@ export default function AdminReportsPage() {
 
       {/* Reports List */}
       <div className="space-y-4">
-        {filteredReports.map((report) => (
-          <div
-            key={report.id}
-            className="bg-background-light rounded-lg border border-secondary/30 p-6 hover:border-primary/50 transition-colors"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-3 flex-wrap">
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${getTypeColor(report.type)}`}>
-                    {getTypeText(report.type)}
-                  </span>
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(report.status)}`}>
-                    {getStatusText(report.status)}
-                  </span>
-                </div>
-                <div className="mb-3">
-                  <p className="text-sm text-text-muted mb-1">
-                    <span className="font-medium text-text">Người báo cáo:</span> {report.reporterName}
-                  </p>
-                  <p className="text-sm text-text-muted mb-1">
-                    <span className="font-medium text-text">Người bị báo cáo:</span> {report.reportedName}
-                  </p>
-                  <p className="text-sm text-text-muted">
-                    <span className="font-medium text-text">Lý do:</span> {report.reason}
-                  </p>
-                </div>
-                <p className="text-text mb-3 bg-background p-3 rounded-lg border border-secondary/30">
-                  {report.description}
-                </p>
-                <p className="text-xs text-text-muted">
-                  {new Date(report.createdAt).toLocaleString('vi-VN')}
-                </p>
-              </div>
-              {report.status === 'pending' && (
-                <div className="flex flex-col gap-2">
-                  <button className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm cursor-pointer">
-                    Xử lý
-                  </button>
-                  <button className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm cursor-pointer">
-                    Bỏ qua
-                  </button>
-                </div>
-              )}
+        {isLoading ? (
+          <div className="bg-background-light rounded-xl border border-secondary/30 p-12 text-center">
+            <div className="flex items-center justify-center gap-2">
+              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-text-muted">Đang tải...</span>
             </div>
           </div>
-        ))}
+        ) : reports.length === 0 ? (
+          <div className="bg-background-light rounded-xl border border-secondary/30 p-12 text-center">
+            <p className="text-text-muted">Không có báo cáo nào</p>
+          </div>
+        ) : (
+          reports.map((report) => {
+            const reportedItem = getReportedItemInfo(report);
+            return (
+              <div
+                key={report.id}
+                className={`bg-background-light rounded-xl border p-6 hover:border-primary/50 transition-colors ${
+                  report.status === 'PENDING' 
+                    ? 'border-red-500/30' 
+                    : report.status === 'RESOLVED'
+                    ? 'border-green-500/30'
+                    : 'border-secondary/30'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-3 flex-wrap">
+                      <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${getTypeColor(report.reason)}`}>
+                        {getTypeText(report.reason)}
+                      </span>
+                      <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${getStatusColor(report.status)}`}>
+                        {getStatusText(report.status)}
+                      </span>
+                    </div>
+                    <div className="mb-3 space-y-1.5">
+                      <p className="text-sm text-text-muted">
+                        <span className="font-medium text-text">Người báo cáo:</span> {report.reporter.fullName}
+                      </p>
+                      {report.reportedUser && (
+                        <p className="text-sm text-text-muted">
+                          <span className="font-medium text-text">Người bị báo cáo:</span> {report.reportedUser.fullName}
+                        </p>
+                      )}
+                      {reportedItem && (
+                        <p className="text-sm text-text-muted">
+                          <span className="font-medium text-text">Đối tượng:</span> {reportedItem.type} (ID: {reportedItem.id.slice(0, 8)}...)
+                        </p>
+                      )}
+                      <p className="text-sm text-text-muted">
+                        <span className="font-medium text-text">Lý do:</span> {getTypeText(report.reason)}
+                      </p>
+                    </div>
+                    <p className="text-text mb-3 bg-background p-3 rounded-lg border border-secondary/30">
+                      {report.description}
+                    </p>
+                    <div className="flex items-center gap-4 text-xs text-text-muted">
+                      <span>
+                        {format(new Date(report.createdAt), 'HH:mm:ss dd/MM/yyyy', { locale: vi })}
+                      </span>
+                      {report.reviewedBy && (
+                        <span className="flex items-center gap-1">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                          Xử lý bởi: {report.reviewedBy.fullName}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {report.status === 'PENDING' && (
+                    <div className="flex flex-col gap-2 flex-shrink-0">
+                      <Button
+                        variant="success"
+                        size="sm"
+                        onClick={() => handleProcess(report.id, 'RESOLVED')}
+                      >
+                        Xử lý
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handleProcess(report.id, 'DISMISSED')}
+                      >
+                        Bỏ qua
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+          >
+            Trước
+          </Button>
+          <span className="text-text-muted text-sm">
+            Trang {page} / {totalPages}
+          </span>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+          >
+            Sau
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
-

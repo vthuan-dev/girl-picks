@@ -76,18 +76,8 @@ export class ReportsService {
             fullName: true,
           },
         },
-        reportedPost: {
-          select: {
-            id: true,
-            title: true,
-          },
-        },
-        reportedReview: {
-          select: {
-            id: true,
-            title: true,
-          },
-        },
+        // reportedPostId and reportedReviewId are fields, not relations
+        // Query Post/Review separately if needed
       },
     });
   }
@@ -102,19 +92,9 @@ export class ReportsService {
             fullName: true,
           },
         },
-        reportedPost: {
-          select: {
-            id: true,
-            title: true,
-          },
-        },
-        reportedReview: {
-          select: {
-            id: true,
-            title: true,
-          },
-        },
-        resolvedBy: {
+        // reportedPostId and reportedReviewId are fields, not relations
+        // Query Post/Review separately if needed
+        reviewedBy: {
           select: {
             id: true,
             fullName: true,
@@ -145,41 +125,9 @@ export class ReportsService {
             email: true,
           },
         },
-        reportedPost: {
-          include: {
-            girl: {
-              include: {
-                user: {
-                  select: {
-                    id: true,
-                    fullName: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-        reportedReview: {
-          include: {
-            customer: {
-              select: {
-                id: true,
-                fullName: true,
-              },
-            },
-            girl: {
-              include: {
-                user: {
-                  select: {
-                    id: true,
-                    fullName: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-        resolvedBy: {
+        // reportedPostId and reportedReviewId are fields, not relations
+        // Query Post/Review separately if needed
+        reviewedBy: {
           select: {
             id: true,
             fullName: true,

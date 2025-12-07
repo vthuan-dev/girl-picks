@@ -20,13 +20,13 @@ export async function generateTokens(
   refreshExpiresIn: string,
 ): Promise<Tokens> {
   const [accessToken, refreshToken] = await Promise.all([
-    jwtService.signAsync(payload, {
+    jwtService.signAsync(payload as any, {
       secret: jwtSecret,
-      expiresIn: jwtExpiresIn,
+      expiresIn: jwtExpiresIn as any,
     }),
-    jwtService.signAsync(payload, {
+    jwtService.signAsync(payload as any, {
       secret: refreshSecret,
-      expiresIn: refreshExpiresIn,
+      expiresIn: refreshExpiresIn as any,
     }),
   ]);
 

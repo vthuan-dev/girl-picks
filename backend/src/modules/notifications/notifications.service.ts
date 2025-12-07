@@ -46,7 +46,7 @@ export class NotificationsService {
   async markAsRead(id: string, userId: string) {
     const notification = await this.findOne(id);
 
-    if (notification.userId !== userId) {
+    if (!notification || notification.userId !== userId) {
       throw new Error('Unauthorized');
     }
 

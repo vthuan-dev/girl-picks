@@ -44,17 +44,34 @@ export default function RegisterForm() {
   const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true);
     try {
-      const { confirmPassword, ...registerData } = data;
-      const response = await authApi.register(registerData);
-      if (response.success) {
-        setAuth(response.data);
+      const { confirmPassword, username, ...registerData } = data;
+      // Backend doesn't need username, only fullName
+      const response = await authApi.register({
+        ...registerData,
+        role: registerData.role || UserRole.CUSTOMER,
+      });
+      setAuth(response);
         toast.success('Đăng ký thành công!');
-        router.push('/');
-      }
+      const redirectPath = getRedirectPath(response.user.role);
+      router.replace(redirectPath);
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Đăng ký thất bại');
+      const errorMessage = error.response?.data?.message || error.message || 'Đăng ký thất bại';
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const getRedirectPath = (role: UserRole): string => {
+    switch (role) {
+      case UserRole.ADMIN:
+        return '/admin/dashboard';
+      case UserRole.GIRL:
+        return '/girl/dashboard';
+      case UserRole.CUSTOMER:
+        return '/search';
+      default:
+        return '/';
     }
   };
 

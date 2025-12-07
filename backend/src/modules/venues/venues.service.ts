@@ -96,7 +96,7 @@ export class VenuesService {
         };
       })
       .filter((v) => v !== null && v.distance <= radiusKm)
-      .sort((a, b) => a.distance - b.distance);
+      .sort((a, b) => (a?.distance || 0) - (b?.distance || 0));
 
     return venuesWithDistance;
   }

@@ -283,19 +283,8 @@ export class AdminService {
               email: true,
             },
           },
-          reportedPost: {
-            select: {
-              id: true,
-              title: true,
-            },
-          },
-          reportedReview: {
-            select: {
-              id: true,
-              title: true,
-            },
-          },
-          resolvedBy: {
+          // reportedPostId and reportedReviewId are fields, not relations
+          reviewedBy: {
             select: {
               id: true,
               fullName: true,
@@ -338,9 +327,8 @@ export class AdminService {
       where: { id: reportId },
       data: {
         status: action,
-        resolvedById: adminId,
-        resolvedAt: new Date(),
-        adminNotes: notes,
+        reviewedById: adminId,
+        reviewedAt: new Date(),
       },
     });
   }
@@ -620,18 +608,18 @@ export class AdminService {
             },
           },
         },
-        bookingsAsCustomer: {
+        bookings: {
           take: 10,
           orderBy: { createdAt: 'desc' },
         },
-        reviewsAsCustomer: {
+        reviews: {
           take: 10,
           orderBy: { createdAt: 'desc' },
         },
         _count: {
           select: {
-            bookingsAsCustomer: true,
-            reviewsAsCustomer: true,
+            bookings: true,
+            reviews: true,
             sentMessages: true,
             receivedMessages: true,
           },
@@ -640,5 +628,52 @@ export class AdminService {
     });
 
     return user;
+  }
+
+  async toggleUserStatus(userId: string, isActive: boolean) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { isActive },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        phone: true,
+        role: true,
+        isActive: true,
+        avatarUrl: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
+  async deleteUser(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Prevent deleting admin users
+    if (user.role === UserRole.ADMIN) {
+      throw new ConflictException('Cannot delete admin user');
+    }
+
+    await this.prisma.user.delete({
+      where: { id: userId },
+    });
+
+    return { message: 'User deleted successfully' };
   }
 }

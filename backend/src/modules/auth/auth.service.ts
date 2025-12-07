@@ -44,6 +44,13 @@ export class AuthService {
     const { email, password, fullName, phone, role, bio, districts } =
       registerDto;
 
+    // Prevent registering as ADMIN or STAFF_UPLOAD - these must be created by existing admins
+    if (role === UserRole.ADMIN || role === UserRole.STAFF_UPLOAD) {
+      throw new BadRequestException(
+        'Cannot register as ADMIN or STAFF_UPLOAD. These roles must be assigned by existing administrators.',
+      );
+    }
+
     // Check if user already exists
     const existingUser = await this.prisma.user.findUnique({
       where: { email },
@@ -91,10 +98,10 @@ export class AuthService {
     const tokens = await generateTokens(
       this.jwtService,
       payload,
-      config.jwt.secret,
-      config.jwt.expiresIn,
-      config.jwt.refreshSecret,
-      config.jwt.refreshExpiresIn,
+      config.jwt.secret || 'jwt-secret',
+      config.jwt.expiresIn || '15m',
+      config.jwt.refreshSecret || 'refresh-secret',
+      config.jwt.refreshExpiresIn || '7d',
     );
 
     return {
@@ -105,6 +112,9 @@ export class AuthService {
         phone: user.phone,
         role: user.role,
         avatarUrl: user.avatarUrl,
+        isActive: user.isActive,
+        createdAt: user.createdAt.toISOString(),
+        updatedAt: user.updatedAt.toISOString(),
       },
       ...tokens,
     };
@@ -157,10 +167,10 @@ export class AuthService {
     const tokens = await generateTokens(
       this.jwtService,
       payload,
-      config.jwt.secret,
-      config.jwt.expiresIn,
-      config.jwt.refreshSecret,
-      config.jwt.refreshExpiresIn,
+      config.jwt.secret || 'jwt-secret',
+      config.jwt.expiresIn || '15m',
+      config.jwt.refreshSecret || 'refresh-secret',
+      config.jwt.refreshExpiresIn || '7d',
     );
 
     return {
@@ -171,6 +181,9 @@ export class AuthService {
         phone: user.phone,
         role: user.role,
         avatarUrl: user.avatarUrl,
+        isActive: user.isActive,
+        createdAt: user.createdAt.toISOString(),
+        updatedAt: user.updatedAt.toISOString(),
         girl: user.girl
           ? {
               id: user.girl.id,

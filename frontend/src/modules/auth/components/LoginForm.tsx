@@ -48,61 +48,47 @@ export default function LoginForm() {
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     try {
-      // Mock login for admin - tạm thời để test admin dashboard
-      if (data.email === 'admin@admin.com' && data.password === 'admin123') {
-        const mockAuthResponse = {
-          success: true,
-          data: {
-            user: {
-              id: '1',
-              email: 'admin@admin.com',
-              username: 'admin',
-              fullName: 'Admin User',
-              phone: '0123456789',
-              role: UserRole.ADMIN,
-              avatar: undefined,
-              isActive: true,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            },
-            accessToken: 'mock-access-token',
-            refreshToken: 'mock-refresh-token',
-          },
-        };
-        
-        setAuth(mockAuthResponse.data);
-        toast.success('Đăng nhập thành công! (Mock Admin)');
-        
-        // Delay nhỏ để đảm bảo store được update trước khi redirect
-        await new Promise(resolve => setTimeout(resolve, 150));
-        router.replace('/admin/dashboard');
-        setIsLoading(false);
-        return;
+      const response = await authApi.login(data);
+      
+      if (!response || !response.user) {
+        console.error('❌ Invalid response:', response);
+        throw new Error('Invalid response from server');
       }
 
-      // Normal API call for other users
-      const response = await authApi.login(data);
-      if (response.success) {
-        setAuth(response.data);
-        toast.success('Đăng nhập thành công!');
-        const redirectPath = getRedirectPath(response.data.user.role);
-        router.push(redirectPath);
+      if (!response.accessToken || !response.refreshToken) {
+        console.error('❌ Missing tokens in response:', response);
+        throw new Error('Missing authentication tokens');
       }
+
+      setAuth(response);
+      toast.success('Đăng nhập thành công!');
+      
+      const redirectPath = getRedirectPath(response.user.role);
+      
+      // Small delay to ensure state is updated
+      await new Promise(resolve => setTimeout(resolve, 150));
+      router.replace(redirectPath);
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Đăng nhập thất bại');
+      console.error('❌ Login error:', error);
+      console.error('Error response:', error.response?.data);
+      const errorMessage = error.response?.data?.message || error.message || 'Đăng nhập thất bại';
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 sm:space-y-6" noValidate autoComplete="off">
-      {/* Mock Admin Hint */}
-      <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 mb-4">
-        <p className="text-xs text-text-muted">
-          <span className="font-semibold text-primary">Mock Admin:</span> Email: <code className="bg-background px-1 rounded">admin@admin.com</code> | Password: <code className="bg-background px-1 rounded">admin123</code>
-        </p>
-      </div>
+    <form 
+      onSubmit={(e) => {
+        e.preventDefault();
+        handleSubmit(onSubmit)(e);
+      }} 
+      method="post"
+      className="space-y-5 sm:space-y-6" 
+      noValidate 
+      autoComplete="off"
+    >
 
       {/* Email Field */}
       <div className="space-y-2">

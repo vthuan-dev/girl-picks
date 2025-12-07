@@ -25,17 +25,54 @@ export const useAuthStore = create<AuthState>()(
       isAdmin: false,
 
       setAuth: (authData: AuthResponse) => {
-        // Store tokens in cookies for HTTP-only security
-        Cookies.set('accessToken', authData.accessToken, { expires: 1 }); // 1 day
-        Cookies.set('refreshToken', authData.refreshToken, { expires: 7 }); // 7 days
+        try {
+          // Validate required fields
+          if (!authData) {
+            throw new Error('Auth data is missing');
+          }
 
-        set({
-          user: authData.user,
-          accessToken: authData.accessToken,
-          refreshToken: authData.refreshToken,
-          isAuthenticated: true,
-          isAdmin: authData.user.role === UserRole.ADMIN,
-        });
+          if (!authData.accessToken || !authData.refreshToken) {
+            throw new Error('Authentication tokens are missing');
+          }
+
+          if (!authData.user) {
+            throw new Error('User data is missing from auth response');
+          }
+
+          // Store tokens in cookies for HTTP-only security
+          Cookies.set('accessToken', authData.accessToken, { expires: 1 }); // 1 day
+          Cookies.set('refreshToken', authData.refreshToken, { expires: 7 }); // 7 days
+
+          // Map backend user to frontend user format
+          // Backend doesn't return username, so we generate it from email
+          const user: User = {
+            id: authData.user.id,
+            email: authData.user.email,
+            fullName: authData.user.fullName,
+            role: authData.user.role,
+            phone: authData.user.phone,
+            isActive: authData.user.isActive ?? true,
+            createdAt: authData.user.createdAt || new Date().toISOString(),
+            updatedAt: authData.user.updatedAt || new Date().toISOString(),
+            // Generate username from email if not provided
+            username: authData.user.username || (authData.user.email ? authData.user.email.split('@')[0] : 'user'),
+            // Map avatar fields
+            avatar: authData.user.avatarUrl || authData.user.avatar,
+            avatarUrl: authData.user.avatarUrl || authData.user.avatar,
+          };
+
+          set({
+            user,
+            accessToken: authData.accessToken,
+            refreshToken: authData.refreshToken,
+            isAuthenticated: true,
+            isAdmin: authData.user.role === UserRole.ADMIN,
+          });
+        } catch (error: any) {
+          console.error('❌ Error in setAuth:', error);
+          console.error('Auth data received:', authData);
+          throw error;
+        }
       },
 
       setUser: (user: User) => {

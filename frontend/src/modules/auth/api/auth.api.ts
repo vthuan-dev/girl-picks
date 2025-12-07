@@ -11,44 +11,57 @@ import {
 
 export const authApi = {
   // Login
-  login: async (data: LoginDto): Promise<ApiResponse<AuthResponse>> => {
-    const response = await apiClient.post<ApiResponse<AuthResponse>>('/auth/login', data);
-    return response.data;
+  login: async (data: LoginDto): Promise<AuthResponse> => {
+    const response = await apiClient.post<any>('/auth/login', data);
+    // Backend wraps response in {success: true, data: {...}}
+    const responseData = response.data;
+    
+    // Handle both wrapped and unwrapped responses
+    if (responseData.success && responseData.data) {
+      return responseData.data;
+    }
+    
+    // If already unwrapped, return directly
+    if (responseData.user && responseData.accessToken) {
+      return responseData;
+    }
+    
+    throw new Error('Invalid response format from server');
   },
 
   // Register
-  register: async (data: RegisterDto): Promise<ApiResponse<AuthResponse>> => {
-    const response = await apiClient.post<ApiResponse<AuthResponse>>('/auth/register', data);
-    return response.data;
+  register: async (data: Omit<RegisterDto, 'username'>): Promise<AuthResponse> => {
+    const response = await apiClient.post<any>('/auth/register', data);
+    const responseData = response.data;
+    
+    // Handle both wrapped and unwrapped responses
+    if (responseData.success && responseData.data) {
+      return responseData.data;
+    }
+    
+    // If already unwrapped, return directly
+    if (responseData.user && responseData.accessToken) {
+      return responseData;
+    }
+    
+    throw new Error('Invalid response format from server');
   },
 
   // Refresh Token
-  refreshToken: async (data: RefreshTokenDto): Promise<ApiResponse<{ accessToken: string }>> => {
-    const response = await apiClient.post<ApiResponse<{ accessToken: string }>>('/auth/refresh', data);
-    return response.data;
-  },
-
-  // Logout
-  logout: async (): Promise<ApiResponse<void>> => {
-    const response = await apiClient.post<ApiResponse<void>>('/auth/logout');
+  refreshToken: async (data: RefreshTokenDto): Promise<{ accessToken: string; refreshToken: string }> => {
+    const response = await apiClient.post<{ accessToken: string; refreshToken: string }>('/auth/refresh', data);
     return response.data;
   },
 
   // Request Password Reset
-  requestPasswordReset: async (data: PasswordResetDto): Promise<ApiResponse<void>> => {
-    const response = await apiClient.post<ApiResponse<void>>('/auth/forgot-password', data);
+  requestPasswordReset: async (data: PasswordResetDto): Promise<{ message: string }> => {
+    const response = await apiClient.post<{ message: string }>('/auth/forgot-password', data);
     return response.data;
   },
 
   // Confirm Password Reset
-  confirmPasswordReset: async (data: PasswordResetConfirmDto): Promise<ApiResponse<void>> => {
-    const response = await apiClient.post<ApiResponse<void>>('/auth/reset-password', data);
-    return response.data;
-  },
-
-  // Get Current User
-  getCurrentUser: async (): Promise<ApiResponse<AuthResponse['user']>> => {
-    const response = await apiClient.get<ApiResponse<AuthResponse['user']>>('/auth/me');
+  confirmPasswordReset: async (data: PasswordResetConfirmDto): Promise<{ message: string }> => {
+    const response = await apiClient.post<{ message: string }>('/auth/reset-password', data);
     return response.data;
   },
 };

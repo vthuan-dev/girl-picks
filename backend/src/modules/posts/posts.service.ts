@@ -20,24 +20,35 @@ export class PostsService {
     private notificationsService: NotificationsService,
   ) {}
 
-  async create(userId: string, createPostDto: CreatePostDto) {
-    // Get girl from user
+  async create(userId: string, createPostDto: CreatePostDto, userRole: UserRole) {
+    // Check if user is GIRL and get girl profile (optional)
+    let girlId: string | undefined;
+    if (userRole === UserRole.GIRL) {
     const girl = await this.prisma.girl.findUnique({
       where: { userId },
     });
-
-    if (!girl) {
-      throw new ForbiddenException('Only girls can create posts');
+      if (girl) {
+        girlId = girl.id;
+      }
     }
 
-    return this.prisma.post.create({
+    return (this.prisma.post.create as any)({
       data: {
         ...createPostDto,
-        girlId: girl.id,
+        authorId: userId,
+        girlId: girlId || createPostDto.girlId || null,
         status: PostStatus.PENDING,
         images: createPostDto.images || [],
       },
       include: {
+        author: {
+          select: {
+            id: true,
+            fullName: true,
+            avatarUrl: true,
+            role: true,
+          },
+        },
         girl: {
           include: {
             user: {
@@ -63,7 +74,9 @@ export class PostsService {
 
     const where: Prisma.PostWhereInput = {};
 
-    if (status) {
+    // Only filter by status if explicitly provided
+    // If status is undefined, don't filter (show all statuses)
+    if (status !== undefined) {
       where.status = status;
     }
 
@@ -72,33 +85,35 @@ export class PostsService {
     }
 
     const [posts, total] = await Promise.all([
-      this.prisma.post.findMany({
+      (this.prisma.post.findMany as any)({
         where,
-      include: {
-        girl: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                fullName: true,
-                avatarUrl: true,
+        include: {
+          author: {
+            select: {
+              id: true,
+              fullName: true,
+              avatarUrl: true,
+              role: true,
+            },
+          },
+          girl: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  avatarUrl: true,
+                },
               },
             },
           },
-        },
-        approvedBy: {
-          select: {
-            id: true,
-            fullName: true,
+          approvedBy: {
+            select: {
+              id: true,
+              fullName: true,
+            },
           },
         },
-        _count: {
-          select: {
-            likes: true,
-            comments: true,
-          },
-        },
-      },
         skip: (page - 1) * limit,
         take: limit,
         orderBy: {
@@ -108,8 +123,25 @@ export class PostsService {
       this.prisma.post.count({ where }),
     ]);
 
+    // Get likes and comments count for each post
+    const postsWithCounts = await Promise.all(
+      posts.map(async (post) => {
+        const [likesCount, commentsCount] = await Promise.all([
+          (this.prisma as any).postLike.count({ where: { postId: post.id } }),
+          (this.prisma as any).postComment.count({ where: { postId: post.id } }),
+        ]);
+        return {
+          ...post,
+          _count: {
+            likes: likesCount,
+            comments: commentsCount,
+          },
+        };
+      }),
+    );
+
     return {
-      data: posts,
+      data: postsWithCounts,
       meta: {
         total,
         page,
@@ -120,9 +152,17 @@ export class PostsService {
   }
 
   async findOne(id: string) {
-    const post = await this.prisma.post.findUnique({
+    const post = await (this.prisma.post.findUnique as any)({
       where: { id },
       include: {
+          author: {
+            select: {
+              id: true,
+              fullName: true,
+              avatarUrl: true,
+              role: true,
+            },
+          },
         girl: {
           include: {
             user: {
@@ -140,12 +180,6 @@ export class PostsService {
             fullName: true,
           },
         },
-        _count: {
-          select: {
-            likes: true,
-            comments: true,
-          },
-        },
       },
     });
 
@@ -153,7 +187,19 @@ export class PostsService {
       throw new NotFoundException('Post not found');
     }
 
-    return post;
+    // Get likes and comments count
+    const [likesCount, commentsCount] = await Promise.all([
+      (this.prisma as any).postLike.count({ where: { postId: id } }),
+      (this.prisma as any).postComment.count({ where: { postId: id } }),
+    ]);
+
+    return {
+      ...post,
+      _count: {
+        likes: likesCount,
+        comments: commentsCount,
+      },
+    };
   }
 
   async findByGirl(girlId: string, status?: PostStatus) {
@@ -163,20 +209,31 @@ export class PostsService {
       where.status = status;
     }
 
-    return this.prisma.post.findMany({
+    const posts = await this.prisma.post.findMany({
       where,
-      include: {
-        _count: {
-          select: {
-            likes: true,
-            comments: true,
-          },
-        },
-      },
       orderBy: {
         createdAt: 'desc',
       },
     });
+
+    // Get likes and comments count for each post
+    const postsWithCounts = await Promise.all(
+      posts.map(async (post) => {
+        const [likesCount, commentsCount] = await Promise.all([
+          (this.prisma as any).postLike.count({ where: { postId: post.id } }),
+          (this.prisma as any).postComment.count({ where: { postId: post.id } }),
+        ]);
+        return {
+          ...post,
+          _count: {
+            likes: likesCount,
+            comments: commentsCount,
+          },
+        };
+      }),
+    );
+
+    return postsWithCounts;
   }
 
   async findMyPosts(userId: string, status?: PostStatus) {
@@ -195,11 +252,7 @@ export class PostsService {
     const post = await this.findOne(id);
 
     // Check if user owns this post
-    const girl = await this.prisma.girl.findUnique({
-      where: { userId },
-    });
-
-    if (!girl || girl.id !== post.girlId) {
+    if ((post as any).authorId !== userId) {
       throw new ForbiddenException('You can only update your own posts');
     }
 
@@ -208,10 +261,18 @@ export class PostsService {
       throw new BadRequestException('Can only update pending posts');
     }
 
-    return this.prisma.post.update({
+    return (this.prisma.post.update as any)({
       where: { id },
       data: updatePostDto,
       include: {
+        author: {
+          select: {
+            id: true,
+            fullName: true,
+            avatarUrl: true,
+            role: true,
+          },
+        },
         girl: {
           include: {
             user: {
@@ -230,15 +291,9 @@ export class PostsService {
   async delete(id: string, userId: string, userRole: UserRole) {
     const post = await this.findOne(id);
 
-    // Girls can only delete their own posts, Admins can delete any
-    if (userRole !== UserRole.ADMIN) {
-      const girl = await this.prisma.girl.findUnique({
-        where: { userId },
-      });
-
-      if (!girl || girl.id !== post.girlId) {
+    // Users can only delete their own posts, Admins can delete any
+    if (userRole !== UserRole.ADMIN && (post as any).authorId !== userId) {
         throw new ForbiddenException('You can only delete your own posts');
-      }
     }
 
     return this.prisma.post.delete({
@@ -253,7 +308,7 @@ export class PostsService {
       throw new BadRequestException('Can only approve pending posts');
     }
 
-    const updated = await this.prisma.post.update({
+    const updated = await (this.prisma.post.update as any)({
       where: { id },
       data: {
         status: PostStatus.APPROVED,
@@ -261,6 +316,13 @@ export class PostsService {
         approvedAt: new Date(),
       },
       include: {
+        author: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+          },
+        },
         girl: {
           include: {
             user: true,
@@ -269,10 +331,10 @@ export class PostsService {
       },
     });
 
-    // Send notification
+    // Send notification to author
     try {
       await this.notificationsService.create(
-        updated.girl.userId,
+        (updated as any).authorId,
         'POST_APPROVED',
         'Bài viết của bạn đã được duyệt',
         { postId: id, notes },
@@ -291,13 +353,20 @@ export class PostsService {
       throw new BadRequestException('Can only reject pending posts');
     }
 
-    const updated = await this.prisma.post.update({
+    const updated = await (this.prisma.post.update as any)({
       where: { id },
       data: {
         status: PostStatus.REJECTED,
         approvedById: adminId,
       },
       include: {
+        author: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+          },
+        },
         girl: {
           include: {
             user: true,
@@ -306,10 +375,10 @@ export class PostsService {
       },
     });
 
-    // Send notification
+    // Send notification to author
     try {
       await this.notificationsService.create(
-        updated.girl.userId,
+        (updated as any).authorId,
         'POST_REJECTED',
         `Bài viết của bạn đã bị từ chối: ${reason}`,
         { postId: id, reason },
@@ -335,7 +404,7 @@ export class PostsService {
       throw new BadRequestException('Only approved posts can be liked');
     }
 
-    const existing = await this.prisma.postLike.findUnique({
+    const existing = await (this.prisma as any).postLike.findUnique({
       where: {
         postId_userId: {
           postId,
@@ -345,10 +414,10 @@ export class PostsService {
     });
 
     if (existing) {
-      await this.prisma.postLike.delete({
+      await (this.prisma as any).postLike.delete({
         where: { id: existing.id },
       });
-      const likesCount = await this.prisma.postLike.count({
+      const likesCount = await (this.prisma as any).postLike.count({
         where: { postId },
       });
       return {
@@ -357,14 +426,14 @@ export class PostsService {
       };
     }
 
-    await this.prisma.postLike.create({
+    await (this.prisma as any).postLike.create({
       data: {
         postId,
         userId,
       },
     });
 
-    const likesCount = await this.prisma.postLike.count({
+    const likesCount = await (this.prisma as any).postLike.count({
       where: { postId },
     });
 
@@ -384,7 +453,7 @@ export class PostsService {
       throw new NotFoundException('Post not found');
     }
 
-    const likesCount = await this.prisma.postLike.count({
+    const likesCount = await (this.prisma as any).postLike.count({
       where: { postId },
     });
 
@@ -412,7 +481,7 @@ export class PostsService {
       throw new BadRequestException('Only approved posts can be commented');
     }
 
-    return this.prisma.postComment.create({
+    return (this.prisma as any).postComment.create({
       data: {
         postId,
         userId,
@@ -441,7 +510,7 @@ export class PostsService {
     }
 
     const [comments, total] = await Promise.all([
-      this.prisma.postComment.findMany({
+      (this.prisma as any).postComment.findMany({
         where: { postId },
         include: {
           user: {
@@ -456,7 +525,7 @@ export class PostsService {
         skip: (page - 1) * limit,
         take: limit,
       }),
-      this.prisma.postComment.count({ where: { postId } }),
+      (this.prisma as any).postComment.count({ where: { postId } }),
     ]);
 
     return {
