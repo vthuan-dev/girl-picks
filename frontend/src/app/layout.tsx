@@ -65,8 +65,7 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    // Add your verification codes here when available
-    // google: 'your-google-verification-code',
+    google: 'imrKeLEUy2G3YJDgu2ugYH5p7I67wEJQqtjMhwpc040',
     // yandex: 'your-yandex-verification-code',
     // yahoo: 'your-yahoo-verification-code',
   },

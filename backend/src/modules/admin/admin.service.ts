@@ -676,4 +676,54 @@ export class AdminService {
 
     return { message: 'User deleted successfully' };
   }
+
+  async getSettings() {
+    const settings = await this.prisma.setting.findMany();
+    
+    // Convert array of settings to object
+    const settingsObj: Record<string, any> = {};
+    for (const setting of settings) {
+      // value is already Json type from Prisma
+      settingsObj[setting.key] = setting.value;
+    }
+
+    // Return with defaults
+    return {
+      siteName: settingsObj.siteName || 'Tìm Gái gọi',
+      siteDescription: settingsObj.siteDescription || 'Nền tảng đặt lịch dịch vụ giải trí',
+      maintenanceMode: settingsObj.maintenanceMode === true || settingsObj.maintenanceMode === 'true',
+      allowRegistration: settingsObj.allowRegistration !== false && settingsObj.allowRegistration !== 'false',
+      requireEmailVerification: settingsObj.requireEmailVerification === true || settingsObj.requireEmailVerification === 'true',
+      maxFileSize: typeof settingsObj.maxFileSize === 'number' ? settingsObj.maxFileSize : parseInt(String(settingsObj.maxFileSize)) || 5,
+      allowedFileTypes: Array.isArray(settingsObj.allowedFileTypes) 
+        ? settingsObj.allowedFileTypes 
+        : (typeof settingsObj.allowedFileTypes === 'string' ? settingsObj.allowedFileTypes.split(',') : ['jpg', 'png', 'jpeg']),
+      emailHost: settingsObj.emailHost || '',
+      emailPort: typeof settingsObj.emailPort === 'number' ? settingsObj.emailPort : parseInt(String(settingsObj.emailPort)) || 587,
+      emailUser: settingsObj.emailUser || '',
+      emailPassword: settingsObj.emailPassword || '',
+      emailFrom: settingsObj.emailFrom || '',
+      storageProvider: settingsObj.storageProvider || 'local',
+      storageConfig: settingsObj.storageConfig || {},
+    };
+  }
+
+  async updateSettings(updateSettingsDto: any) {
+    const updates: Array<Promise<any>> = [];
+
+    for (const [key, value] of Object.entries(updateSettingsDto)) {
+      // Prisma Json type accepts any JSON-serializable value
+      updates.push(
+        this.prisma.setting.upsert({
+          where: { key },
+          update: { value: value as any },
+          create: { key, value: value as any },
+        })
+      );
+    }
+
+    await Promise.all(updates);
+
+    return this.getSettings();
+  }
 }

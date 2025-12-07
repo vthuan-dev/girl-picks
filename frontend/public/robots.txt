@@ -1,0 +1,25 @@
+# robots.txt for gaigu1.net
+
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /auth/
+Disallow: /customer/
+Disallow: /girl/
+Disallow: /client/
+Disallow: /*?*sort=
+Disallow: /*?*filter=
+
+# Allow important pages
+Allow: /girls
+Allow: /phim-sex
+Allow: /anh-sex
+Allow: /chat-sex
+
+# Sitemap
+Sitemap: https://gaigu1.net/sitemap.xml
+
+# Crawl-delay (optional, adjust as needed)
+Crawl-delay: 1
+

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import MovieCard from '@/components/movies/MovieCard';
 import Pagination from '@/components/common/Pagination';
+import StructuredData from '@/components/seo/StructuredData';
 
 // Mock movies data - in real app, this would come from API
 // Generate more mock movies for pagination demo
@@ -74,9 +75,21 @@ export default function PhimSexPage() {
     setCurrentPage(1);
   }, [selectedCategory]);
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gaigu1.net';
+
   return (
-    <main className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
+    <>
+      <StructuredData
+        type="CollectionPage"
+        data={{
+          name: 'Phim sex',
+          description: 'Xem phim sex chất lượng cao, phim sex tự quay, phim sex Nhật Bản, phim sex Việt Nam và nhiều thể loại khác',
+          url: `${siteUrl}/phim-sex`,
+          numberOfItems: filteredMovies.length,
+        }}
+      />
+      <main className="min-h-screen bg-background">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
         {/* Page Header */}
         <div className="mb-6 lg:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
@@ -190,6 +203,7 @@ export default function PhimSexPage() {
         )}
       </div>
     </main>
+    </>
   );
 }
 

@@ -230,4 +230,18 @@ export class AdminController {
   deleteUser(@Param('id') id: string) {
     return this.adminService.deleteUser(id);
   }
+
+  @Get('settings')
+  @ApiOperation({ summary: 'Get system settings (Admin only)' })
+  @ApiResponse({ status: 200, description: 'System settings' })
+  getSettings() {
+    return this.adminService.getSettings();
+  }
+
+  @Patch('settings')
+  @ApiOperation({ summary: 'Update system settings (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Settings updated' })
+  updateSettings(@Body() updateSettingsDto: any) {
+    return this.adminService.updateSettings(updateSettingsDto);
+  }
 }

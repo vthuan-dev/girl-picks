@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import ImageCard from '@/components/images/ImageCard';
 import Pagination from '@/components/common/Pagination';
+import StructuredData from '@/components/seo/StructuredData';
 
 // Generate more mock images for pagination demo
 const generateMockImages = () => {
@@ -64,9 +65,21 @@ export default function AnhSexPage() {
     setCurrentPage(1);
   }, [selectedCategory]);
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gaigu1.net';
+
   return (
-    <main className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
+    <>
+      <StructuredData
+        type="CollectionPage"
+        data={{
+          name: 'Ảnh sex',
+          description: 'Xem ảnh sex chất lượng cao, ảnh nóng, ảnh gái xinh và nhiều bộ sưu tập ảnh đẹp khác',
+          url: `${siteUrl}/anh-sex`,
+          numberOfItems: filteredImages.length,
+        }}
+      />
+      <main className="min-h-screen bg-background">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
         {/* Page Header */}
         <div className="mb-6 lg:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
@@ -168,6 +181,7 @@ export default function AnhSexPage() {
         )}
       </div>
     </main>
+    </>
   );
 }
 
