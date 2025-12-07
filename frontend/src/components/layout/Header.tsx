@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useAuthStore } from '@/store/auth.store';
 import { useRouter, usePathname } from 'next/navigation';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { UserRole } from '@/types/auth';
 import NotificationBell from '@/components/common/NotificationBell';
 
@@ -15,123 +15,223 @@ export default function Header() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
+      setIsMenuOpen(false); // Close mobile menu after search
     }
-  };
+  }, [searchQuery, router]);
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     logout();
     router.push('/auth/login');
     setIsUserMenuOpen(false);
-  };
+    setIsMenuOpen(false);
+  }, [logout, router]);
 
-  // Close user menu when clicking outside
+  // Close menus when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setIsUserMenuOpen(false);
       }
+      // Close mobile menu when clicking outside
+      if (isMenuOpen && headerRef.current && !headerRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
     };
 
-    if (isUserMenuOpen) {
+    if (isUserMenuOpen || isMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isUserMenuOpen]);
+  }, [isUserMenuOpen, isMenuOpen]);
 
-  const navItems = [
+  // Handle scroll for header shadow
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [pathname]);
+
+  // Close mobile menu on escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsMenuOpen(false);
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, []);
+
+  const navItems = useMemo(() => [
     { href: '/', label: 'Trang chủ' },
     { href: '/girls', label: 'Gái gọi' },
     { href: '/chat-sex', label: 'Chat sex' },
     { href: '/phim-sex', label: 'Phim sex' },
     { href: '/anh-sex', label: 'Ảnh sex' },
-  ];
+  ], []);
 
-  const getRoleDashboardPath = () => {
+  const getRoleDashboardPath = useCallback(() => {
     if (!user) return '/';
     switch (user.role) {
       case UserRole.ADMIN:
         return '/admin/dashboard';
       case UserRole.GIRL:
-        return '/profile';
+        return '/girl/dashboard';
       case UserRole.CUSTOMER:
-        return '/search';
+        return '/client/dashboard';
       default:
         return '/';
     }
-  };
+  }, [user]);
 
   return (
-    <header className="sticky top-0 z-50 bg-background/98 backdrop-blur-xl border-b border-secondary/20 shadow-lg shadow-black/20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <>
+      {/* Skip to main content link for accessibility */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-primary focus:text-white focus:rounded-lg focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
+      >
+        Bỏ qua đến nội dung chính
+      </a>
+      
+      <header 
+        ref={headerRef}
+        className={`sticky top-0 z-50 bg-background/98 backdrop-blur-xl border-b transition-all duration-300 ${
+          isScrolled 
+            ? 'border-secondary/30 shadow-xl shadow-black/30' 
+            : 'border-secondary/20 shadow-lg shadow-black/20'
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8">
         {/* Main Header Bar */}
-        <div className="flex items-center justify-between h-16 lg:h-18">
+        <div className="flex items-center justify-between h-14 sm:h-16 lg:h-18 gap-2 sm:gap-4">
           {/* Logo Section */}
           <Link 
             href="/" 
-            className="flex items-center gap-3 flex-shrink-0 group cursor-pointer"
+            className="flex items-center gap-1.5 sm:gap-2 md:gap-3 flex-shrink-0 group cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-lg p-1 -m-1 transition-all min-w-0"
+            aria-label="Trang chủ - Tìm Gái gọi"
           >
-            <div className="relative">
+            <div className="relative flex-shrink-0">
               <div className="absolute inset-0 bg-primary/20 rounded-xl blur-lg group-hover:blur-xl transition-all opacity-0 group-hover:opacity-100" />
-              <div className="relative w-12 h-12 lg:w-14 lg:h-14 rounded-xl overflow-hidden shadow-lg shadow-primary/30 group-hover:shadow-xl group-hover:shadow-primary/40 transition-all bg-background-light">
+              <div className="relative w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 rounded-xl overflow-hidden shadow-lg shadow-primary/30 group-hover:shadow-xl group-hover:shadow-primary/40 transition-all bg-background-light">
                 <Image 
                   src="https://gaigu1.net/images/logo/logo.png?v=0.0.1" 
                   alt="Girl Pick Logo" 
                   width={56}
                   height={56}
                   className="w-full h-full object-contain"
+                  priority
                   unoptimized
                 />
               </div>
             </div>
-            <div className="hidden sm:block">
-              <h1 className="text-lg lg:text-xl font-bold text-text group-hover:text-primary transition-colors">
+            <div className="hidden xs:block min-w-0">
+              <h1 className="text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl font-bold text-text group-hover:text-primary transition-colors truncate">
                 Tìm Gái gọi
               </h1>
-              <p className="text-xs text-text-muted hidden lg:block">Kết nối nhanh chóng</p>
+              <p className="text-xs text-text-muted hidden md:block">Kết nối nhanh chóng</p>
             </div>
           </Link>
 
           {/* Search Bar - Desktop */}
           <form 
             onSubmit={handleSearch} 
-            className="hidden md:flex flex-1 max-w-2xl mx-4 lg:mx-8"
+            className="hidden md:flex flex-1 max-w-2xl mx-3 sm:mx-4 lg:mx-6 xl:mx-8"
+            role="search"
+            aria-label="Tìm kiếm"
           >
             <div className="relative w-full group">
-              <div className="absolute inset-0 bg-primary/5 rounded-xl blur-sm opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="relative flex items-center bg-background-light/80 backdrop-blur-sm border border-secondary/30 rounded-xl focus-within:border-primary/50 focus-within:bg-background-light focus-within:shadow-lg focus-within:shadow-primary/10 transition-all">
-                <div className="pl-4 pr-2">
-                  <svg className="w-5 h-5 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              {/* Glow effect on hover */}
+              <div className="absolute inset-0 bg-primary/10 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-300" />
+              
+              {/* Main search container */}
+              <div className="relative flex items-center bg-background-light/90 backdrop-blur-md border border-secondary/40 rounded-2xl shadow-lg shadow-black/10 focus-within:border-primary/60 focus-within:bg-background-light focus-within:shadow-xl focus-within:shadow-primary/20 transition-all duration-300 group-hover:border-secondary/50">
+                <label htmlFor="desktop-search" className="sr-only">Tìm kiếm</label>
+                
+                {/* Search icon on left */}
+                <div className="pl-4 pr-2 flex-shrink-0">
+                  <svg 
+                    className="w-5 h-5 text-text-muted group-focus-within:text-primary transition-colors duration-200" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24" 
+                    aria-hidden="true"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
+                    />
                   </svg>
                 </div>
+                
+                {/* Search input */}
                 <input
-                  type="text"
+                  id="desktop-search"
+                  type="search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Tìm kiếm gái gọi, địa điểm..."
-                  className="flex-1 px-3 py-3 bg-transparent text-text placeholder:text-text-muted/70 focus:outline-none text-sm lg:text-base"
+                  className="flex-1 px-2 sm:px-3 py-3 sm:py-3.5 bg-transparent text-text placeholder:text-text-muted/60 focus:outline-none text-sm sm:text-base transition-colors"
+                  aria-label="Tìm kiếm gái gọi, địa điểm"
                 />
+                
+                {/* Search button with icon */}
                 <button
                   type="submit"
-                  className="mr-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover active:scale-95 transition-all font-medium text-sm shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 cursor-pointer"
+                  className={`mr-2 p-2.5 sm:p-3 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background group/btn ${
+                    searchQuery.trim()
+                      ? 'bg-gradient-to-r from-primary via-primary to-primary-hover text-white hover:shadow-xl hover:shadow-primary/40 active:scale-95 cursor-pointer'
+                      : 'bg-secondary/20 text-text-muted/50 cursor-not-allowed opacity-60'
+                  }`}
+                  aria-label="Tìm kiếm"
+                  disabled={!searchQuery.trim()}
                 >
-                  Tìm
+                  <svg 
+                    className={`w-5 h-5 sm:w-6 sm:h-6 transition-transform duration-200 ${
+                      searchQuery.trim() ? 'group-hover/btn:scale-110' : ''
+                    }`}
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2.5} 
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
+                    />
+                  </svg>
                 </button>
               </div>
             </div>
           </form>
 
           {/* Right Section - Auth & Actions */}
-          <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0">
+          <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 lg:gap-3 flex-shrink-0">
             {/* Notifications - Authenticated */}
             {isAuthenticated && (
               <div className="hidden sm:block">
@@ -144,22 +244,26 @@ export default function Header() {
               <div className="relative" ref={userMenuRef}>
                 <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-background-light transition-colors cursor-pointer group"
+                  className="flex items-center gap-1 sm:gap-1.5 md:gap-2 px-1.5 sm:px-2 md:px-3 py-1.5 sm:py-2 rounded-xl hover:bg-background-light transition-colors cursor-pointer group focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
+                  aria-label="Menu người dùng"
+                  aria-expanded={isUserMenuOpen}
+                  aria-haspopup="true"
                 >
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center border-2 border-primary/30 group-hover:border-primary/50 transition-colors">
-                    <span className="text-primary font-bold text-sm">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center border-2 border-primary/30 group-hover:border-primary/50 transition-colors flex-shrink-0">
+                    <span className="text-primary font-bold text-xs sm:text-sm">
                       {user?.fullName?.charAt(0) || 'U'}
                     </span>
                   </div>
-                  <div className="hidden lg:block text-left">
-                    <p className="text-sm font-medium text-text">{user?.fullName || 'User'}</p>
+                  <div className="hidden lg:block text-left min-w-0">
+                    <p className="text-sm font-medium text-text truncate max-w-[120px]">{user?.fullName || 'User'}</p>
                     <p className="text-xs text-text-muted capitalize">{user?.role?.toLowerCase()}</p>
                   </div>
                   <svg 
-                    className={`w-4 h-4 text-text-muted transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`}
+                    className={`w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 text-text-muted transition-transform duration-200 flex-shrink-0 ${isUserMenuOpen ? 'rotate-180' : ''}`}
                     fill="none" 
                     stroke="currentColor" 
                     viewBox="0 0 24 24"
+                    aria-hidden="true"
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
@@ -167,7 +271,11 @@ export default function Header() {
 
                 {/* User Dropdown Menu */}
                 {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-background-light rounded-xl border border-secondary/30 shadow-2xl overflow-hidden animate-fadeIn">
+                  <div 
+                    className="absolute right-0 mt-2 w-56 bg-background-light rounded-xl border border-secondary/30 shadow-2xl overflow-hidden animate-fadeIn z-50"
+                    role="menu"
+                    aria-orientation="vertical"
+                  >
                     <div className="p-4 border-b border-secondary/30">
                       <p className="font-semibold text-text">{user?.fullName}</p>
                       <p className="text-sm text-text-muted">{user?.email}</p>
@@ -176,41 +284,32 @@ export default function Header() {
                       <Link
                         href={getRoleDashboardPath()}
                         onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-text hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-text hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer focus:outline-none focus:bg-primary/10 focus:text-primary"
+                        role="menuitem"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                         </svg>
                         Dashboard
                       </Link>
-                      {user?.role === UserRole.ADMIN && (
-                        <Link
-                          href="/admin/crawler"
-                          onClick={() => setIsUserMenuOpen(false)}
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-text hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                          </svg>
-                          Crawler
-                        </Link>
-                      )}
                       <Link
                         href="/profile"
                         onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-text hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-text hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer focus:outline-none focus:bg-primary/10 focus:text-primary"
+                        role="menuitem"
                       >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
                         Profile
                       </Link>
-                      <div className="border-t border-secondary/30 my-2" />
+                      <div className="border-t border-secondary/30 my-2" role="separator" />
                       <button
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer focus:outline-none focus:bg-red-500/10"
+                        role="menuitem"
                       >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                         </svg>
                         Đăng xuất
@@ -221,16 +320,16 @@ export default function Header() {
               </div>
             ) : (
               /* Auth Buttons - Not Authenticated */
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2">
                 <Link
                   href="/auth/login"
-                  className="px-4 py-2 text-sm font-medium text-text hover:text-primary transition-colors hidden sm:block cursor-pointer"
+                  className="px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-text hover:text-primary transition-colors hidden sm:block cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-lg whitespace-nowrap"
                 >
                   Đăng nhập
                 </Link>
                 <Link
                   href="/auth/register"
-                  className="px-4 py-2.5 bg-primary text-white rounded-lg hover:bg-primary-hover active:scale-95 transition-all font-medium text-sm shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 cursor-pointer"
+                  className="px-3 sm:px-3.5 md:px-4 py-1.5 sm:py-2 md:py-2.5 bg-gradient-to-r from-primary to-primary-hover text-white rounded-lg hover:shadow-lg hover:shadow-primary/30 active:scale-95 transition-all font-medium text-xs sm:text-sm shadow-md shadow-primary/20 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background whitespace-nowrap"
                 >
                   Đăng ký
                 </Link>
@@ -240,10 +339,11 @@ export default function Header() {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="lg:hidden p-2 text-text hover:text-primary hover:bg-gray-50 rounded-lg transition-colors"
-              aria-label="Toggle menu"
+              className="lg:hidden p-2 sm:p-2.5 text-text hover:text-primary hover:bg-background-light rounded-lg transition-all duration-200 active:scale-95 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background flex-shrink-0"
+              aria-label={isMenuOpen ? 'Đóng menu' : 'Mở menu'}
+              aria-expanded={isMenuOpen}
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 {isMenuOpen ? (
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 ) : (
@@ -255,7 +355,7 @@ export default function Header() {
         </div>
 
         {/* Navigation Bar */}
-        <nav className="hidden md:flex items-center gap-1 py-2 border-t border-secondary/20">
+        <nav className="hidden md:flex items-center gap-0.5 sm:gap-1 py-2 border-t border-secondary/20" aria-label="Main navigation">
           {navItems.map((item) => {
             const isActive = pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href));
             return (
@@ -263,16 +363,17 @@ export default function Header() {
                 key={item.href}
                 href={item.href}
                 className={`
-                  relative px-4 py-2.5 text-sm font-medium rounded-lg transition-all cursor-pointer
+                  relative px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-lg transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background
                   ${isActive
                     ? 'text-primary bg-primary/10'
                     : 'text-text-muted hover:text-text hover:bg-background-light'
                   }
                 `}
+                aria-current={isActive ? 'page' : undefined}
               >
                 {item.label}
                 {isActive && (
-                  <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary rounded-full" />
+                  <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary rounded-full" aria-hidden="true" />
                 )}
               </Link>
             );
@@ -281,33 +382,80 @@ export default function Header() {
 
         {/* Mobile Search & Menu */}
         {isMenuOpen && (
-          <div className="lg:hidden py-4 border-t border-gray-200 space-y-4 animate-fadeIn">
+          <div className="lg:hidden py-4 border-t border-secondary/20 space-y-4 animate-fadeIn">
             {/* Mobile Search */}
-            <form onSubmit={handleSearch}>
-              <div className="flex items-center bg-gray-50 border border-gray-200 rounded-lg focus-within:border-primary transition-all">
-                <div className="pl-4 pr-2">
-                  <svg className="w-5 h-5 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
+            <form onSubmit={handleSearch} role="search" aria-label="Tìm kiếm mobile">
+              <div className="relative group">
+                {/* Glow effect on focus */}
+                <div className="absolute inset-0 bg-primary/10 rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300" />
+                
+                {/* Main search container */}
+                <div className="relative flex items-center bg-background-light/90 backdrop-blur-md border border-secondary/40 rounded-2xl shadow-lg shadow-black/10 focus-within:border-primary/60 focus-within:bg-background-light focus-within:shadow-xl focus-within:shadow-primary/20 transition-all duration-300">
+                  <label htmlFor="mobile-search" className="sr-only">Tìm kiếm</label>
+                  
+                  {/* Search icon on left */}
+                  <div className="pl-4 pr-2 flex-shrink-0">
+                    <svg 
+                      className="w-5 h-5 text-text-muted group-focus-within:text-primary transition-colors duration-200" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24" 
+                      aria-hidden="true"
+                    >
+                      <path 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        strokeWidth={2} 
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
+                      />
+                    </svg>
+                  </div>
+                  
+                  {/* Search input */}
+                  <input
+                    id="mobile-search"
+                    type="search"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Tìm kiếm gái gọi, địa điểm..."
+                    className="flex-1 px-3 py-3 bg-transparent text-text placeholder:text-text-muted/60 focus:outline-none text-sm transition-colors"
+                    aria-label="Tìm kiếm gái gọi, địa điểm"
+                  />
+                  
+                  {/* Search button with icon */}
+                  <button
+                    type="submit"
+                    className={`mr-2 p-3 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background group/btn ${
+                      searchQuery.trim()
+                        ? 'bg-gradient-to-r from-primary via-primary to-primary-hover text-white hover:shadow-xl hover:shadow-primary/40 active:scale-95 cursor-pointer'
+                        : 'bg-secondary/20 text-text-muted/50 cursor-not-allowed opacity-60'
+                    }`}
+                    aria-label="Tìm kiếm"
+                    disabled={!searchQuery.trim()}
+                  >
+                    <svg 
+                      className={`w-5 h-5 transition-transform duration-200 ${
+                        searchQuery.trim() ? 'group-hover/btn:scale-110' : ''
+                      }`}
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        strokeWidth={2.5} 
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
+                      />
+                    </svg>
+                  </button>
                 </div>
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Tìm kiếm..."
-                  className="flex-1 px-3 py-2.5 bg-transparent text-text placeholder:text-text-muted focus:outline-none"
-                />
-                <button
-                  type="submit"
-                  className="mr-2 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-hover transition-colors text-sm font-medium"
-                >
-                  Tìm
-                </button>
               </div>
             </form>
 
             {/* Mobile Navigation */}
-            <nav className="flex flex-col gap-1">
+            <nav className="flex flex-col gap-1.5">
               {navItems.map((item) => {
                 const isActive = pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href));
                 return (
@@ -316,10 +464,10 @@ export default function Header() {
                     href={item.href}
                     onClick={() => setIsMenuOpen(false)}
                     className={`
-                      px-4 py-3 rounded-lg text-sm font-medium transition-colors
+                      px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer
                       ${isActive
-                        ? 'text-primary bg-primary/10'
-                        : 'text-text hover:text-primary hover:bg-gray-50'
+                        ? 'text-primary bg-primary/10 border border-primary/20 shadow-sm shadow-primary/10'
+                        : 'text-text hover:text-primary hover:bg-background-light border border-transparent hover:border-secondary/30'
                       }
                     `}
                   >
@@ -331,23 +479,11 @@ export default function Header() {
 
             {/* Mobile Auth Section */}
             {isAuthenticated ? (
-              <div className="pt-4 border-t border-gray-200 space-y-2">
-                {user?.role === UserRole.ADMIN && (
-                  <Link
-                    href="/admin/crawler"
-                    onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-text hover:text-primary hover:bg-gray-50 transition-colors"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    Crawler
-                  </Link>
-                )}
+              <div className="pt-4 border-t border-secondary/20 space-y-2">
                 <Link
                   href={getRoleDashboardPath()}
                   onClick={() => setIsMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-text hover:text-primary hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-text hover:text-primary hover:bg-background-light border border-transparent hover:border-secondary/30 transition-all duration-200 cursor-pointer"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -359,7 +495,7 @@ export default function Header() {
                     handleLogout();
                     setIsMenuOpen(false);
                   }}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all duration-200 cursor-pointer"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -368,18 +504,18 @@ export default function Header() {
                 </button>
               </div>
             ) : (
-              <div className="pt-4 border-t border-gray-200 space-y-2">
+              <div className="pt-4 border-t border-secondary/20 space-y-2">
                 <Link
                   href="/auth/login"
                   onClick={() => setIsMenuOpen(false)}
-                  className="block px-4 py-3 rounded-lg text-sm font-medium text-text hover:text-primary hover:bg-gray-50 transition-colors text-center"
+                  className="block px-4 py-3 rounded-xl text-sm font-medium text-text hover:text-primary hover:bg-background-light border border-transparent hover:border-secondary/30 transition-all duration-200 text-center cursor-pointer"
                 >
                   Đăng nhập
                 </Link>
                 <Link
                   href="/auth/register"
                   onClick={() => setIsMenuOpen(false)}
-                  className="block px-4 py-3 rounded-lg text-sm font-medium bg-primary text-white hover:bg-primary-hover transition-colors text-center"
+                  className="block px-4 py-3 rounded-xl text-sm font-medium bg-gradient-to-r from-primary to-primary-hover text-white hover:shadow-lg hover:shadow-primary/30 active:scale-95 transition-all text-center cursor-pointer"
                 >
                   Đăng ký
                 </Link>
@@ -389,5 +525,6 @@ export default function Header() {
         )}
       </div>
     </header>
+    </>
   );
 }

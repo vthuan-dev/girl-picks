@@ -12,7 +12,7 @@ export default function GirlCard({ girl }: GirlCardProps) {
   const imageUrl = girl.avatar || girl.images?.[0] || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=600&fit=crop';
 
   return (
-    <Link href={`/girls/${girl.id}`} className="block">
+    <Link href={`/gai-goi/${girl.id}/${encodeURIComponent(girl.fullName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-').replace(/-+/g, '-'))}`} className="block">
       <div className="group relative bg-background-light rounded-lg overflow-hidden hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300 cursor-pointer border border-secondary/30 hover:border-primary/50 transform hover:-translate-y-1">
         {/* Image Container - Top Section */}
         <div className="relative w-full aspect-[3/4] overflow-hidden bg-secondary/20">

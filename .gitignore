@@ -1,0 +1,59 @@
+# Root .gitignore for entire project
+
+# Media files - should use CDN (Cloudinary/S3) instead
+**/uploads/
+**/public/uploads/
+**/temp/
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
+*.flv
+*.wmv
+*.m4v
+
+# Large image files (use Cloudinary instead)
+# Exception: Keep logo and favicon files
+**/*.jpg
+**/*.jpeg
+**/*.png
+**/*.gif
+**/*.webp
+!**/logo.*
+!**/favicon.*
+!**/favicons/**
+
+# Crawler data (large JSON files)
+crawler/data/*.json
+!crawler/data/.gitkeep
+
+# Node modules
+node_modules/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+

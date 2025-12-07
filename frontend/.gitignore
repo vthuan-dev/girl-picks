@@ -35,3 +35,18 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Uploads and media files (should use CDN instead)
+/public/uploads
+/uploads
+/temp
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
+# Large image files (use Cloudinary instead)
+# Only ignore user-uploaded images, keep logo/favicon
+/uploads/**
+!/public/images/logo.*
+!/public/images/favicon.*
+

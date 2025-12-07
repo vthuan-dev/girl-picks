@@ -74,25 +74,31 @@ export class PostsService {
     const [posts, total] = await Promise.all([
       this.prisma.post.findMany({
         where,
-        include: {
-          girl: {
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  fullName: true,
-                  avatarUrl: true,
-                },
+      include: {
+        girl: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                fullName: true,
+                avatarUrl: true,
               },
             },
           },
-          approvedBy: {
-            select: {
-              id: true,
-              fullName: true,
-            },
+        },
+        approvedBy: {
+          select: {
+            id: true,
+            fullName: true,
           },
         },
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
+          },
+        },
+      },
         skip: (page - 1) * limit,
         take: limit,
         orderBy: {
@@ -134,6 +140,12 @@ export class PostsService {
             fullName: true,
           },
         },
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
+          },
+        },
       },
     });
 
@@ -153,6 +165,14 @@ export class PostsService {
 
     return this.prisma.post.findMany({
       where,
+      include: {
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
+          },
+        },
+      },
       orderBy: {
         createdAt: 'desc',
       },
@@ -299,5 +319,154 @@ export class PostsService {
     }
 
     return updated;
+  }
+
+  async toggleLike(postId: string, userId: string) {
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+      select: { status: true },
+    });
+
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+
+    if (post.status !== PostStatus.APPROVED) {
+      throw new BadRequestException('Only approved posts can be liked');
+    }
+
+    const existing = await this.prisma.postLike.findUnique({
+      where: {
+        postId_userId: {
+          postId,
+          userId,
+        },
+      },
+    });
+
+    if (existing) {
+      await this.prisma.postLike.delete({
+        where: { id: existing.id },
+      });
+      const likesCount = await this.prisma.postLike.count({
+        where: { postId },
+      });
+      return {
+        liked: false,
+        likesCount,
+      };
+    }
+
+    await this.prisma.postLike.create({
+      data: {
+        postId,
+        userId,
+      },
+    });
+
+    const likesCount = await this.prisma.postLike.count({
+      where: { postId },
+    });
+
+    return {
+      liked: true,
+      likesCount,
+    };
+  }
+
+  async getLikes(postId: string) {
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+      select: { id: true },
+    });
+
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+
+    const likesCount = await this.prisma.postLike.count({
+      where: { postId },
+    });
+
+    return {
+      postId,
+      likesCount,
+    };
+  }
+
+  async addComment(
+    postId: string,
+    userId: string,
+    content: string,
+  ) {
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+      select: { status: true },
+    });
+
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+
+    if (post.status !== PostStatus.APPROVED) {
+      throw new BadRequestException('Only approved posts can be commented');
+    }
+
+    return this.prisma.postComment.create({
+      data: {
+        postId,
+        userId,
+        content,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    });
+  }
+
+  async getComments(postId: string, page = 1, limit = 20) {
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+      select: { id: true },
+    });
+
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+
+    const [comments, total] = await Promise.all([
+      this.prisma.postComment.findMany({
+        where: { postId },
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              avatarUrl: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.postComment.count({ where: { postId } }),
+    ]);
+
+    return {
+      data: comments,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 }

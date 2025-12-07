@@ -107,9 +107,15 @@ NEXT_PUBLIC_WS_URL=http://localhost:3000
 
 ### 3.1. Custom Domain (Tùy chọn)
 
+**Xem hướng dẫn chi tiết tại:** [DOMAIN_DNS_SETUP.md](./DOMAIN_DNS_SETUP.md)
+
+Tóm tắt:
 1. Vào Project Settings → Domains
-2. Thêm domain của bạn
-3. Cấu hình DNS theo hướng dẫn của Vercel
+2. Thêm domain của bạn (ví dụ: `gaigu1.net`)
+3. Vercel sẽ hiển thị DNS records cần thêm
+4. Thêm DNS records vào nhà cung cấp domain của bạn
+5. Chờ DNS propagate (5-30 phút)
+6. Vercel tự động cấp SSL certificate
 
 ### 3.2. Environment Variables
 

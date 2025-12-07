@@ -41,3 +41,24 @@ lerna-debug.log*
 
 # Prisma
 /generated
+
+# Uploads and media files (should use CDN instead)
+/uploads
+/public/uploads
+/temp
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
+*.flv
+*.wmv
+*.m4v
+# Large image files (use Cloudinary instead)
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.webp
+!logo.*
+!favicon.*

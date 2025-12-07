@@ -16,7 +16,22 @@ export class CrawlerController {
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Save crawled girl data to database' })
   @ApiResponse({ status: 200, description: 'Girl saved successfully' })
-  async saveGirl(@Body() data: any) {
+  async saveGirl(@Body() data: {
+    name: string;
+    images: string[];
+    bio?: string;
+    location?: string;
+    province?: string;
+    rating?: number;
+    totalReviews?: number;
+    verified?: boolean;
+    tags?: string[];
+    age?: number;
+    price?: string;
+    isAvailable?: boolean;
+    detailUrl?: string;
+    uploadToCloudinary?: boolean; // Set to true to upload images to Cloudinary
+  }) {
     const result = await this.crawlerService.saveGirl(data);
     return {
       success: true,

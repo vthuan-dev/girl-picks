@@ -118,6 +118,8 @@ model User {
   viewHistory  ViewHistory[]
   reviewLikes  ReviewLike[]
   reviewComments ReviewComment[]
+  postLikes    PostLike[]
+  postComments PostComment[]
   bookings     Booking[] @relation("Customer")
   payments     Payment[] @relation("Payments")
   auditLogs    AuditLog[]
@@ -180,6 +182,8 @@ model Post {
   // Relations
   girl        Girl      @relation(fields: [girlId], references: [id], onDelete: Cascade)
   approvedBy  User?     @relation("ApprovedBy", fields: [approvedById], references: [id])
+  likes       PostLike[]
+  comments    PostComment[]
 
   @@map("posts")
 }
@@ -262,6 +266,32 @@ model ReviewComment {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("review_comments")
+}
+
+model PostLike {
+  id        String   @id @default(uuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@map("post_likes")
+}
+
+model PostComment {
+  id        String   @id @default(uuid())
+  postId    String
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("post_comments")
 }
 
 model Report {

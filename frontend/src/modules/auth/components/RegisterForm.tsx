@@ -67,27 +67,21 @@ export default function RegisterForm() {
           <label htmlFor="email" className="block text-sm font-semibold text-text">
             Email <span className="text-primary">*</span>
           </label>
-          <div className="relative">
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted z-10 pointer-events-none">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-              </div>
               <input
                 {...register('email')}
                 type="email"
                 id="email"
                 className={`
-                w-full pl-11 pr-4 py-3 bg-background border rounded-lg
-                text-text placeholder:text-text-muted
+              w-full px-4 py-3 bg-background border rounded-lg
+              text-text placeholder:text-text-muted
                 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200
                   ${errors.email 
                   ? 'border-red-500 focus:border-red-500 focus:ring-red-500/50' 
                   : 'border-secondary/50 hover:border-secondary/70'
                   }
                 `}
+            placeholder="email@example.com"
               />
-          </div>
           {errors.email && (
             <p className="text-sm text-red-500 flex items-center gap-1.5 mt-1">
               <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -103,27 +97,21 @@ export default function RegisterForm() {
           <label htmlFor="username" className="block text-sm font-semibold text-text">
             Tên đăng nhập <span className="text-primary">*</span>
           </label>
-          <div className="relative">
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted z-10 pointer-events-none">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </div>
               <input
                 {...register('username')}
                 type="text"
                 id="username"
                 className={`
-                w-full pl-11 pr-4 py-3 bg-background border rounded-lg
-                text-text placeholder:text-text-muted
+              w-full px-4 py-3 bg-background border rounded-lg
+              text-text placeholder:text-text-muted
                 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200
                   ${errors.username 
                   ? 'border-red-500 focus:border-red-500 focus:ring-red-500/50' 
                   : 'border-secondary/50 hover:border-secondary/70'
                   }
                 `}
+            placeholder="username"
               />
-          </div>
           {errors.username && (
             <p className="text-sm text-red-500 flex items-center gap-1.5 mt-1">
               <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -140,27 +128,21 @@ export default function RegisterForm() {
         <label htmlFor="fullName" className="block text-sm font-semibold text-text">
           Họ và tên <span className="text-primary">*</span>
         </label>
-        <div className="relative">
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted z-10 pointer-events-none">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </div>
             <input
               {...register('fullName')}
               type="text"
               id="fullName"
               className={`
-              w-full pl-11 pr-4 py-3 bg-background border rounded-lg
-              text-text placeholder:text-text-muted
+            w-full px-4 py-3 bg-background border rounded-lg
+            text-text placeholder:text-text-muted
               focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200
                 ${errors.fullName 
                 ? 'border-red-500 focus:border-red-500 focus:ring-red-500/50' 
                 : 'border-secondary/50 hover:border-secondary/70'
                 }
               `}
+          placeholder="Nguyễn Văn A"
             />
-        </div>
         {errors.fullName && (
           <p className="text-sm text-red-500 flex items-center gap-1.5 mt-1">
             <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -176,19 +158,13 @@ export default function RegisterForm() {
         <label htmlFor="phone" className="block text-sm font-semibold text-text">
           Số điện thoại <span className="text-text-muted/60 font-normal text-xs">(tùy chọn)</span>
         </label>
-        <div className="relative">
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted z-10 pointer-events-none">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-              </svg>
-            </div>
             <input
               {...register('phone')}
               type="tel"
               id="phone"
-              className="w-full pl-11 pr-4 py-3 bg-background border border-secondary/50 rounded-lg text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 hover:border-secondary/70"
+          className="w-full px-4 py-3 bg-background border border-secondary/50 rounded-lg text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 hover:border-secondary/70"
+          placeholder="0123456789"
             />
-        </div>
       </div>
 
       {/* Password & Confirm Password Row */}
@@ -199,17 +175,12 @@ export default function RegisterForm() {
             Mật khẩu <span className="text-primary">*</span>
           </label>
           <div className="relative">
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted z-10 pointer-events-none">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-              </div>
               <input
                 {...register('password')}
                 type={showPassword ? 'text' : 'password'}
                 id="password"
                 className={`
-                w-full pl-11 pr-11 py-3 bg-background border rounded-lg
+                w-full pl-4 pr-11 py-3 bg-background border rounded-lg
                 text-text placeholder:text-text-muted
                 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200
                   ${errors.password 
@@ -217,6 +188,7 @@ export default function RegisterForm() {
                   : 'border-secondary/50 hover:border-secondary/70'
                   }
                 `}
+              placeholder="Tối thiểu 8 ký tự"
               />
               <button
                 type="button"
@@ -254,7 +226,7 @@ export default function RegisterForm() {
           <div className="relative">
             <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted z-10 pointer-events-none">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
               </div>
               <input
@@ -270,6 +242,7 @@ export default function RegisterForm() {
                   : 'border-secondary/50 hover:border-secondary/70'
                   }
                 `}
+              placeholder="Nhập lại mật khẩu"
               />
               <button
                 type="button"

@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
 import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 import StructuredData from '@/components/seo/StructuredData';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -71,6 +72,8 @@ export const metadata: Metadata = {
   },
 };
 
+import ClientLayout from '@/components/layout/ClientLayout';
+
 export default function RootLayout({
   children,
 }: {
@@ -105,8 +108,9 @@ export default function RootLayout({
             },
           }}
         />
-        <Header />
-        <main className="min-h-screen bg-background">{children}</main>
+        <ClientLayout>
+          {children}
+        </ClientLayout>
         <Toaster 
           position="top-right"
           toastOptions={{

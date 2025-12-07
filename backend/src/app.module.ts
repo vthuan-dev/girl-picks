@@ -23,6 +23,7 @@ import { ReportsModule } from './modules/reports/reports.module';
 import { FavoritesModule } from './modules/favorites/favorites.module';
 import { SearchModule } from './modules/search/search.module';
 import { CrawlerModule } from './modules/crawler/crawler.module';
+import { UploadModule } from './modules/upload/upload.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { CrawlerModule } from './modules/crawler/crawler.module';
     VenuesModule,
     NotificationsModule,
     CrawlerModule,
+    UploadModule,
     ThrottlerModule.forRoot([
       {
         ttl: 60000, // 1 minute

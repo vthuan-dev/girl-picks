@@ -48,6 +48,39 @@ export default function LoginForm() {
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     try {
+      // Mock login for admin - tạm thời để test admin dashboard
+      if (data.email === 'admin@admin.com' && data.password === 'admin123') {
+        const mockAuthResponse = {
+          success: true,
+          data: {
+            user: {
+              id: '1',
+              email: 'admin@admin.com',
+              username: 'admin',
+              fullName: 'Admin User',
+              phone: '0123456789',
+              role: UserRole.ADMIN,
+              avatar: undefined,
+              isActive: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+            accessToken: 'mock-access-token',
+            refreshToken: 'mock-refresh-token',
+          },
+        };
+        
+        setAuth(mockAuthResponse.data);
+        toast.success('Đăng nhập thành công! (Mock Admin)');
+        
+        // Delay nhỏ để đảm bảo store được update trước khi redirect
+        await new Promise(resolve => setTimeout(resolve, 150));
+        router.replace('/admin/dashboard');
+        setIsLoading(false);
+        return;
+      }
+
+      // Normal API call for other users
       const response = await authApi.login(data);
       if (response.success) {
         setAuth(response.data);
@@ -63,24 +96,27 @@ export default function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 sm:space-y-6" noValidate>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 sm:space-y-6" noValidate autoComplete="off">
+      {/* Mock Admin Hint */}
+      <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 mb-4">
+        <p className="text-xs text-text-muted">
+          <span className="font-semibold text-primary">Mock Admin:</span> Email: <code className="bg-background px-1 rounded">admin@admin.com</code> | Password: <code className="bg-background px-1 rounded">admin123</code>
+        </p>
+      </div>
+
       {/* Email Field */}
       <div className="space-y-2">
         <label htmlFor="email" className="block text-sm font-semibold text-text">
           Email
         </label>
-        <div className="relative">
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted z-10 pointer-events-none">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-            </div>
             <input
               {...register('email')}
               type="email"
               id="email"
+              placeholder="Nhập email của bạn"
+              autoComplete="email"
               className={`
-              w-full pl-11 pr-4 py-3 bg-background border rounded-lg
+            w-full px-4 py-3 bg-background border rounded-lg
               text-text placeholder:text-text-muted/60
               focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200
                 ${errors.email 
@@ -89,7 +125,6 @@ export default function LoginForm() {
                 }
               `}
             />
-        </div>
         {errors.email && (
           <p className="text-sm text-red-500 flex items-center gap-1.5 mt-1">
             <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -106,17 +141,14 @@ export default function LoginForm() {
           Mật khẩu
         </label>
         <div className="relative">
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted z-10 pointer-events-none">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-            </div>
             <input
               {...register('password')}
               type={showPassword ? 'text' : 'password'}
               id="password"
+              placeholder="Nhập mật khẩu của bạn"
+              autoComplete="current-password"
               className={`
-              w-full pl-11 pr-11 py-3 bg-background border rounded-lg
+              w-full pl-4 pr-11 py-3 bg-background border rounded-lg
               text-text placeholder:text-text-muted/60
               focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200
                 ${errors.password 

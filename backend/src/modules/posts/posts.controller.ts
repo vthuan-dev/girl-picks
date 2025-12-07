@@ -16,6 +16,7 @@ import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { ApprovePostDto } from './dto/approve-post.dto';
 import { RejectPostDto } from './dto/reject-post.dto';
+import { CreatePostCommentDto } from './dto/create-post-comment.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -155,5 +156,51 @@ export class PostsController {
     @Body() rejectDto: RejectPostDto,
   ) {
     return this.postsService.reject(id, adminId, rejectDto.reason);
+  }
+
+  @Post(':id/like')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.CUSTOMER, UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Toggle like on a post (Customer/Admin)' })
+  @ApiResponse({ status: 200, description: 'Like toggled' })
+  toggleLike(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    return this.postsService.toggleLike(id, userId);
+  }
+
+  @Get(':id/likes')
+  @Public()
+  @ApiOperation({ summary: 'Get likes count for a post' })
+  @ApiResponse({ status: 200, description: 'Likes count' })
+  getLikes(@Param('id') id: string) {
+    return this.postsService.getLikes(id);
+  }
+
+  @Post(':id/comments')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.CUSTOMER, UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Add comment to a post (Customer/Admin)' })
+  @ApiResponse({ status: 201, description: 'Comment added' })
+  addComment(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Body() createPostCommentDto: CreatePostCommentDto,
+  ) {
+    return this.postsService.addComment(id, userId, createPostCommentDto.content);
+  }
+
+  @Get(':id/comments')
+  @Public()
+  @ApiOperation({ summary: 'Get comments for a post' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'List of comments' })
+  getComments(
+    @Param('id') id: string,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page?: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
+  ) {
+    return this.postsService.getComments(id, page, limit);
   }
 }

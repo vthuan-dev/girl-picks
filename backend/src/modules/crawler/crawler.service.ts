@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { hashPassword } from '../../common/utils/password.util';
+import { UploadService } from '../upload/upload.service';
 
 @Injectable()
 export class CrawlerService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private uploadService: UploadService,
+  ) {}
 
   async saveGirl(data: {
     name: string;
@@ -20,15 +24,31 @@ export class CrawlerService {
     price?: string;
     isAvailable?: boolean;
     detailUrl?: string;
+    uploadToCloudinary?: boolean; // Option to upload images to Cloudinary
   }) {
     try {
-      // Check if girl already exists by name and images
+      let finalImages = data.images;
+
+      // Upload images to Cloudinary if requested
+      if (data.uploadToCloudinary && data.images.length > 0) {
+        try {
+          const uploadResult = await this.uploadService.uploadMultipleImagesFromUrls({
+            urls: data.images,
+            folder: 'girl-pick/girls',
+            publicIdPrefix: `girl-${data.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`,
+          });
+          finalImages = uploadResult.data.map((item) => item.cloudinaryUrl);
+          console.log(`✅ Uploaded ${uploadResult.total} images to Cloudinary for ${data.name}`);
+        } catch (uploadError) {
+          console.error('⚠️ Failed to upload images to Cloudinary, using original URLs:', uploadError);
+          // Fallback to original URLs if upload fails
+        }
+      }
+
+      // Check if girl already exists by name
       const existingGirl = await this.prisma.girl.findFirst({
         where: {
           name: data.name,
-          images: {
-            has: data.images[0] || '',
-          },
         },
         include: {
           user: true,
@@ -41,7 +61,7 @@ export class CrawlerService {
           where: { id: existingGirl.id },
           data: {
             name: data.name,
-            images: data.images,
+            images: finalImages,
             bio: data.bio || existingGirl.bio,
             age: data.age || existingGirl.age,
             ratingAverage: data.rating || existingGirl.ratingAverage,
@@ -79,7 +99,7 @@ export class CrawlerService {
         data: {
           userId: user.id,
           name: data.name,
-          images: data.images,
+          images: finalImages, // Use Cloudinary URLs if uploaded
           bio: data.bio,
           age: data.age,
           ratingAverage: data.rating || 0,
