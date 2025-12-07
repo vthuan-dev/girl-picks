@@ -9,16 +9,32 @@ export function useAuth() {
 
   useEffect(() => {
     // Check if user is authenticated on mount
+    // Only check if we have a token in storage
     if (!isAuthenticated && typeof window !== 'undefined') {
       const checkAuth = async () => {
         try {
+          // Check if token exists in cookies/localStorage first
+          const token = document.cookie
+            .split('; ')
+            .find((row) => row.startsWith('accessToken='))
+            ?.split('=')[1];
+          
+          if (!token) {
+            // No token, user is not authenticated
+            return;
+          }
+
           const response = await authApi.getCurrentUser();
-          if (response.success) {
+          if (response.success && response.data) {
             setUser(response.data);
+          } else {
+            // Backend not available or user not authenticated
+            logout();
           }
         } catch (error) {
-          // User not authenticated
-          logout();
+          // User not authenticated or backend error
+          // Don't logout immediately, might be backend not ready
+          console.warn('Auth check failed:', error);
         }
       };
       checkAuth();
