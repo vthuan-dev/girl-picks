@@ -9,7 +9,7 @@ import {
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
-import { Prisma, ReviewStatus, UserRole } from '@prisma/client';
+import { Prisma, ReviewStatus, UserRole, NotificationType } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { GirlsService } from '../girls/girls.service';
 import { CreateReviewCommentDto } from './dto/create-review-comment.dto';
@@ -351,7 +351,7 @@ export class ReviewsService {
     try {
       await this.notificationsService.create(
         updated.customerId,
-        'REVIEW_APPROVED',
+        NotificationType.REVIEW_APPROVED,
         'Review của bạn đã được duyệt',
         { reviewId: id, notes },
       );
@@ -364,7 +364,7 @@ export class ReviewsService {
       if (updated.girl.userId) {
         await this.notificationsService.create(
           updated.girl.userId,
-          'REVIEW_APPROVED',
+          NotificationType.REVIEW_APPROVED,
           'Bạn có review mới',
           { reviewId: id, rating: updated.rating },
         );

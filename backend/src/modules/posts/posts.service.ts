@@ -9,7 +9,7 @@ import {
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
-import { PostStatus, UserRole, Prisma } from '@prisma/client';
+import { PostStatus, UserRole, Prisma, NotificationType } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { generateSlug, generateUniqueSlug } from '../../common/utils/slug.util';
 
@@ -500,7 +500,7 @@ export class PostsService {
     try {
       await this.notificationsService.create(
         (updated as any).authorId,
-        'POST_APPROVED',
+        NotificationType.POST_APPROVED,
         'Bài viết của bạn đã được duyệt',
         { postId: id, notes },
       );
@@ -648,10 +648,14 @@ export class PostsService {
     }
 
     // If parentId provided, verify it exists and belongs to same post
+    let parentCommentUserId: string | null = null;
     if (parentId) {
       const parentComment = await (this.prisma as any).postComment.findUnique({
         where: { id: parentId },
-        select: { postId: true },
+        select: { 
+          postId: true,
+          userId: true,
+        },
       });
       if (!parentComment) {
         throw new NotFoundException('Parent comment not found');
@@ -659,9 +663,10 @@ export class PostsService {
       if (parentComment.postId !== postId) {
         throw new BadRequestException('Parent comment does not belong to this post');
       }
+      parentCommentUserId = parentComment.userId;
     }
 
-    return (this.prisma as any).postComment.create({
+    const newComment = await (this.prisma as any).postComment.create({
       data: {
         postId,
         userId,
@@ -678,6 +683,31 @@ export class PostsService {
         },
       },
     });
+
+    // Send notification to parent comment author if this is a reply
+    if (parentId && parentCommentUserId && parentCommentUserId !== userId) {
+      try {
+        const post = await this.prisma.post.findUnique({
+          where: { id: postId },
+          select: { title: true },
+        });
+        await this.notificationsService.create(
+          parentCommentUserId,
+          NotificationType.COMMENT_REPLY,
+          `${newComment.user.fullName} đã trả lời bình luận của bạn`,
+          { 
+            postId,
+            postTitle: post?.title,
+            commentId: newComment.id,
+            parentCommentId: parentId,
+          },
+        );
+      } catch (error) {
+        console.error('Failed to send comment reply notification:', error);
+      }
+    }
+
+    return newComment;
   }
 
   async getComments(postId: string, page = 1, limit = 20) {
