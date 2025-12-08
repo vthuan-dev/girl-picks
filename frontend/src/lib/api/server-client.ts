@@ -2,32 +2,24 @@ import { cookies } from 'next/headers';
 
 // For server-side rendering, we need to detect Docker environment at runtime
 // NEXT_PUBLIC_API_URL is embedded at build time, but we need runtime detection for server-side
-// In Docker, backend service is accessible via 'backend' hostname
-// For local development, use 'localhost'
+// Always use environment variables, never hardcode URLs
 const getApiUrl = () => {
-  // Check for explicit API_URL environment variable (set at runtime, not build time)
+  // Priority 1: Check for explicit API_URL environment variable (set at runtime, not build time)
   if (process.env.API_URL) {
     console.log(`[getApiUrl] Using API_URL from env: ${process.env.API_URL}`);
     return process.env.API_URL;
   }
   
-  // Use NEXT_PUBLIC_API_URL if available (for VPS deployment)
+  // Priority 2: Use NEXT_PUBLIC_API_URL if available (for VPS deployment)
   if (process.env.NEXT_PUBLIC_API_URL) {
     console.log(`[getApiUrl] Using NEXT_PUBLIC_API_URL: ${process.env.NEXT_PUBLIC_API_URL}`);
     return process.env.NEXT_PUBLIC_API_URL;
   }
   
-  // In Docker container, always use backend service name when in production
-  if (process.env.NODE_ENV === 'production') {
-    // Check if we're in Docker (backend hostname exists) or VPS (use localhost)
-    // For VPS, backend runs on localhost:8000
-    console.log(`[getApiUrl] Production mode, using localhost:8000`);
-    return 'http://localhost:8000';
-  }
-  
-  // Default: use localhost for local development
-  console.log(`[getApiUrl] Development mode, using localhost: http://localhost:3001`);
-  return 'http://localhost:3001';
+  // No hardcoded fallback - require environment variable to be set
+  const errorMsg = 'API_URL or NEXT_PUBLIC_API_URL must be set in environment variables';
+  console.error(`[getApiUrl] ERROR: ${errorMsg}`);
+  throw new Error(errorMsg);
 };
 
 const API_URL = getApiUrl();

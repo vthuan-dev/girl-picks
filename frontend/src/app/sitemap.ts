@@ -1,8 +1,11 @@
 import { MetadataRoute } from 'next';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gaigo1.net';
-// Use NEXT_PUBLIC_API_URL if available, otherwise fallback to localhost:8000 (VPS) or localhost:3001 (dev)
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'production' ? 'http://localhost:8000' : 'http://localhost:3001');
+// Use environment variable only, no hardcoded fallback
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL;
+if (!apiBaseUrl) {
+  throw new Error('NEXT_PUBLIC_API_URL or API_URL must be set in environment variables');
+}
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseRoutes: MetadataRoute.Sitemap = [
