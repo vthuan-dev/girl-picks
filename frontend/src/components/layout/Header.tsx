@@ -99,7 +99,7 @@ export default function Header() {
       case UserRole.GIRL:
         return '/girl/dashboard';
       case UserRole.CUSTOMER:
-        return '/client/dashboard';
+        return '/girls';
       default:
         return '/';
     }
