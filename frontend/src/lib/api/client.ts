@@ -1,9 +1,12 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import Cookies from 'js-cookie';
 
-// Backend API URL - Backend runs on port 3001 (Docker) or 8000 (local dev)
-// Frontend Next.js runs on port 3000
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+// Backend API URL - Must be set via NEXT_PUBLIC_API_URL environment variable
+// No hardcoded fallback to ensure proper configuration
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+if (!API_URL) {
+  throw new Error('NEXT_PUBLIC_API_URL must be set in environment variables');
+}
 
 // Log API URL in development for debugging
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
