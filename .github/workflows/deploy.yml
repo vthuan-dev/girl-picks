@@ -22,7 +22,7 @@ jobs:
             APP_DIR=/var/www/girl-pick
             REPO_URL=https://github.com/vthuan-dev/girl-picks.git
 
-            echo "==> Ensuring base dependencies (Node 20, npm, pm2, git, build tools)"
+            echo "==> Ensuring base dependencies (Node 20, npm, pm2, git, build tools, nginx)"
             if ! command -v node >/dev/null 2>&1; then
               curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
               apt-get update -y
@@ -34,6 +34,10 @@ jobs:
             if ! command -v git >/dev/null 2>&1; then
               apt-get update -y
               apt-get install -y git build-essential
+            fi
+            if ! command -v nginx >/dev/null 2>&1; then
+              apt-get update -y
+              apt-get install -y nginx
             fi
 
             echo "==> Cloning or updating repository"
@@ -78,5 +82,26 @@ jobs:
             PORT=${PORT:-3000} HOST=${HOST:-0.0.0.0} pm2 start "npm run start" --name girl-pick-frontend --time --cwd "$APP_DIR/frontend" --env production
 
             pm2 save
+
+            echo "==> Configure Nginx reverse proxy"
+            if [ -f "$APP_DIR/nginx/gaigo1.net.conf" ]; then
+              cp "$APP_DIR/nginx/gaigo1.net.conf" /etc/nginx/sites-available/gaigo1.net
+              ln -sf /etc/nginx/sites-available/gaigo1.net /etc/nginx/sites-enabled/
+              # Remove default nginx site if it exists
+              rm -f /etc/nginx/sites-enabled/default
+              # Test nginx configuration
+              nginx -t
+              # Reload nginx
+              systemctl reload nginx || systemctl restart nginx
+              echo "Nginx configured successfully"
+            else
+              echo "Warning: Nginx config file not found at $APP_DIR/nginx/gaigo1.net.conf"
+            fi
+
+            echo "==> Ensure firewall allows HTTP/HTTPS"
+            if command -v ufw >/dev/null 2>&1; then
+              ufw allow 80/tcp || true
+              ufw allow 443/tcp || true
+            fi
 
             echo "Deployment finished."

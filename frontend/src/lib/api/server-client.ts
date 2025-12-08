@@ -11,10 +11,18 @@ const getApiUrl = () => {
     return process.env.API_URL;
   }
   
+  // Use NEXT_PUBLIC_API_URL if available (for VPS deployment)
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    console.log(`[getApiUrl] Using NEXT_PUBLIC_API_URL: ${process.env.NEXT_PUBLIC_API_URL}`);
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  
   // In Docker container, always use backend service name when in production
   if (process.env.NODE_ENV === 'production') {
-    console.log(`[getApiUrl] Production mode, using backend service: http://backend:3001`);
-    return 'http://backend:3001';
+    // Check if we're in Docker (backend hostname exists) or VPS (use localhost)
+    // For VPS, backend runs on localhost:8000
+    console.log(`[getApiUrl] Production mode, using localhost:8000`);
+    return 'http://localhost:8000';
   }
   
   // Default: use localhost for local development
