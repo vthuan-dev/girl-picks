@@ -19,13 +19,24 @@ export default function RelatedGirls({ currentGirlId, districtId }: RelatedGirls
     const fetchRelatedGirls = async () => {
       try {
         setLoading(true);
+        console.log('[RelatedGirls] Fetching with districtId:', districtId, 'currentGirlId:', currentGirlId);
+        
         const response = await girlsApi.getGirls({
           limit: 10,
-          districtId,
+          ...(districtId && { districtId }),
         });
         
+        console.log('[RelatedGirls] Full response:', response);
+        
+        // API returns PaginatedResponse<Girl> = { data: Girl[], meta: {...} }
+        const girlsList: Girl[] = response?.data || [];
+        
+        console.log('[RelatedGirls] Extracted girls list:', girlsList.length, 'girls');
+        
         // Filter out current girl
-        const relatedGirls = response.data.data.filter((girl) => girl.id !== currentGirlId);
+        const relatedGirls = girlsList.filter((girl: Girl) => girl && girl.id && girl.id !== currentGirlId);
+        console.log('[RelatedGirls] Filtered related girls:', relatedGirls.length);
+        
         setGirls(relatedGirls.slice(0, 8)); // Show max 8
       } catch (error) {
         console.error('Failed to fetch related girls:', error);
@@ -170,7 +181,7 @@ export default function RelatedGirls({ currentGirlId, districtId }: RelatedGirls
           return (
             <Link
               key={girl.id}
-              href={`/gai-goi/${girl.id}/${encodeURIComponent(girl.fullName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-').replace(/-+/g, '-'))}`}
+              href={`/girls/${girl.id}/${girl.slug || encodeURIComponent(girl.fullName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-').replace(/-+/g, '-'))}`}
               className="flex gap-3 p-3 rounded-xl hover:bg-background border border-secondary/20 hover:border-primary/30 transition-all group cursor-pointer"
             >
               {/* Thumbnail */}
@@ -225,13 +236,19 @@ export default function RelatedGirls({ currentGirlId, districtId }: RelatedGirls
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1">
-                      {[...Array(5)].map((_, i) => (
+                    <div className="flex items-center gap-0.5">
+                      {[...Array(5)].map((_, i) => {
+                        const rating = girl.rating || 0;
+                        const filled = i < Math.floor(rating);
+                        const halfFilled = i === Math.floor(rating) && rating % 1 >= 0.5;
+                        return (
                         <svg
                           key={i}
                           className={`w-3 h-3 ${
-                            i < Math.floor(girl.rating)
-                              ? 'text-primary fill-current'
+                              filled
+                                ? 'text-yellow-400 fill-current'
+                                : halfFilled
+                                ? 'text-yellow-400 fill-current opacity-50'
                               : 'text-secondary/30'
                           }`}
                           fill="currentColor"
@@ -239,9 +256,15 @@ export default function RelatedGirls({ currentGirlId, districtId }: RelatedGirls
                         >
                           <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                         </svg>
-                      ))}
+                        );
+                      })}
                     </div>
-                    <span className="text-xs text-text-muted">({girl.totalReviews})</span>
+                    <span className="text-xs text-text font-medium">
+                      {(girl.rating || 0).toFixed(1)}
+                    </span>
+                    <span className="text-xs text-text-muted">
+                      ({girl.totalReviews || 0})
+                    </span>
                   </div>
 
                   <div className="text-xs text-text-muted">

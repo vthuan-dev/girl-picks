@@ -15,25 +15,79 @@ export default function AdminUsersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
   const [isActiveFilter, setIsActiveFilter] = useState<boolean | undefined>(undefined);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    fullName: '',
+    phone: '',
+    role: 'CUSTOMER' as 'ADMIN' | 'GIRL' | 'CUSTOMER' | 'STAFF_UPLOAD',
+    avatarUrl: '',
+  });
 
   const roles = ['Tất cả', 'CUSTOMER', 'GIRL', 'ADMIN', 'STAFF_UPLOAD'];
 
   useEffect(() => {
     loadUsers();
-  }, [selectedRole, page, isActiveFilter]);
+  }, [selectedRole, page, isActiveFilter, searchQuery]);
 
   const loadUsers = async () => {
     setIsLoading(true);
     try {
       const role = selectedRole === 'Tất cả' ? undefined : selectedRole;
-      const response = await usersApi.getAll(role, isActiveFilter, page, 20);
+      const search = searchQuery.trim() || undefined;
+      const response = await usersApi.getAll(role, isActiveFilter, page, 20, search);
       setUsers(response.data || []);
-      setTotalPages(response.meta?.totalPages || 1);
+      setTotalPages(response.totalPages || 1);
+      setTotal(response.total || 0);
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Không thể tải danh sách người dùng');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    try {
+      // Validate form
+      if (!formData.email || !formData.password || !formData.fullName) {
+        toast.error('Vui lòng điền đầy đủ thông tin bắt buộc');
+        setIsSubmitting(false);
+        return;
+      }
+
+      await usersApi.create({
+        email: formData.email,
+        password: formData.password,
+        fullName: formData.fullName,
+        phone: formData.phone || undefined,
+        role: formData.role,
+        avatarUrl: formData.avatarUrl || undefined,
+      });
+
+      toast.success('Tạo người dùng thành công');
+      setIsCreateModalOpen(false);
+      setFormData({
+        email: '',
+        password: '',
+        fullName: '',
+        phone: '',
+        role: 'CUSTOMER',
+        avatarUrl: '',
+      });
+      loadUsers();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Không thể tạo người dùng');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -68,11 +122,23 @@ export default function AdminUsersPage() {
     }
   };
 
-  const filteredUsers = Array.isArray(users) ? users.filter(user => {
-    const matchesSearch = user.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
-  }) : [];
+  // Search is now handled by backend, so we just use users directly
+  const filteredUsers = users;
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setPage(newPage);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value);
+    if (!isNaN(value) && value >= 1 && value <= totalPages) {
+      setPage(value);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -82,8 +148,12 @@ export default function AdminUsersPage() {
           <h1 className="text-2xl sm:text-3xl font-bold text-text mb-2">Quản lý người dùng</h1>
           <p className="text-text-muted">Quản lý tất cả người dùng trong hệ thống</p>
         </div>
-        <Button variant="primary" size="md">
-          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <Button 
+          variant="primary" 
+          size="md"
+          onClick={() => setIsCreateModalOpen(true)}
+        >
+          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
           Thêm người dùng
@@ -237,7 +307,7 @@ export default function AdminUsersPage() {
                           title="Xem chi tiết"
                           onClick={() => window.location.href = `/admin/users/${user.id}`}
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                           </svg>
@@ -248,7 +318,7 @@ export default function AdminUsersPage() {
                             title="Vô hiệu hóa"
                             onClick={() => handleDeactivate(user.id)}
                           >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
                             </svg>
                           </IconButton>
@@ -258,7 +328,7 @@ export default function AdminUsersPage() {
                             title="Kích hoạt"
                             onClick={() => handleActivate(user.id)}
                           >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                             </svg>
                           </IconButton>
@@ -268,7 +338,7 @@ export default function AdminUsersPage() {
                           title="Xóa"
                           onClick={() => handleDelete(user.id)}
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                           </svg>
                         </IconButton>
@@ -280,8 +350,202 @@ export default function AdminUsersPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="px-6 py-4 border-t border-secondary/30 bg-background">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="text-sm text-text-muted">
+                Hiển thị <span className="font-semibold text-text">{(page - 1) * 20 + 1}</span> - <span className="font-semibold text-text">{Math.min(page * 20, total)}</span> trong tổng số <span className="font-semibold text-text">{total}</span> người dùng
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handlePageChange(page - 1)}
+                  disabled={page === 1}
+                  className="px-4 py-2 rounded-lg bg-background border border-secondary/50 text-text hover:bg-primary/10 hover:border-primary/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                >
+                  Trước
+                </button>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-text-muted">Trang</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max={totalPages}
+                    value={page}
+                    onChange={handlePageInputChange}
+                    className="w-16 px-2 py-1 rounded-lg bg-background border border-secondary/50 text-text text-center focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                  />
+                  <span className="text-sm text-text-muted">/ {totalPages}</span>
+                </div>
+                <button
+                  onClick={() => handlePageChange(page + 1)}
+                  disabled={page === totalPages}
+                  className="px-4 py-2 rounded-lg bg-background border border-secondary/50 text-text hover:bg-primary/10 hover:border-primary/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                >
+                  Sau
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Create User Modal */}
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-background-light rounded-2xl border border-secondary/30 shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="sticky top-0 bg-gradient-to-r from-primary/20 to-primary/10 border-b border-secondary/30 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-text">Tạo người dùng mới</h2>
+                  <p className="text-sm text-text-muted">Thêm người dùng mới vào hệ thống</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsCreateModalOpen(false)}
+                className="w-8 h-8 rounded-lg bg-background hover:bg-secondary/30 flex items-center justify-center transition-colors"
+              >
+                <svg className="w-5 h-5 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleCreateUser} className="p-6 space-y-5">
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-semibold text-text mb-2">
+                  Email <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text placeholder:text-text-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200"
+                  placeholder="user@example.com"
+                />
+              </div>
+
+              {/* Password */}
+              <div>
+                <label className="block text-sm font-semibold text-text mb-2">
+                  Mật khẩu <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="password"
+                  required
+                  minLength={8}
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text placeholder:text-text-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200"
+                  placeholder="Tối thiểu 8 ký tự, có chữ hoa, chữ thường và số"
+                />
+                <p className="mt-1 text-xs text-text-muted">Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường và số</p>
+              </div>
+
+              {/* Full Name */}
+              <div>
+                <label className="block text-sm font-semibold text-text mb-2">
+                  Họ và tên <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.fullName}
+                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text placeholder:text-text-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200"
+                  placeholder="Nguyễn Văn A"
+                />
+              </div>
+
+              {/* Phone */}
+              <div>
+                <label className="block text-sm font-semibold text-text mb-2">
+                  Số điện thoại
+                </label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text placeholder:text-text-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200"
+                  placeholder="0123456789"
+                />
+              </div>
+
+              {/* Role */}
+              <div>
+                <label className="block text-sm font-semibold text-text mb-2">
+                  Vai trò <span className="text-red-500">*</span>
+                </label>
+                <select
+                  required
+                  value={formData.role}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
+                  className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200"
+                >
+                  <option value="CUSTOMER">CUSTOMER</option>
+                  <option value="GIRL">GIRL</option>
+                  <option value="ADMIN">ADMIN</option>
+                  <option value="STAFF_UPLOAD">STAFF_UPLOAD</option>
+                </select>
+              </div>
+
+              {/* Avatar URL */}
+              <div>
+                <label className="block text-sm font-semibold text-text mb-2">
+                  Avatar URL
+                </label>
+                <input
+                  type="url"
+                  value={formData.avatarUrl}
+                  onChange={(e) => setFormData({ ...formData, avatarUrl: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text placeholder:text-text-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200"
+                  placeholder="https://example.com/avatar.jpg"
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-secondary/30">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateModalOpen(false)}
+                  className="px-6 py-2.5 rounded-xl bg-background border border-secondary/50 text-text hover:bg-secondary/30 transition-all duration-200"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-6 py-2.5 rounded-xl bg-primary text-white hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Đang tạo...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Tạo người dùng</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-

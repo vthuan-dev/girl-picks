@@ -1,43 +1,30 @@
 'use client';
 
-import { useAuthStore } from '@/store/auth.store';
 import { UserRole } from '@/types/auth';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 import GirlSidebar from '@/components/layout/GirlSidebar';
+import AuthGuard from '@/components/auth/AuthGuard';
 
 export default function GirlLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user, isAuthenticated } = useAuthStore();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isAuthenticated || user?.role !== UserRole.GIRL) {
-      router.push('/auth/login');
-    }
-  }, [isAuthenticated, user, router]);
-
-  if (!isAuthenticated || user?.role !== UserRole.GIRL) {
-    return null;
-  }
-
   return (
-    <div className="min-h-screen bg-background">
-      <div className="flex">
-        {/* Sidebar */}
-        <GirlSidebar />
-        
-        {/* Main Content */}
-        <main className="flex-1 lg:ml-64">
-          <div className="p-4 sm:p-6 lg:p-8">
-            {children}
-          </div>
-        </main>
+    <AuthGuard allowedRoles={[UserRole.GIRL]}>
+      <div className="min-h-screen bg-background">
+        <div className="flex">
+          {/* Sidebar */}
+          <GirlSidebar />
+          
+          {/* Main Content */}
+          <main className="flex-1 lg:ml-64">
+            <div className="p-4 sm:p-6 lg:p-8">
+              {children}
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
+    </AuthGuard>
   );
 }
 

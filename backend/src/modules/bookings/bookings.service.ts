@@ -35,7 +35,8 @@ export class BookingsService {
       throw new NotFoundException('Girl not found');
     }
 
-    if (!girl.user.isActive) {
+    // Girl is now a product, check isActive directly
+    if (!girl.isActive) {
       throw new BadRequestException('Girl is not active');
     }
 

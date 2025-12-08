@@ -19,6 +19,7 @@ import { RejectPostDto } from './dto/reject-post.dto';
 import { CreatePostCommentDto } from './dto/create-post-comment.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { ContentManagerGuard } from '../../common/guards/content-manager.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
@@ -103,7 +104,15 @@ export class PostsController {
   @ApiOperation({ summary: 'Get post by ID (public)' })
   @ApiResponse({ status: 200, description: 'Post details' })
   findOne(@Param('id') id: string) {
-    return this.postsService.findOne(id);
+    return this.postsService.findOne(id, true);
+  }
+
+  @Post(':id/view')
+  @Public()
+  @ApiOperation({ summary: 'Increment post view count (public)' })
+  @ApiResponse({ status: 200, description: 'View count incremented' })
+  incrementView(@Param('id') id: string) {
+    return this.postsService.incrementViewCount(id);
   }
 
   @Patch(':id')
@@ -134,10 +143,9 @@ export class PostsController {
   }
 
   @Post(':id/approve')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @UseGuards(JwtAuthGuard, ContentManagerGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Approve post (Admin only)' })
+  @ApiOperation({ summary: 'Approve post (Admin/Staff only)' })
   @ApiResponse({ status: 200, description: 'Post approved' })
   approve(
     @Param('id') id: string,
@@ -148,10 +156,9 @@ export class PostsController {
   }
 
   @Post(':id/reject')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @UseGuards(JwtAuthGuard, ContentManagerGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Reject post (Admin only)' })
+  @ApiOperation({ summary: 'Reject post (Admin/Staff only)' })
   @ApiResponse({ status: 200, description: 'Post rejected' })
   reject(
     @Param('id') id: string,
@@ -159,6 +166,48 @@ export class PostsController {
     @Body() rejectDto: RejectPostDto,
   ) {
     return this.postsService.reject(id, adminId, rejectDto.reason);
+  }
+
+  // ============================================
+  // CRUD Operations for Staff/Admin
+  // ============================================
+
+  @Post('admin')
+  @UseGuards(JwtAuthGuard, ContentManagerGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create post as admin/staff (Admin/Staff only)' })
+  @ApiResponse({ status: 201, description: 'Post created' })
+  createAsAdmin(
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: UserRole,
+    @Body() createPostDto: CreatePostDto,
+  ) {
+    return this.postsService.create(userId, createPostDto, userRole);
+  }
+
+  @Patch('admin/:id')
+  @UseGuards(JwtAuthGuard, ContentManagerGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update any post (Admin/Staff only)' })
+  @ApiResponse({ status: 200, description: 'Post updated' })
+  updateAsAdmin(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Body() updatePostDto: UpdatePostDto,
+  ) {
+    return this.postsService.updateAsAdmin(id, userId, updatePostDto);
+  }
+
+  @Delete('admin/:id')
+  @UseGuards(JwtAuthGuard, ContentManagerGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete any post (Admin/Staff only)' })
+  @ApiResponse({ status: 200, description: 'Post deleted' })
+  deleteAsAdmin(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.postsService.deleteAsAdmin(id, userId);
   }
 
   @Post(':id/like')
@@ -181,16 +230,21 @@ export class PostsController {
 
   @Post(':id/comments')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.CUSTOMER, UserRole.ADMIN)
+  @Roles(UserRole.CUSTOMER, UserRole.ADMIN, UserRole.GIRL)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Add comment to a post (Customer/Admin)' })
+  @ApiOperation({ summary: 'Add comment to a post (Customer/Admin/Girl)' })
   @ApiResponse({ status: 201, description: 'Comment added' })
   addComment(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
     @Body() createPostCommentDto: CreatePostCommentDto,
   ) {
-    return this.postsService.addComment(id, userId, createPostCommentDto.content);
+    return this.postsService.addComment(
+      id, 
+      userId, 
+      createPostCommentDto.content,
+      createPostCommentDto.parentId,
+    );
   }
 
   @Get(':id/comments')
@@ -205,5 +259,19 @@ export class PostsController {
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
   ) {
     return this.postsService.getComments(id, page, limit);
+  }
+
+  @Get('comments/:commentId/replies')
+  @Public()
+  @ApiOperation({ summary: 'Get replies for a comment' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'List of replies' })
+  getReplies(
+    @Param('commentId') commentId: string,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page?: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit?: number,
+  ) {
+    return this.postsService.getReplies(commentId, page, limit);
   }
 }

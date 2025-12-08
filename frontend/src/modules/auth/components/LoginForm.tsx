@@ -7,7 +7,7 @@ import { z } from 'zod';
 import Link from 'next/link';
 import { authApi } from '../api/auth.api';
 import { useAuthStore } from '@/store/auth.store';
-import { useRouter } from 'next/navigation';
+// Router not needed - using window.location.href for instant redirect
 import toast from 'react-hot-toast';
 import { UserRole } from '@/types/auth';
 
@@ -19,7 +19,6 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginForm() {
-  const router = useRouter();
   const { setAuth } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -50,6 +49,7 @@ export default function LoginForm() {
     try {
       const response = await authApi.login(data);
       
+      // Validate response structure
       if (!response || !response.user) {
         console.error('❌ Invalid response:', response);
         throw new Error('Invalid response from server');
@@ -60,20 +60,52 @@ export default function LoginForm() {
         throw new Error('Missing authentication tokens');
       }
 
+      // Validate user data
+      if (!response.user.id || !response.user.email || !response.user.role) {
+        console.error('❌ Incomplete user data:', response.user);
+        throw new Error('Incomplete user data from server');
+      }
+
+      // Set auth state immediately - this stores tokens in cookies and updates state
+      try {
       setAuth(response);
-      toast.success('Đăng nhập thành công!');
+        
+        // Verify tokens were stored
+        const storedToken = document.cookie
+          .split('; ')
+          .find((row) => row.startsWith('accessToken='));
+        
+        if (!storedToken) {
+          console.warn('⚠️ Token may not have been stored in cookie');
+        }
+      } catch (authError: any) {
+        console.error('❌ Error setting auth state:', authError);
+        throw new Error('Failed to save authentication data');
+      }
       
+      // Get redirect path based on user role
       const redirectPath = getRedirectPath(response.user.role);
       
-      // Small delay to ensure state is updated
-      await new Promise(resolve => setTimeout(resolve, 150));
-      router.replace(redirectPath);
+      // Validate redirect path
+      if (!redirectPath || redirectPath === '/') {
+        console.warn('⚠️ Invalid redirect path, using default');
+      }
+      
+      console.log('✅ Login successful, redirecting to:', redirectPath);
+      
+      // Show success toast briefly
+      toast.success('Đăng nhập thành công!', { duration: 1500 });
+      
+      // Small delay to ensure cookies are set (browser needs time to process)
+      // Then redirect immediately using window.location for instant navigation
+      setTimeout(() => {
+        window.location.href = redirectPath;
+      }, 100);
     } catch (error: any) {
       console.error('❌ Login error:', error);
       console.error('Error response:', error.response?.data);
       const errorMessage = error.response?.data?.message || error.message || 'Đăng nhập thất bại';
       toast.error(errorMessage);
-    } finally {
       setIsLoading(false);
     }
   };

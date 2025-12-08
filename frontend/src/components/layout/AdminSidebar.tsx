@@ -33,15 +33,6 @@ const menuItems = [
     ),
   },
   {
-    title: 'Đặt lịch',
-    href: '/admin/bookings',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-      </svg>
-    ),
-  },
-  {
     title: 'Posts',
     href: '/admin/posts',
     icon: (
@@ -125,8 +116,8 @@ function AdminSidebar() {
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-16 left-0 h-[calc(100vh-4rem)] w-64 bg-background-light border-r border-secondary/30 z-40
-          transform transition-transform duration-300 ease-in-out
+          fixed top-16 left-0 h-[calc(100vh-4rem)] w-64 bg-background-light border-r border-secondary/30 z-20
+          transform transition-transform duration-300 ease-in-out overflow-y-auto
           ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
           lg:translate-x-0
         `}

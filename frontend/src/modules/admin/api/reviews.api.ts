@@ -1,5 +1,5 @@
 import apiClient from '@/lib/api/client';
-import { ApiResponse } from '@/lib/api/types';
+import { ApiResponse, PaginatedResponse } from '@/lib/api/types';
 
 export interface Review {
   id: string;
@@ -34,15 +34,7 @@ export interface Review {
   };
 }
 
-export interface PaginatedResponse<T> {
-  data: T[];
-  meta: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
-}
+// Use PaginatedResponse from @/lib/api/types
 
 export const reviewsApi = {
   // Get all reviews (Admin can see all, including pending)

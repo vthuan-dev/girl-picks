@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
+// import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+// import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -24,10 +24,13 @@ import { FavoritesModule } from './modules/favorites/favorites.module';
 import { SearchModule } from './modules/search/search.module';
 import { CrawlerModule } from './modules/crawler/crawler.module';
 import { UploadModule } from './modules/upload/upload.module';
+import { CacheModule } from './modules/cache/cache.module';
+import { TagsModule } from './modules/tags/tags.module';
 
 @Module({
   imports: [
     PrismaModule,
+    CacheModule,
     AuthModule,
     UsersModule,
     GirlsModule,
@@ -48,20 +51,21 @@ import { UploadModule } from './modules/upload/upload.module';
     NotificationsModule,
     CrawlerModule,
     UploadModule,
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60000, // 1 minute
-        limit: 10, // 10 requests per minute
-      },
-    ]),
+    TagsModule,
+    // ThrottlerModule.forRoot([
+    //   {
+    //     ttl: 60000, // 1 minute
+    //     limit: process.env.NODE_ENV === 'production' ? 100 : 1000, // Higher limit for development
+    //   },
+    // ]),
   ],
   controllers: [AppController],
   providers: [
     AppService,
-    {
-      provide: APP_GUARD,
-      useClass: ThrottlerGuard,
-    },
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: ThrottlerGuard,
+    // },
   ],
 })
 export class AppModule {}

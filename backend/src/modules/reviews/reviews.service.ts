@@ -359,14 +359,16 @@ export class ReviewsService {
       console.error('Failed to send review approved notification:', error);
     }
 
-    // Send notification to girl
+    // Send notification to girl (if girl has userId)
     try {
-      await this.notificationsService.create(
-        updated.girl.userId,
-        'REVIEW_APPROVED',
-        'Bạn có review mới',
-        { reviewId: id, rating: updated.rating },
-      );
+      if (updated.girl.userId) {
+        await this.notificationsService.create(
+          updated.girl.userId,
+          'REVIEW_APPROVED',
+          'Bạn có review mới',
+          { reviewId: id, rating: updated.rating },
+        );
+      }
     } catch (error) {
       console.error('Failed to send review notification to girl:', error);
     }

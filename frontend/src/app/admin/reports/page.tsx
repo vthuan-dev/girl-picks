@@ -34,7 +34,7 @@ export default function AdminReportsPage() {
       
       const reportsData = Array.isArray(response.data) ? response.data : [];
       setReports(reportsData);
-      setTotalPages(response.meta?.totalPages || 1);
+      setTotalPages(response.totalPages || 1);
 
       // Calculate stats
       const total = reportsData.length;

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useQuery } from 'react-query';
 import { girlsApi } from '../api/girls.api';
 import { Girl, GirlListParams } from '@/types/girl';
 import GirlCard from './GirlCard';
@@ -24,81 +25,185 @@ const mockImages = [
 
 const districts = ['Sài Gòn', 'Hà Nội', 'Đà Nẵng'];
 
-export default function GirlList() {
-  const [girls, setGirls] = useState<Girl[]>([]);
-  const [loading, setLoading] = useState(true);
+interface GirlListProps {
+  filters?: {
+    verified?: boolean;
+    price?: string;
+    age?: string;
+    height?: string;
+    weight?: string;
+    origin?: string;
+    location?: string;
+  };
+  selectedProvince?: string | null;
+  searchQuery?: string;
+  selectedTag?: string | null;
+  onTotalChange?: (total: number, isLoading: boolean) => void;
+  onPageInfoChange?: (info: { total: number; page: number; limit: number }) => void;
+}
+
+export default function GirlList({ filters = {}, selectedProvince = null, searchQuery, selectedTag, onTotalChange, onPageInfoChange }: GirlListProps) {
   const [params, setParams] = useState<GirlListParams>({
     page: 1,
-    limit: 60,
-  });
-  const [pagination, setPagination] = useState({
-    total: 0,
-    totalPages: 0,
-    page: 1,
+    limit: 20, // Match backend default
   });
 
+  // Reset to page 1 when filters change
   useEffect(() => {
-    fetchGirls();
-  }, [params]);
+    setParams(prev => ({ ...prev, page: 1 }));
+  }, [filters.verified, filters.price, filters.age, filters.height, filters.weight, filters.origin, filters.location, selectedProvince, selectedTag]);
 
-  const fetchGirls = async () => {
-    setLoading(true);
-    try {
-      const response = await girlsApi.getGirls(params);
-      if (response.success) {
-        const data = response.data as unknown as PaginatedResponse<Girl>;
-        const girlsWithImages = data.data.map((girl, index) => ({
-          ...girl,
-          avatar: girl.avatar || mockImages[index % mockImages.length],
-          images: girl.images || [mockImages[index % mockImages.length]],
-        }));
-        setGirls(girlsWithImages);
-        setPagination({
-          total: data.total,
-          totalPages: data.totalPages,
-          page: data.page,
-        });
-      }
-    } catch (error) {
-      console.error('Failed to fetch girls:', error);
-      // Use mock data if API fails
-      const mockGirls: Girl[] = Array.from({ length: 12 }, (_, i) => ({
-        id: `mock-${i}`,
-        email: `girl${i}@example.com`,
-        username: `girl${i}`,
-        fullName: `Nguyễn Thị ${String.fromCharCode(65 + i)}`,
-        role: 'GIRL' as any,
-        avatar: mockImages[i % mockImages.length],
-        images: [mockImages[i % mockImages.length]],
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        bio: `Chào mừng bạn đến với profile của tôi. Tôi là một người vui vẻ, thân thiện và chuyên nghiệp.`,
-        verified: i % 3 === 0,
-        rating: 4.5 + Math.random() * 0.5,
-        totalReviews: Math.floor(Math.random() * 100) + 10,
-        totalBookings: Math.floor(Math.random() * 50) + 5,
-        isAvailable: i % 2 === 0,
-        districtId: `district-${i % 3}`,
-        district: {
-          id: `district-${i % 3}`,
-          name: districts[i % 3],
-          code: `SG-${i}`,
-        },
-        tags: ['tag1', 'tag2'],
-      }));
-      setGirls(mockGirls);
-      setPagination({
-        total: 15550,
-        totalPages: 260,
-        page: 1,
-      });
-    } finally {
-      setLoading(false);
+  // Scroll to top when page changes
+  useEffect(() => {
+    if (params.page && params.page > 1) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  };
+  }, [params.page]);
 
-  if (loading) {
+  // Build query key for React Query caching
+  const queryKey = useMemo(() => [
+    'girls',
+    'list',
+    params.page,
+    params.limit,
+    filters.verified,
+    filters.price,
+    filters.age,
+    filters.height,
+    filters.weight,
+    filters.origin,
+    filters.location,
+    selectedProvince,
+    searchQuery,
+    selectedTag,
+  ], [params.page, params.limit, filters.verified, filters.price, filters.age, filters.height, filters.weight, filters.origin, filters.location, selectedProvince, searchQuery, selectedTag]);
+
+  // Build filter params
+  const filterParams: GirlListParams = useMemo(() => ({
+        page: params.page || 1,
+        limit: params.limit || 20,
+        verified: filters.verified ? true : undefined,
+        priceFilter: filters.price || undefined,
+        ageFilter: filters.age || undefined,
+        heightFilter: filters.height || undefined,
+        weightFilter: filters.weight || undefined,
+        originFilter: filters.origin || undefined,
+        locationFilter: filters.location || undefined,
+        province: selectedProvince || searchQuery || undefined,
+        search: searchQuery || undefined,
+        tags: selectedTag ? [selectedTag] : undefined,
+  }), [params.page, params.limit, filters.verified, filters.price, filters.age, filters.height, filters.weight, filters.origin, filters.location, selectedProvince, searchQuery, selectedTag]);
+
+  // Use React Query to fetch and cache data
+  const { data, isLoading, error, isFetching } = useQuery(
+    queryKey,
+    () => girlsApi.getGirls(filterParams),
+    {
+      staleTime: 2 * 60 * 1000, // Cache for 2 minutes
+      cacheTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+      keepPreviousData: true, // Keep previous data while fetching new data
+      refetchOnWindowFocus: false, // Don't refetch on window focus
+    }
+  );
+
+  // Notify parent component about total count changes
+  useEffect(() => {
+    if (onTotalChange) {
+      const total = data?.total || 0;
+      onTotalChange(total, isLoading);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.total, isLoading]);
+
+  // Notify parent about pagination info
+  useEffect(() => {
+    if (onPageInfoChange) {
+      onPageInfoChange({
+        total: (data as any)?.total || 0,
+        page: params.page || 1,
+        limit: params.limit || 20,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.total, params.page, params.limit]);
+      
+      // Map API response to Girl type
+  const girls = useMemo(() => {
+    if (!data?.data) return [];
+    
+    return (data.data || []).map((girl: any, index: number) => {
+        // Handle images - can be JSON string or array
+        let images: string[] = [];
+        if (girl.images) {
+          if (typeof girl.images === 'string') {
+            try {
+              images = JSON.parse(girl.images);
+            } catch {
+              images = [girl.images];
+            }
+          } else if (Array.isArray(girl.images)) {
+            images = girl.images;
+          }
+        }
+        
+        // Use first image as avatar if available
+        const avatar = images[0] || girl.avatarUrl || mockImages[index % mockImages.length];
+        
+        return {
+          id: girl.id,
+          email: girl.user?.email || girl.email || '',
+          username: girl.name || '',
+          fullName: girl.name || girl.user?.fullName || 'N/A',
+          role: 'GIRL' as any,
+          avatar,
+          images: images.length > 0 ? images : [avatar],
+          isActive: girl.isActive !== false,
+          createdAt: girl.createdAt || new Date().toISOString(),
+          updatedAt: girl.updatedAt || new Date().toISOString(),
+          bio: girl.bio || '',
+          verified: girl.verificationStatus === 'VERIFIED',
+          rating: girl.ratingAverage || 0,
+          totalReviews: girl.totalReviews || 0,
+          totalBookings: girl._count?.bookings || 0,
+          isAvailable: girl.isAvailable !== false,
+          districtId: girl.districtId,
+          district: girl.district,
+          province: girl.province || (girl.location ? String(girl.location).split('/')[0] : undefined),
+          location: girl.location,
+          tags: Array.isArray(girl.tags) ? girl.tags : (typeof girl.tags === 'string' ? JSON.parse(girl.tags || '[]') : []),
+          slug: girl.slug || null,
+          price: girl.price || null,
+          viewCount: girl.viewCount || 0,
+          age: girl.age || null,
+          height: girl.height || null,
+          weight: girl.weight || null,
+          origin: girl.origin || null,
+        } as Girl & { age?: number | null; height?: string | null; weight?: string | null; origin?: string | null };
+      });
+  }, [data]);
+
+  // Calculate pagination
+  const pagination = useMemo(() => {
+    const total = data?.total || 0;
+    const limit = data?.limit || params.limit || 20;
+    const page = data?.page || params.page || 1;
+    const totalPages = data?.totalPages || (total > 0 ? Math.ceil(total / limit) : 0);
+    const hasNextByCount = (data?.data?.length || 0) === limit;
+
+    return {
+      total,
+      totalPages,
+      page,
+      hasNext: totalPages > 0 ? page < totalPages : hasNextByCount,
+      hasPrev: page > 1,
+      hasNextByCount,
+    };
+  }, [data, params.limit, params.page]);
+
+  const loading = isLoading || isFetching;
+
+  // Show loading overlay when fetching new page
+  if (isLoading && !data) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3 lg:gap-4">
         {Array.from({ length: 12 }).map((_, i) => (
@@ -128,64 +233,121 @@ export default function GirlList() {
   }
 
   return (
-    <div>
+    <div className="relative">
+      {/* Loading overlay when fetching new page */}
+      {isFetching && data && (
+        <div className="absolute inset-0 bg-background/50 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
+          <div className="bg-background-light px-6 py-4 rounded-lg shadow-xl border border-primary/30">
+            <div className="flex items-center gap-3">
+              <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-text font-medium">Đang tải...</span>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3 lg:gap-4">
-        {girls.map((girl) => (
-          <GirlCard key={girl.id} girl={girl} />
+        {girls.map((girl, index) => (
+          <GirlCard key={girl.id} girl={girl} index={index} />
         ))}
       </div>
 
-      {pagination.totalPages > 1 && (
-        <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4 mt-8 sm:mt-12">
-          <button
-            onClick={() => setParams({ ...params, page: (params.page || 1) - 1 })}
-            disabled={pagination.page === 1}
-            className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-background-light border border-secondary/50 text-text rounded-lg hover:bg-primary/10 hover:border-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium flex items-center justify-center gap-2 text-sm cursor-pointer"
-          >
-            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            <span className="hidden sm:inline">Trước</span>
-            <span className="sm:hidden">Trang trước</span>
-          </button>
-          
-          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-hide px-2">
-            {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-              const page = pagination.page <= 3 
-                ? i + 1 
-                : pagination.page >= pagination.totalPages - 2
-                ? pagination.totalPages - 4 + i
-                : pagination.page - 2 + i;
-              
-              if (page < 1 || page > pagination.totalPages) return null;
-              
-              return (
-                <button
-                  key={page}
-                  onClick={() => setParams({ ...params, page })}
-                  className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg font-medium transition-all text-xs sm:text-sm flex-shrink-0 cursor-pointer ${
-                    pagination.page === page
-                      ? 'bg-primary text-white shadow-lg shadow-primary/30'
-                      : 'bg-background-light border border-secondary/50 text-text hover:bg-primary/10 hover:border-primary'
-                  }`}
-                >
-                  {page}
-                </button>
-              );
-            })}
-          </div>
+      {/* PornHub Style Pagination */}
+      {(pagination.totalPages > 1 || pagination.hasPrev || pagination.hasNextByCount) && (
+        <div className="flex justify-center items-center mt-10 sm:mt-14">
+          <div className="inline-flex items-center bg-[#1a1a1a] rounded-md overflow-hidden shadow-lg border border-[#2a2a2a]">
+            {/* Previous Button */}
+            <button
+              onClick={() => {
+                const newPage = (params.page || 1) - 1;
+                console.log('[GirlList] Previous page clicked, going to page:', newPage);
+                setParams({ ...params, page: newPage });
+              }}
+              disabled={pagination.page === 1 || isFetching}
+              className="px-4 py-2.5 text-sm font-medium text-white/70 hover:text-white hover:bg-[#2a2a2a] disabled:opacity-30 disabled:cursor-not-allowed transition-all border-r border-[#2a2a2a]"
+            >
+              Prev
+            </button>
 
-          <button
-            onClick={() => setParams({ ...params, page: (params.page || 1) + 1 })}
-            disabled={pagination.page >= pagination.totalPages}
-            className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-background-light border border-secondary/50 text-text rounded-lg hover:bg-primary/10 hover:border-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium flex items-center justify-center gap-2 text-sm cursor-pointer"
-          >
-            <span className="hidden sm:inline">Sau</span>
-            <span className="sm:hidden">Trang sau</span>
-            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
+            {/* Page Numbers */}
+            <div className="flex items-center">
+              {/* First page if not visible */}
+              {pagination.page > 3 && pagination.totalPages > 1 && (
+                <>
+                  <button
+                    onClick={() => {
+                      console.log('[GirlList] Page 1 clicked');
+                      setParams({ ...params, page: 1 });
+                    }}
+                    disabled={isFetching}
+                    className="px-3.5 py-2.5 text-sm font-medium text-white/70 hover:text-white hover:bg-[#2a2a2a] transition-all border-r border-[#2a2a2a] disabled:opacity-50"
+                  >
+                    1
+                  </button>
+                  <span className="px-2 text-white/40 text-sm">...</span>
+                </>
+              )}
+
+              {/* Visible page range */}
+              {Array.from({ length: Math.min(7, pagination.totalPages) }, (_, i) => {
+                // Show 3 pages before and after current page
+                const startPage = Math.max(1, Math.min(pagination.page - 3, pagination.totalPages - 6));
+                const page = startPage + i;
+                
+                if (page > pagination.totalPages) return null;
+
+                const isActive = pagination.page === page;
+
+                return (
+                  <button
+                    key={page}
+                    onClick={() => {
+                      console.log('[GirlList] Page clicked:', page);
+                      setParams({ ...params, page });
+                    }}
+                    disabled={isFetching || isActive}
+                    className={`px-3.5 py-2.5 text-sm font-bold transition-all border-r border-[#2a2a2a] min-w-[44px] ${
+                      isActive
+                        ? 'bg-primary text-white cursor-default'
+                        : 'text-white/70 hover:text-white hover:bg-[#2a2a2a] disabled:opacity-50'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                );
+              })}
+
+              {/* Last page if not visible */}
+              {pagination.page < pagination.totalPages - 3 && pagination.totalPages > 7 && (
+                <>
+                  <span className="px-2 text-white/40 text-sm">...</span>
+                  <button
+                    onClick={() => {
+                      console.log('[GirlList] Last page clicked:', pagination.totalPages);
+                      setParams({ ...params, page: pagination.totalPages });
+                    }}
+                    disabled={isFetching}
+                    className="px-3.5 py-2.5 text-sm font-medium text-white/70 hover:text-white hover:bg-[#2a2a2a] transition-all border-r border-[#2a2a2a] disabled:opacity-50"
+                  >
+                    {pagination.totalPages}
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Next Button */}
+            <button
+              onClick={() => {
+                const newPage = (params.page || 1) + 1;
+                console.log('[GirlList] Next page clicked, going to page:', newPage);
+                setParams({ ...params, page: newPage });
+              }}
+              disabled={!pagination.hasNext || isFetching}
+              className="px-4 py-2.5 text-sm font-medium text-white/70 hover:text-white hover:bg-[#2a2a2a] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              Next
+            </button>
+          </div>
         </div>
       )}
     </div>

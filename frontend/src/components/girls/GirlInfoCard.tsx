@@ -35,6 +35,19 @@ export default function GirlInfoCard({ girl }: GirlInfoCardProps) {
     }
   };
 
+  const shareUrl =
+    typeof window !== 'undefined'
+      ? window.location.href
+      : `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/girls/${girl.id}/${girl.slug || ''}`;
+
+  const handleCopyLink = () => {
+    if (typeof navigator !== 'undefined') {
+      navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   const infoItems = [
     {
       label: 'Giá',
@@ -104,7 +117,27 @@ export default function GirlInfoCard({ girl }: GirlInfoCardProps) {
     },
     {
       label: 'Khu vực',
-      value: girl.district?.name || 'Chưa cập nhật',
+      value: (() => {
+        // Hiển thị quận + tỉnh
+        const districtName = girl.district?.name || (girl as any).location || '';
+        const province = (girl as any).province || '';
+        
+        if (districtName && province) {
+          // Nếu location đã chứa cả quận và tỉnh, dùng luôn
+          if ((girl as any).location && (girl as any).location.includes(province)) {
+            return (girl as any).location;
+          }
+          // Nếu không, kết hợp quận + tỉnh
+          return `${districtName}, ${province}`;
+        } else if (districtName) {
+          return districtName;
+        } else if (province) {
+          return province;
+        } else if ((girl as any).location) {
+          return (girl as any).location;
+        }
+        return 'Chưa cập nhật';
+      })(),
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -206,11 +239,14 @@ export default function GirlInfoCard({ girl }: GirlInfoCardProps) {
 
       {/* Share Button */}
       <div className="mt-6 pt-6 border-t border-secondary/30">
-        <button className="w-full px-4 py-3 bg-gradient-to-r from-primary to-primary-hover text-white rounded-xl hover:shadow-xl hover:shadow-primary/30 transition-all font-semibold cursor-pointer flex items-center justify-center gap-2">
+        <button
+          onClick={handleCopyLink}
+          className="w-full px-4 py-3 bg-gradient-to-r from-primary to-primary-hover text-white rounded-xl hover:shadow-xl hover:shadow-primary/30 transition-all font-semibold cursor-pointer flex items-center justify-center gap-2"
+        >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342c-.396 0-.72-.316-.72-.705 0-.39.324-.705.72-.705h2.748v-2.124c0-.39.324-.705.72-.705.397 0 .72.316.72.705v2.124h2.748c.396 0 .72.316.72.705 0 .39-.324.705-.72.705H13.172v2.124c0 .39-.323.705-.72.705-.396 0-.72-.316-.72-.705v-2.124H8.684z" />
           </svg>
-          Chia sẻ
+          {copied ? 'Đã copy link' : 'Chia sẻ (copy link)'}
         </button>
       </div>
     </div>

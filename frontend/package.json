@@ -5,8 +5,10 @@
   "description": "Frontend cho nền tảng đặt lịch dịch vụ giải trí",
   "scripts": {
     "dev": "next dev",
+    "dev:turbo": "next dev --turbo",
     "build": "next build",
     "start": "next start",
+    "build:start": "next build && next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit"
   },

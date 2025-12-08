@@ -107,7 +107,8 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  girl             Girl?
+  girl             Girl?            @relation("GirlUser")
+  managedGirls     Girl[]           @relation("GirlManager") // Girls managed by this user
   reviews          Review[]
   sentMessages     Message[]       @relation("SentMessages")
   receivedMessages Message[]       @relation("ReceivedMessages")
@@ -135,29 +136,68 @@ model User {
 
 model Girl {
   id                      String             @id @default(uuid())
-  userId                  String             @unique
+  userId                  String?            @unique // Optional - Girl is a product, not a user
+  managedById             String?            // User ID who manages this girl (STAFF_UPLOAD/ADMIN)
+  
+  // Basic Info
   name                    String?
+  slug                    String?            @unique // URL-friendly slug for SEO
   age                     Int?
   bio                     String?
+  phone                   String?            // Phone number from crawler
+  birthYear               Int?               // Birth year from crawler
+  
+  // Physical Info
+  height                  String?            // e.g., "160cm"
+  weight                  String?            // e.g., "52kg"
+  measurements            String?            // e.g., "89-64-92"
+  origin                  String?            // e.g., "Miền Tây"
+  
+  // Location
   districts               Json               @default("[]") // Array of district IDs stored as JSON
+  address                 String?            // Full address from crawler
+  location                String?            // e.g., "Sài Gòn/Bình Tân"
+  province                String?            // e.g., "Sài Gòn"
+  
+  // Pricing
+  price                   String?            // e.g., "200K"
+  
+  // Rating & Reviews
   ratingAverage           Float              @default(0)
   totalReviews            Int                @default(0)
+  
+  // Verification
   verificationStatus      VerificationStatus @default(PENDING)
   verificationDocuments   Json               @default("[]") // Array of document URLs stored as JSON
   verificationRequestedAt DateTime?
   verificationVerifiedAt  DateTime?
+  
+  // Statistics
   viewCount               Int                @default(0)
   favoriteCount           Int                @default(0)
+  
+  // Flags
   isFeatured              Boolean            @default(false)
   isPremium               Boolean            @default(false)
   isActive                Boolean            @default(true)
+  isAvailable             Boolean            @default(true) // From crawler
+  
+  // Media & Content
   images                  Json               @default("[]") // Array of image URLs stored as JSON
+  tags                    Json               @default("[]") // Array of tag strings from crawler
+  services                Json               @default("[]") // Array of service strings (temporary, will move to relation)
+  
+  // Activity
   lastActiveAt            DateTime?
+  workingHours            String?            // e.g., "24/24"
+  
+  // Timestamps
   createdAt               DateTime           @default(now())
   updatedAt               DateTime           @updatedAt
 
   // Relations
-  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User?            @relation("GirlUser", fields: [userId], references: [id], onDelete: SetNull)
+  managedBy       User?            @relation("GirlManager", fields: [managedById], references: [id], onDelete: SetNull)
   posts           Post[]
   reviews         Review[]
   favorites       Favorite[]
@@ -167,6 +207,12 @@ model Girl {
   timeSlots       TimeSlot[]
   blockedDates    BlockedDate[]
 
+  // Indexes for performance optimization
+  @@index([isActive, isFeatured, ratingAverage]) // For list queries with sorting
+  @@index([province, isActive]) // For province filter
+  @@index([verificationStatus, isActive]) // For verification filter
+  @@index([lastActiveAt]) // For sorting by last active
+  @@index([isActive, ratingAverage]) // For rating filter
   @@map("girls")
 }
 
@@ -175,6 +221,7 @@ model Post {
   authorId     String     // User ID who created the post (can be GIRL or CUSTOMER)
   girlId       String?    // Optional: if post is related to a specific girl
   title        String
+  slug         String?    @unique // URL-friendly slug for SEO
   content      String
   images       Json       @default("[]") // Array of image URLs stored as JSON
   status       PostStatus @default(PENDING)
@@ -182,6 +229,17 @@ model Post {
   approvedAt   DateTime?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+
+  // Video/Movie fields (for phim-sex)
+  videoUrl     String?    // Main video URL
+  videoSources Json       @default("[]") // Array of {url, type, label, resolution} stored as JSON
+  duration     String?    // Video duration (e.g., "10:30")
+  viewCount    Int        @default(0) // Number of views
+  rating       Float?     // Rating (0-5)
+  category     String?    // Category (e.g., "sex tự quay")
+  tags         Json       @default("[]") // Array of tag strings stored as JSON
+  poster       String?    // Poster/thumbnail URL
+  thumbnail    String?    // Thumbnail URL
 
   // Relations
   author     User         @relation("PostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
@@ -291,11 +349,15 @@ model PostComment {
   postId    String
   userId    String
   content   String
+  parentId  String?  // For nested replies
   createdAt DateTime @default(now())
 
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post     Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent   PostComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  PostComment[] @relation("CommentReplies")
 
+  @@index([postId, parentId])
   @@map("post_comments")
 }
 

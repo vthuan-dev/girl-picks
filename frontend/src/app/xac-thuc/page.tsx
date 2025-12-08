@@ -1,0 +1,25 @@
+import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
+
+export const metadata = {
+  title: 'Xác thực | Tìm Gái gọi',
+  description: 'Xác thực tài khoản',
+};
+
+export default function XacThucPage() {
+  return (
+    <>
+      <Header />
+      <div className="min-h-screen bg-background">
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <h1 className="text-3xl font-bold text-text mb-6">Xác thực</h1>
+          <div className="bg-background-light rounded-lg p-6 space-y-4 text-text">
+            <p>Trang xác thực sẽ được cập nhật...</p>
+          </div>
+        </div>
+      </div>
+      <Footer />
+    </>
+  );
+}
+

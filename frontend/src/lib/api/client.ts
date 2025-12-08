@@ -1,9 +1,9 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import Cookies from 'js-cookie';
 
-// Backend API URL - Backend runs on port 8000
+// Backend API URL - Backend runs on port 3001 (Docker) or 8000 (local dev)
 // Frontend Next.js runs on port 3000
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 // Log API URL in development for debugging
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
@@ -50,14 +50,25 @@ apiClient.interceptors.response.use(
             refreshToken,
           });
 
-          const { accessToken } = response.data;
-          Cookies.set('accessToken', accessToken);
+          // Handle wrapped response
+          const responseData = response.data;
+          const accessToken = responseData.success 
+            ? responseData.data?.accessToken || responseData.data?.access_token
+            : responseData.accessToken || responseData.access_token;
+
+          if (accessToken) {
+            Cookies.set('accessToken', accessToken, {
+              expires: 7, // 7 days
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: 'strict',
+            });
 
           if (originalRequest.headers) {
             originalRequest.headers.Authorization = `Bearer ${accessToken}`;
           }
 
           return apiClient(originalRequest);
+          }
         }
       } catch (refreshError) {
         // Refresh failed - clear tokens and redirect to login

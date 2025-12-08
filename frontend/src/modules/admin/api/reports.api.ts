@@ -1,4 +1,6 @@
 import apiClient from '@/lib/api/client';
+import { PaginatedResponse } from '@/lib/api/types';
+import { unwrapResponse, getPaginatedData } from '@/lib/api/response-helper';
 
 export type ReportStatus = 'PENDING' | 'RESOLVED' | 'DISMISSED';
 export type ReportReason = 
@@ -35,15 +37,7 @@ export interface Report {
   };
 }
 
-export interface PaginatedResponse<T> {
-  data: T[];
-  meta: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
-}
+// Use PaginatedResponse from @/lib/api/types
 
 export const reportsApi = {
   // Get all reports (Admin only)
@@ -58,19 +52,10 @@ export const reportsApi = {
     const response = await apiClient.get<any>(
       `/admin/reports?${params.toString()}`
     );
-    const responseData = response.data;
     
-    // Handle wrapped response {success: true, data: {...}}
-    if (responseData.success && responseData.data) {
-      return responseData.data;
-    }
-    
-    // If already unwrapped, return directly
-    if (responseData.data && Array.isArray(responseData.data)) {
-      return responseData;
-    }
-    
-    throw new Error('Invalid response format from server');
+    // Use helper to unwrap response
+    const unwrapped = unwrapResponse(response.data);
+    return getPaginatedData<Report>(unwrapped);
   },
 
   // Get report by ID

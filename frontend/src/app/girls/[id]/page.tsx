@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getGirlById } from '@/lib/api/server-client';
@@ -8,6 +8,7 @@ import GirlGallery from '@/components/girls/GirlGallery';
 import GirlInfoCard from '@/components/girls/GirlInfoCard';
 import RelatedGirls from '@/components/girls/RelatedGirls';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
+import ViewTracker from '@/components/common/ViewTracker';
 import { Girl } from '@/types/girl';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gaigo1.net';
@@ -34,10 +35,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       };
     }
 
-    const title = `${girl.fullName} - Gái gọi ${girl.district?.name || ''} | Tìm Gái gọi`;
-    const description = girl.bio || `Thông tin chi tiết về ${girl.fullName}. ${girl.district?.name ? `Khu vực: ${girl.district.name}.` : ''} Xem ảnh, đánh giá và đặt lịch ngay.`;
+    const title = `${girl.fullName || (girl as any).name} - Gái gọi ${girl.district?.name || ''} | Tìm Gái gọi`;
+    const description = girl.bio || `Thông tin chi tiết về ${girl.fullName || (girl as any).name}. ${girl.district?.name ? `Khu vực: ${girl.district.name}.` : ''} Xem ảnh, đánh giá và đặt lịch ngay.`;
     const imageUrl = girl.images?.[0] || girl.avatar || `${siteUrl}/images/logo/logo.png`;
-    const url = `${siteUrl}/girls/${id}`;
+    // Use slug in URL if available, otherwise use ID
+    const url = girl.slug 
+      ? `${siteUrl}/girls/${girl.id}/${girl.slug}`
+      : `${siteUrl}/girls/${id}`;
 
     return {
       title,
@@ -104,6 +108,11 @@ export default async function GirlDetailPage({ params }: PageProps) {
     if (!girl || !girl.id) {
       notFound();
     }
+
+    // Redirect to slug URL if slug exists
+    if (girl.slug) {
+      redirect(`/girls/${girl.id}/${girl.slug}`);
+    }
   } catch (error: any) {
     console.error('Error fetching girl:', error);
     // If 404 or not found, show not found page
@@ -115,9 +124,12 @@ export default async function GirlDetailPage({ params }: PageProps) {
   }
 
   const imageUrl = girl.images?.[0] || girl.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=1200&h=800&fit=crop';
-  const title = `${girl.fullName} - Gái gọi ${girl.district?.name || ''}`;
-  const description = girl.bio || `Thông tin chi tiết về ${girl.fullName}`;
-  const url = `${siteUrl}/girls/${id}`;
+  const title = `${girl.fullName || (girl as any).name} - Gái gọi ${girl.district?.name || ''}`;
+  const description = girl.bio || `Thông tin chi tiết về ${girl.fullName || (girl as any).name}`;
+  // Use slug in URL if available
+  const url = girl.slug 
+    ? `${siteUrl}/girls/${girl.id}/${girl.slug}`
+    : `${siteUrl}/girls/${id}`;
 
   // Breadcrumbs data
   const breadcrumbs = [
@@ -166,6 +178,9 @@ export default async function GirlDetailPage({ params }: PageProps) {
 
   return (
     <>
+      {/* Track view count */}
+      <ViewTracker type="girl" id={girl.id} />
+
       {/* Structured Data for SEO */}
       <script
         type="application/ld+json"
@@ -173,18 +188,17 @@ export default async function GirlDetailPage({ params }: PageProps) {
       />
       <StructuredData type="BreadcrumbList" data={breadcrumbStructuredData} />
 
-      <main className="min-h-screen bg-background">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
-          {/* Breadcrumbs */}
-          <Breadcrumbs items={breadcrumbs} />
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
+        {/* Breadcrumbs */}
+        <Breadcrumbs items={breadcrumbs} />
 
-          {/* Main Content */}
-          <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 mt-4">
-            {/* Left Column - Gallery & Info */}
-            <div className="flex-1 min-w-0 space-y-6">
-              {/* Title Section */}
-              <div className="bg-background-light rounded-2xl p-4 sm:p-6 border border-secondary/30 shadow-lg">
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        {/* Main Content */}
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 mt-4">
+          {/* Left Column - Gallery & Info */}
+          <div className="flex-1 min-w-0 space-y-6">
+            {/* Title Section */}
+            <div className="bg-background-light rounded-2xl p-4 sm:p-6 border border-secondary/30 shadow-lg">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                   <div className="flex-1">
                     <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-text mb-2">
                       {girl.fullName}
@@ -255,48 +269,47 @@ export default async function GirlDetailPage({ params }: PageProps) {
                       )}
                     </div>
                   </div>
-                </div>
-              </div>
-
-              {/* Gallery */}
-              <GirlGallery images={girl.images || [imageUrl]} name={girl.fullName} />
-
-              {/* Info Card */}
-              <GirlInfoCard girl={girl} />
-
-              {/* Description Section */}
-              {girl.bio && (
-                <div className="bg-background-light rounded-2xl p-4 sm:p-6 border border-secondary/30 shadow-lg">
-                  <h2 className="text-xl font-bold text-text mb-4">Mô tả</h2>
-                  <div className="prose prose-invert max-w-none">
-                    <p className="text-text-muted leading-relaxed whitespace-pre-line">
-                      {girl.bio}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Comments & Reviews Section */}
-              <div className="bg-background-light rounded-2xl p-4 sm:p-6 border border-secondary/30 shadow-lg">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-bold text-text">Đánh giá & Bình luận</h2>
-                  <button className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors text-sm font-medium cursor-pointer">
-                    Viết đánh giá
-                  </button>
-                </div>
-                <div className="text-center py-8 text-text-muted">
-                  <p>Chưa có đánh giá nào. Hãy là người đầu tiên đánh giá!</p>
-                </div>
               </div>
             </div>
 
-            {/* Right Column - Related Girls */}
-            <div className="lg:w-80 flex-shrink-0">
-              <RelatedGirls currentGirlId={girl.id} districtId={girl.districtId} />
+            {/* Gallery */}
+            <GirlGallery images={girl.images || [imageUrl]} name={girl.fullName} />
+
+            {/* Info Card */}
+            <GirlInfoCard girl={girl} />
+
+            {/* Description Section */}
+            {girl.bio && (
+              <div className="bg-background-light rounded-2xl p-4 sm:p-6 border border-secondary/30 shadow-lg">
+                <h2 className="text-xl font-bold text-text mb-4">Mô tả</h2>
+                <div className="prose prose-invert max-w-none">
+                  <p className="text-text-muted leading-relaxed whitespace-pre-line">
+                    {girl.bio}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Comments & Reviews Section */}
+            <div className="bg-background-light rounded-2xl p-4 sm:p-6 border border-secondary/30 shadow-lg">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-text">Đánh giá & Bình luận</h2>
+                <button className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors text-sm font-medium cursor-pointer">
+                  Viết đánh giá
+                </button>
+              </div>
+              <div className="text-center py-8 text-text-muted">
+                <p>Chưa có đánh giá nào. Hãy là người đầu tiên đánh giá!</p>
+              </div>
             </div>
           </div>
+
+          {/* Right Column - Related Girls */}
+          <div className="lg:w-80 flex-shrink-0">
+            <RelatedGirls currentGirlId={girl.id} districtId={girl.districtId} />
+          </div>
         </div>
-      </main>
+      </div>
     </>
   );
 }

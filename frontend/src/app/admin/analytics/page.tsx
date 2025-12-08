@@ -70,18 +70,6 @@ export default function AdminAnalyticsPage() {
       color: 'bg-green-500/20 text-green-500',
     },
     {
-      label: 'Đặt lịch',
-      value: formatNumber(analyticsData.metrics.bookings),
-      change: `+${analyticsData.metrics.bookingsChange?.toFixed(1) || 0}%`,
-      trend: 'up' as const,
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-      ),
-      color: 'bg-purple-500/20 text-purple-500',
-    },
-    {
       label: 'Doanh thu',
       value: `${formatNumber(analyticsData.metrics.revenue)} VNĐ`,
       change: `+${analyticsData.metrics.revenueChange?.toFixed(1) || 0}%`,

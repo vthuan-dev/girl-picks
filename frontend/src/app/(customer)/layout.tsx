@@ -1,43 +1,29 @@
 'use client';
 
-import { useAuthStore } from '@/store/auth.store';
 import { UserRole } from '@/types/auth';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 import CustomerSidebar from '@/components/layout/CustomerSidebar';
+import AuthGuard from '@/components/auth/AuthGuard';
 
 export default function CustomerLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user, isAuthenticated } = useAuthStore();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isAuthenticated || user?.role !== UserRole.CUSTOMER) {
-      router.push('/auth/login');
-    }
-  }, [isAuthenticated, user, router]);
-
-  if (!isAuthenticated || user?.role !== UserRole.CUSTOMER) {
-    return null;
-  }
-
   return (
-    <div className="min-h-screen bg-background">
-      <div className="flex">
-        {/* Sidebar */}
+    <AuthGuard 
+      allowedRoles={[UserRole.CUSTOMER, UserRole.STAFF_UPLOAD, UserRole.GIRL]}
+    >
+      <div className="min-h-screen bg-background">
         <CustomerSidebar />
         
         {/* Main Content */}
-        <main className="flex-1 lg:ml-64">
+        <main className="lg:ml-[260px] min-h-screen">
           <div className="p-4 sm:p-6 lg:p-8">
             {children}
           </div>
         </main>
       </div>
-    </div>
+    </AuthGuard>
   );
 }
 

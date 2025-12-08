@@ -6,6 +6,7 @@ import GirlInfoCard from '@/components/girls/GirlInfoCard';
 import RelatedGirls from '@/components/girls/RelatedGirls';
 import ReviewsSection from '@/components/girls/ReviewsSection';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
+import ViewTracker from '@/components/common/ViewTracker';
 import { Girl } from '@/types/girl';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gaigo1.net';
@@ -276,6 +277,9 @@ export default async function GirlDetailPage({ params }: PageProps) {
 
   return (
     <>
+      {/* Track view count */}
+      <ViewTracker type="girl" id={girl.id} />
+
       {/* Structured Data for SEO */}
       <script
         type="application/ld+json"

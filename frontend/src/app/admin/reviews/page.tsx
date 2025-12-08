@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
 export default function AdminReviewsPage() {
-  const [statusFilter, setStatusFilter] = useState<string>('Tất cả');
+  const [statusFilter, setStatusFilter] = useState<string>('PENDING');
   const [searchQuery, setSearchQuery] = useState('');
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -21,7 +21,7 @@ export default function AdminReviewsPage() {
     approved: 0,
   });
 
-  const statuses = ['Tất cả', 'PENDING', 'APPROVED', 'REJECTED'];
+  const statuses = ['PENDING', 'APPROVED', 'REJECTED'];
 
   useEffect(() => {
     loadReviews();
@@ -30,12 +30,12 @@ export default function AdminReviewsPage() {
   const loadReviews = async () => {
     setIsLoading(true);
     try {
-      const status = statusFilter === 'Tất cả' ? undefined : statusFilter;
+      const status = statusFilter;
       const response = await reviewsApi.getAll(status, undefined, page, 20);
       
       const reviewsData = Array.isArray(response.data) ? response.data : [];
       setReviews(reviewsData);
-      setTotalPages(response.meta?.totalPages || 1);
+      setTotalPages(response.totalPages || 1);
 
       // Calculate stats
       const total = reviewsData.length;
@@ -223,7 +223,7 @@ export default function AdminReviewsPage() {
                   }
                 `}
               >
-                {status === 'Tất cả' ? status : getStatusText(status)}
+                {getStatusText(status)}
               </button>
             ))}
           </div>

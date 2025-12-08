@@ -1,5 +1,6 @@
 import apiClient from '@/lib/api/client';
-import { ApiResponse } from '@/lib/api/types';
+import { ApiResponse, PaginatedResponse } from '@/lib/api/types';
+import { unwrapResponse, getPaginatedData } from '@/lib/api/response-helper';
 
 export interface Post {
   id: string;
@@ -9,6 +10,16 @@ export interface Post {
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
   createdAt: string;
   updatedAt: string;
+  // Video/Movie fields (for phim-sex)
+  videoUrl?: string;
+  videoSources?: Array<{ url: string; type?: string; label?: string; resolution?: string }>;
+  duration?: string;
+  viewCount?: number;
+  rating?: number;
+  category?: string;
+  tags?: string[];
+  poster?: string;
+  thumbnail?: string;
   author?: {
     id: string;
     fullName: string;
@@ -34,18 +45,10 @@ export interface Post {
   };
 }
 
-export interface PaginatedResponse<T> {
-  data: T[];
-  meta: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
-}
+// Use PaginatedResponse from @/lib/api/types
 
 export const postsApi = {
-  // Get all posts
+  // Get all posts (public endpoint)
   getAll: async (status?: string, girlId?: string, page = 1, limit = 20): Promise<PaginatedResponse<Post>> => {
     const params = new URLSearchParams();
     if (status) params.append('status', status);
@@ -69,6 +72,81 @@ export const postsApi = {
     }
     
     throw new Error('Invalid response format from server');
+  },
+
+  // Admin: Get all posts with filters
+  getAllAdmin: async (params?: {
+    search?: string;
+    status?: string;
+    girlId?: string;
+    authorId?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<PaginatedResponse<Post>> => {
+    const searchParams = new URLSearchParams();
+    if (params?.search) searchParams.append('search', params.search);
+    if (params?.status) searchParams.append('status', params.status);
+    if (params?.girlId) searchParams.append('girlId', params.girlId);
+    if (params?.authorId) searchParams.append('authorId', params.authorId);
+    searchParams.append('page', (params?.page || 1).toString());
+    searchParams.append('limit', (params?.limit || 20).toString());
+    
+    const response = await apiClient.get<any>(
+      `/admin/posts?${searchParams.toString()}`
+    );
+    
+    // Use helper to unwrap response
+    return getPaginatedData<Post>(response.data);
+  },
+
+  // Admin: Get post details
+  getDetailsAdmin: async (id: string): Promise<Post> => {
+    const response = await apiClient.get<any>(`/admin/posts/${id}`);
+    const responseData = response.data;
+    
+    // Unwrap response if needed
+    if (responseData?.success && responseData?.data) {
+      return responseData.data;
+    }
+    
+    if (responseData?.id) {
+      return responseData;
+    }
+    
+    if (responseData?.data) {
+      return responseData.data;
+    }
+    
+    return responseData;
+  },
+
+  // Admin: Create post
+  createAdmin: async (data: {
+    title: string;
+    content?: string;
+    images?: string[];
+    girlId?: string;
+    status?: string;
+  }): Promise<Post> => {
+    const response = await apiClient.post<Post>(`/admin/posts`, data);
+    return response.data;
+  },
+
+  // Admin: Update post
+  updateAdmin: async (id: string, data: {
+    title?: string;
+    content?: string;
+    images?: string[];
+    girlId?: string;
+    status?: string;
+  }): Promise<Post> => {
+    const response = await apiClient.patch<Post>(`/admin/posts/${id}`, data);
+    return response.data;
+  },
+
+  // Admin: Delete post
+  deleteAdmin: async (id: string): Promise<void> => {
+    await apiClient.delete(`/admin/posts/${id}`);
   },
 
   // Get post by ID

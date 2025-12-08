@@ -10,7 +10,6 @@ import { useState } from 'react';
 const navItems = [
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/girls', label: 'Tìm Gái gọi' },
-  { href: '/bookings', label: 'Đặt lịch' },
   { href: '/messages', label: 'Tin nhắn' },
   { href: '/favorites', label: 'Yêu thích' },
 ];

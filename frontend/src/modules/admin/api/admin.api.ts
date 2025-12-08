@@ -1,5 +1,5 @@
 import apiClient from '@/lib/api/client';
-import { ApiResponse } from '@/lib/api/types';
+import { ApiResponse, PaginatedResponse } from '@/lib/api/types';
 
 // Types
 export interface DashboardStats {
@@ -103,15 +103,7 @@ export interface Report {
   };
 }
 
-export interface PaginatedResponse<T> {
-  data: T[];
-  meta: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
-}
+// Use PaginatedResponse from @/lib/api/types
 
 export const adminApi = {
   // Dashboard Stats

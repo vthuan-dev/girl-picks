@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
-import { getGirls } from '@/lib/api/server-client';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gaigo1.net';
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseRoutes: MetadataRoute.Sitemap = [
@@ -21,7 +21,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${siteUrl}/phim-sex`,
       lastModified: new Date(),
       changeFrequency: 'daily',
-      priority: 0.8,
+      priority: 0.9,
     },
     {
       url: `${siteUrl}/anh-sex`,
@@ -35,25 +35,65 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'weekly',
       priority: 0.7,
     },
+    {
+      url: `${siteUrl}/search`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.8,
+    },
   ];
+
+  const dynamicRoutes: MetadataRoute.Sitemap = [];
 
   // Try to fetch girls for dynamic sitemap entries
   try {
-    const girlsResponse = await getGirls({ limit: 1000 }); // Get up to 1000 girls
-    const girls = girlsResponse.data?.data || [];
+    const girlsResponse = await fetch(`${apiBaseUrl}/girls?limit=1000`, {
+      next: { revalidate: 3600 }, // Revalidate every hour
+    });
+    
+    if (girlsResponse.ok) {
+      const girlsData = await girlsResponse.json();
+      const girls = girlsData?.data?.data || girlsData?.data || [];
 
-    const girlRoutes: MetadataRoute.Sitemap = girls.map((girl: any) => ({
-      url: `${siteUrl}/girls/${girl.id}`,
-      lastModified: girl.updatedAt ? new Date(girl.updatedAt) : new Date(),
-      changeFrequency: 'weekly' as const,
-      priority: 0.7,
-    }));
+      const girlRoutes: MetadataRoute.Sitemap = girls.map((girl: any) => ({
+        url: `${siteUrl}/girls/${girl.id}`,
+        lastModified: girl.updatedAt ? new Date(girl.updatedAt) : new Date(),
+        changeFrequency: 'weekly' as const,
+        priority: 0.7,
+      }));
 
-    return [...baseRoutes, ...girlRoutes];
+      dynamicRoutes.push(...girlRoutes);
+    }
   } catch (error) {
     console.error('Error fetching girls for sitemap:', error);
-    // Return base routes if API fails
-    return baseRoutes;
   }
+
+  // Try to fetch posts for dynamic sitemap entries
+  try {
+    const postsResponse = await fetch(`${apiBaseUrl}/posts?status=APPROVED&limit=1000`, {
+      next: { revalidate: 3600 }, // Revalidate every hour
+    });
+    
+    if (postsResponse.ok) {
+      const postsData = await postsResponse.json();
+      const posts = postsData?.data?.data || postsData?.data || [];
+
+      const postRoutes: MetadataRoute.Sitemap = posts.map((post: any) => {
+        const slug = post.slug || post.id;
+        return {
+          url: `${siteUrl}/posts/${post.id}/${slug}`,
+          lastModified: post.updatedAt ? new Date(post.updatedAt) : new Date(),
+          changeFrequency: 'weekly' as const,
+          priority: 0.8,
+        };
+      });
+
+      dynamicRoutes.push(...postRoutes);
+    }
+  } catch (error) {
+    console.error('Error fetching posts for sitemap:', error);
+  }
+
+  return [...baseRoutes, ...dynamicRoutes];
 }
 

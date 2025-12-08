@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
 import { useState } from 'react';
 
@@ -15,24 +15,7 @@ const menuItems = [
       </svg>
     ),
   },
-  {
-    title: 'Đặt lịch',
-    href: '/bookings',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-      </svg>
-    ),
-  },
-  {
-    title: 'Tin nhắn',
-    href: '/messages',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-      </svg>
-    ),
-  },
+
   {
     title: 'Yêu thích',
     href: '/favorites',
@@ -51,21 +34,37 @@ const menuItems = [
       </svg>
     ),
   },
+  {
+    title: 'Bài đăng',
+    href: '/posts',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+    ),
+  },
 ];
 
 export default function CustomerSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, logout } = useAuthStore();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    router.push('/');
+  };
 
   return (
     <>
       {/* Mobile Menu Button */}
       <button
         onClick={() => setIsMobileOpen(!isMobileOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-background-light border border-secondary/30 rounded-lg text-text hover:text-primary transition-colors"
+        className="lg:hidden fixed top-4 left-4 z-50 p-2.5 bg-background-light border border-secondary/30 rounded-xl text-text hover:text-primary hover:border-primary/50 transition-all shadow-lg"
+        aria-label="Toggle menu"
       >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           {isMobileOpen ? (
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           ) : (
@@ -77,75 +76,84 @@ export default function CustomerSidebar() {
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 left-0 h-full w-64 bg-background-light border-r border-secondary/30 z-40
+          fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-background-light to-background z-40
+          border-r border-secondary/20 shadow-xl shadow-black/10
           transform transition-transform duration-300 ease-in-out
           ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
           lg:translate-x-0
         `}
       >
         <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="p-6 border-b border-secondary/30">
-            <Link href="/search" className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shadow-lg shadow-primary/30">
+          {/* Logo & Brand */}
+          <div className="p-5 border-b border-secondary/20">
+            <Link href="/" className="flex items-center gap-3 group">
+              <div className="w-11 h-11 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg shadow-primary/30 group-hover:shadow-primary/50 transition-all">
                 <span className="text-white font-bold text-lg">CU</span>
               </div>
               <div>
-                <h1 className="font-bold text-text">Customer</h1>
+                <h1 className="font-bold text-text group-hover:text-primary transition-colors">Customer</h1>
                 <p className="text-xs text-text-muted">Tìm gái gọi</p>
               </div>
             </Link>
           </div>
 
-          {/* User Info */}
-          <div className="p-4 border-b border-secondary/30">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                <span className="text-primary font-bold text-sm">
-                  {user?.fullName?.charAt(0) || 'C'}
-                </span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-text text-sm truncate">
-                  {user?.fullName || 'Customer'}
-                </p>
-                <p className="text-xs text-text-muted truncate">
-                  {user?.email || 'email@example.com'}
-                </p>
+          {/* User Profile Card */}
+          <div className="p-4">
+            <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-4 border border-primary/20">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg">
+                  <span className="text-white font-bold text-lg">
+                    {user?.fullName?.charAt(0)?.toUpperCase() || 'N'}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-text truncate">
+                    {user?.fullName || 'Người dùng'}
+                  </p>
+                  <p className="text-xs text-text-muted truncate">
+                    {user?.email || 'email@example.com'}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Menu Items */}
-          <nav className="flex-1 overflow-y-auto p-4 space-y-1">
-            {menuItems.map((item) => {
-              const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setIsMobileOpen(false)}
-                  className={`
-                    flex items-center gap-3 px-4 py-3 rounded-lg transition-all
-                    ${
-                      isActive
-                        ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                        : 'text-text hover:bg-background hover:text-primary'
-                    }
-                  `}
-                >
-                  {item.icon}
-                  <span className="font-medium">{item.title}</span>
-                </Link>
-              );
-            })}
+          {/* Navigation Menu */}
+          <nav className="flex-1 overflow-y-auto px-3 py-2">
+            <div className="space-y-1">
+              {menuItems.map((item) => {
+                const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setIsMobileOpen(false)}
+                    className={`
+                      flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
+                      ${
+                        isActive
+                          ? 'bg-primary text-white shadow-lg shadow-primary/30'
+                          : 'text-text-muted hover:bg-primary/10 hover:text-primary'
+                      }
+                    `}
+                  >
+                    <span className={isActive ? 'text-white' : ''}>{item.icon}</span>
+                    <span className="font-medium">{item.title}</span>
+                    {isActive && (
+                      <span className="ml-auto w-1.5 h-1.5 rounded-full bg-white"></span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
           </nav>
 
-          {/* Logout */}
-          <div className="p-4 border-t border-secondary/30">
+          {/* Bottom Section */}
+          <div className="p-4 border-t border-secondary/20 space-y-2">
+            {/* Đăng xuất */}
             <button
-              onClick={logout}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-text hover:bg-background hover:text-primary transition-all"
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-text-muted hover:bg-red-500/10 hover:text-red-500 transition-all duration-200"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -159,7 +167,7 @@ export default function CustomerSidebar() {
       {/* Mobile Overlay */}
       {isMobileOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/50 z-30"
+          className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-30"
           onClick={() => setIsMobileOpen(false)}
         />
       )}

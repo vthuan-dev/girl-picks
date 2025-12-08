@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { GirlsService } from './girls.service';
 import { UpdateGirlDto } from './dto/update-girl.dto';
+import { CreateGirlProductDto } from './dto/create-girl-product.dto';
 import { VerificationRequestDto } from './dto/verification-request.dto';
 import {
   AddGirlImagesDto,
@@ -21,6 +22,7 @@ import {
 } from './dto/manage-girl-images.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { GirlManagerGuard } from '../../common/guards/girl-manager.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
@@ -48,6 +50,14 @@ export class GirlsController {
   @ApiQuery({ name: 'isPremium', required: false, type: Boolean })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'priceFilter', required: false, type: String })
+  @ApiQuery({ name: 'ageFilter', required: false, type: String })
+  @ApiQuery({ name: 'heightFilter', required: false, type: String })
+  @ApiQuery({ name: 'weightFilter', required: false, type: String })
+  @ApiQuery({ name: 'originFilter', required: false, type: String })
+  @ApiQuery({ name: 'locationFilter', required: false, type: String })
+  @ApiQuery({ name: 'province', required: false, type: String })
+  @ApiQuery({ name: 'tags', required: false, type: [String], description: 'Array of tags to filter by' })
   @ApiResponse({ status: 200, description: 'List of girls' })
   findAll(
     @Query('districts') districts?: string | string[],
@@ -57,11 +67,25 @@ export class GirlsController {
     @Query('isPremium') isPremium?: string,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page?: number,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
+    @Query('priceFilter') priceFilter?: string,
+    @Query('ageFilter') ageFilter?: string,
+    @Query('heightFilter') heightFilter?: string,
+    @Query('weightFilter') weightFilter?: string,
+    @Query('originFilter') originFilter?: string,
+    @Query('locationFilter') locationFilter?: string,
+    @Query('province') province?: string,
+    @Query('tags') tags?: string | string[],
   ) {
     const districtsArray = districts
       ? Array.isArray(districts)
         ? districts
         : [districts]
+      : undefined;
+
+    const tagsArray = tags
+      ? Array.isArray(tags)
+        ? tags
+        : [tags]
       : undefined;
 
     return this.girlsService.findAll({
@@ -78,6 +102,21 @@ export class GirlsController {
         isPremium === 'true' ? true : isPremium === 'false' ? false : undefined,
       page,
       limit,
+      priceFilter,
+      ageFilter,
+      heightFilter,
+      weightFilter,
+      originFilter,
+      locationFilter,
+      province,
+      tags: tagsArray,
+    });
+    
+    console.log('[GirlsController] Filter params:', {
+      province,
+      locationFilter,
+      priceFilter,
+      ageFilter,
     });
   }
 
@@ -130,7 +169,23 @@ export class GirlsController {
   @ApiResponse({ status: 200, description: 'Girl details' })
   @ApiResponse({ status: 404, description: 'Girl not found' })
   findOne(@Param('id') id: string) {
-    return this.girlsService.findOne(id);
+    return this.girlsService.findOne(id, true);
+  }
+
+  @Get('count/by-province')
+  @Public()
+  @ApiOperation({ summary: 'Get count of girls by province' })
+  @ApiResponse({ status: 200, description: 'Returns array of province with count' })
+  getCountByProvince() {
+    return this.girlsService.getCountByProvince();
+  }
+
+  @Post(':id/view')
+  @Public()
+  @ApiOperation({ summary: 'Increment girl view count (public)' })
+  @ApiResponse({ status: 200, description: 'View count incremented' })
+  incrementView(@Param('id') id: string) {
+    return this.girlsService.incrementViewCount(id);
   }
 
   @Patch('me/profile')
@@ -189,5 +244,46 @@ export class GirlsController {
     @Body('reason') reason: string,
   ) {
     return this.girlsService.rejectVerification(id, adminId, reason);
+  }
+
+  // ============================================
+  // CRUD Operations for Staff/Admin
+  // ============================================
+
+  @Post()
+  @UseGuards(JwtAuthGuard, GirlManagerGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create girl product (Staff/Admin only)' })
+  @ApiResponse({ status: 201, description: 'Girl created' })
+  create(
+    @Body() createGirlDto: CreateGirlProductDto,
+    @CurrentUser('id') managedById: string,
+  ) {
+    return this.girlsService.create(createGirlDto, managedById);
+  }
+
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard, GirlManagerGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update girl by ID (Staff/Admin only)' })
+  @ApiResponse({ status: 200, description: 'Girl updated' })
+  updateById(
+    @Param('id') id: string,
+    @Body() updateGirlDto: UpdateGirlDto,
+    @CurrentUser('id') managedById: string,
+  ) {
+    return this.girlsService.updateById(id, updateGirlDto, managedById);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, GirlManagerGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete girl (Staff/Admin only)' })
+  @ApiResponse({ status: 200, description: 'Girl deleted' })
+  remove(
+    @Param('id') id: string,
+    @CurrentUser('id') managedById: string,
+  ) {
+    return this.girlsService.remove(id, managedById);
   }
 }

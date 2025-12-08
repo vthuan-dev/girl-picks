@@ -1,0 +1,10 @@
+-- AlterTable
+ALTER TABLE `posts` ADD COLUMN `category` VARCHAR(191) NULL,
+    ADD COLUMN `duration` VARCHAR(191) NULL,
+    ADD COLUMN `poster` VARCHAR(191) NULL,
+    ADD COLUMN `rating` DOUBLE NULL,
+    ADD COLUMN `tags` JSON NOT NULL,
+    ADD COLUMN `thumbnail` VARCHAR(191) NULL,
+    ADD COLUMN `videoSources` JSON NOT NULL,
+    ADD COLUMN `videoUrl` VARCHAR(191) NULL,
+    ADD COLUMN `viewCount` INTEGER NOT NULL DEFAULT 0;

@@ -55,3 +55,5 @@ for image_path, success in results.items():
     print(f"{status} {Path(image_path).name}")
 
 
+
+

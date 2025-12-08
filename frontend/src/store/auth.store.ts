@@ -40,8 +40,25 @@ export const useAuthStore = create<AuthState>()(
           }
 
           // Store tokens in cookies for HTTP-only security
-          Cookies.set('accessToken', authData.accessToken, { expires: 1 }); // 1 day
-          Cookies.set('refreshToken', authData.refreshToken, { expires: 7 }); // 7 days
+          // Set secure cookies with proper options
+          const cookieOptions = {
+            expires: 1, // 1 day for access token
+            path: '/',
+            sameSite: 'lax' as const,
+            secure: process.env.NODE_ENV === 'production', // Only secure in production (HTTPS)
+          };
+          
+          Cookies.set('accessToken', authData.accessToken, cookieOptions);
+          Cookies.set('refreshToken', authData.refreshToken, { 
+            ...cookieOptions, 
+            expires: 7 // 7 days for refresh token
+          });
+          
+          // Verify tokens were stored (for debugging)
+          if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+            const verifyToken = Cookies.get('accessToken');
+            console.log('✅ Access token stored:', verifyToken ? 'Yes' : 'No');
+          }
 
           // Map backend user to frontend user format
           // Backend doesn't return username, so we generate it from email

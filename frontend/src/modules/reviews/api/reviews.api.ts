@@ -1,0 +1,143 @@
+import apiClient from '@/lib/api/client';
+import { ApiResponse } from '@/lib/api/types';
+
+export interface Review {
+  id: string;
+  title: string;
+  content: string;
+  rating: number;
+  images: string[];
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  createdAt: string;
+  updatedAt: string;
+  customer: {
+    id: string;
+    fullName: string;
+    avatarUrl?: string | null;
+  };
+  girl: {
+    id: string;
+    name: string;
+  };
+  _count?: {
+    likes: number;
+    comments: number;
+  };
+}
+
+export interface ReviewComment {
+  id: string;
+  content: string;
+  createdAt: string;
+  user: {
+    id: string;
+    fullName: string;
+    avatarUrl?: string | null;
+  };
+}
+
+export interface CreateReviewDto {
+  girlId: string;
+  title: string;
+  content: string;
+  rating: number;
+  images?: string[];
+}
+
+export interface CreateReviewCommentDto {
+  content: string;
+}
+
+export const reviewsApi = {
+  // Get reviews by girl ID (public - approved only)
+  getByGirlId: async (girlId: string): Promise<Review[]> => {
+    const response = await apiClient.get<any>(`/reviews/girl/${girlId}`);
+    const responseData = response.data;
+    
+    if (responseData.success && responseData.data) {
+      return Array.isArray(responseData.data) ? responseData.data : [];
+    }
+    
+    if (Array.isArray(responseData)) {
+      return responseData;
+    }
+    
+    return [];
+  },
+
+  // Create review (Customer only)
+  create: async (data: CreateReviewDto): Promise<Review> => {
+    const response = await apiClient.post<any>('/reviews', data);
+    const responseData = response.data;
+    
+    if (responseData.success && responseData.data) {
+      return responseData.data;
+    }
+    
+    if (responseData.id) {
+      return responseData;
+    }
+    
+    throw new Error('Invalid response format from server');
+  },
+
+  // Toggle like on a review
+  toggleLike: async (reviewId: string): Promise<{ liked: boolean; likesCount: number }> => {
+    const response = await apiClient.post<any>(`/reviews/${reviewId}/like`);
+    const responseData = response.data;
+    
+    if (responseData.success && responseData.data) {
+      return responseData.data;
+    }
+    
+    return responseData;
+  },
+
+  // Get likes count for a review
+  getLikes: async (reviewId: string): Promise<number> => {
+    const response = await apiClient.get<any>(`/reviews/${reviewId}/likes`);
+    const responseData = response.data;
+    
+    if (responseData.success && responseData.data) {
+      return responseData.data.count || 0;
+    }
+    
+    return responseData.count || 0;
+  },
+
+  // Add comment to a review
+  addComment: async (reviewId: string, data: CreateReviewCommentDto): Promise<ReviewComment> => {
+    const response = await apiClient.post<any>(`/reviews/${reviewId}/comments`, data);
+    const responseData = response.data;
+    
+    if (responseData.success && responseData.data) {
+      return responseData.data;
+    }
+    
+    if (responseData.id) {
+      return responseData;
+    }
+    
+    throw new Error('Invalid response format from server');
+  },
+
+  // Get comments for a review
+  getComments: async (reviewId: string, page = 1, limit = 20): Promise<{ data: ReviewComment[]; total: number }> => {
+    const response = await apiClient.get<any>(`/reviews/${reviewId}/comments?page=${page}&limit=${limit}`);
+    const responseData = response.data;
+    
+    if (responseData.success && responseData.data) {
+      return {
+        data: Array.isArray(responseData.data.data) ? responseData.data.data : [],
+        total: responseData.data.total || 0,
+      };
+    }
+    
+    if (Array.isArray(responseData)) {
+      return { data: responseData, total: responseData.length };
+    }
+    
+    return { data: [], total: 0 };
+  },
+};
+

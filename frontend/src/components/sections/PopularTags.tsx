@@ -1,34 +1,80 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useQuery } from 'react-query';
+import { tagsApi, PopularTag } from '@/modules/tags/api/tags.api';
 
-// Mock popular tags data - in real app, this would come from API
-const popularTags = [
-  { name: 'gái gọi', count: 12580, icon: '🔥' },
-  { name: 'gaigu', count: 8930, icon: '⭐' },
-  { name: 'gái gọi sài gòn', count: 6540, icon: '📍' },
-  { name: 'gái gọi cao cấp', count: 5230, icon: '💎' },
-  { name: 'Gaigoi', count: 4890, icon: '✨' },
-  { name: 'gái gọi kỹ nữ', count: 4120, icon: '🎭' },
-  { name: 'gái gọi vú to', count: 3890, icon: '💋' },
-  { name: 'gái gọi hà nội', count: 3650, icon: '🏛️' },
-  { name: 'Ngon', count: 3420, icon: '😋' },
-  { name: 'gái dâm', count: 3210, icon: '🔥' },
-  { name: 'gái gọi quận 10', count: 2980, icon: '📍' },
-  { name: 'gái xinh', count: 2750, icon: '💕' },
-  { name: 'gái gọi kynu', count: 2540, icon: '🎯' },
-  { name: 'Gái Gọi Sài Gòn', count: 2330, icon: '🌆' },
-  { name: 'gái gọi giá rẻ', count: 2120, icon: '💰' },
-  { name: 'vú to', count: 1980, icon: '💋' },
-];
+// Icon mapping for tags
+const getTagIcon = (tagName: string): string => {
+  const name = tagName.toLowerCase();
+  if (name.includes('sài gòn') || name.includes('hà nội') || name.includes('quận')) {
+    return '📍';
+  }
+  if (name.includes('cao cấp') || name.includes('premium')) {
+    return '💎';
+  }
+  if (name.includes('xinh') || name.includes('đẹp')) {
+    return '💕';
+  }
+  if (name.includes('giá rẻ') || name.includes('rẻ')) {
+    return '💰';
+  }
+  if (name.includes('kỹ nữ') || name.includes('kynu')) {
+    return '🎭';
+  }
+  if (name.includes('vú') || name.includes('ngực')) {
+    return '💋';
+  }
+  return '🔥';
+};
 
-export default function PopularTags() {
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+interface PopularTagsProps {
+  onTagClick?: (tag: string) => void;
+  selectedTag?: string | null;
+  source?: 'girls' | 'posts' | 'all'; // Source of tags
+}
+
+export default function PopularTags({ 
+  onTagClick, 
+  selectedTag: externalSelectedTag,
+  source = 'girls' 
+}: PopularTagsProps) {
+  const router = useRouter();
+  const [internalSelectedTag, setInternalSelectedTag] = useState<string | null>(null);
+  const selectedTag = externalSelectedTag !== undefined ? externalSelectedTag : internalSelectedTag;
+
+  // Fetch popular tags from API
+  const { data: popularTags = [], isLoading, error } = useQuery<PopularTag[]>(
+    ['popularTags', source],
+    async () => {
+      try {
+        const result = await tagsApi.getPopularTags({ limit: 20, source });
+        console.log('[PopularTags] Fetched tags:', result);
+        return result;
+      } catch (err) {
+        console.error('[PopularTags] Error fetching tags:', err);
+        throw err;
+      }
+    },
+    {
+      staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+      cacheTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+      retry: 2, // Retry 2 times on error
+      retryDelay: 1000, // Wait 1 second between retries
+    }
+  );
 
   const handleTagClick = (tag: string) => {
-    setSelectedTag(selectedTag === tag ? null : tag);
-    // In real app, this would filter the results
+    // Navigate to search page with tag query
+    const searchUrl = `/search?q=${encodeURIComponent(tag)}&tag=${encodeURIComponent(tag)}`;
+    router.push(searchUrl);
+    
+    // Also call onTagClick callback if provided (for local filtering)
+    if (onTagClick) {
+      onTagClick(tag);
+    }
   };
 
   return (
@@ -40,8 +86,39 @@ export default function PopularTags() {
             Tags phổ biến
           </h2>
         </div>
-        <div className="space-y-2">
-          {popularTags.map((tag, index) => (
+        {isLoading ? (
+          <div className="space-y-2">
+            {[...Array(6)].map((_, index) => (
+              <div
+                key={index}
+                className="w-full h-10 bg-background rounded-lg animate-pulse"
+              />
+            ))}
+          </div>
+        ) : error ? (
+          <div className="text-center py-4">
+            <div className="text-text-muted text-sm mb-2">
+              Không thể tải tags
+            </div>
+            <button
+              onClick={() => window.location.reload()}
+              className="text-xs text-primary hover:text-primary-hover underline cursor-pointer"
+            >
+              Thử lại
+            </button>
+            {process.env.NODE_ENV === 'development' && (
+              <div className="text-xs text-red-400 mt-2">
+                {error instanceof Error ? error.message : 'Unknown error'}
+              </div>
+            )}
+          </div>
+        ) : popularTags.length === 0 ? (
+          <div className="text-center py-4 text-text-muted text-sm">
+            Chưa có tags nào
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {popularTags.map((tag, index) => (
             <button
               key={index}
               onClick={() => handleTagClick(tag.name)}
@@ -61,7 +138,7 @@ export default function PopularTags() {
               ) : null}
               
               <div className="relative flex items-center gap-2.5 flex-1 min-w-0">
-                <span className="text-base flex-shrink-0">{tag.icon}</span>
+                <span className="text-base flex-shrink-0">{getTagIcon(tag.name)}</span>
                 <span className="text-sm font-medium truncate">{tag.name}</span>
               </div>
               
@@ -76,8 +153,9 @@ export default function PopularTags() {
                 {tag.count.toLocaleString()}
               </span>
             </button>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </aside>
   );

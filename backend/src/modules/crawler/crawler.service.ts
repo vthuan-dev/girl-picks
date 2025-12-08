@@ -68,6 +68,10 @@ export class CrawlerService {
             totalReviews: data.totalReviews || existingGirl.totalReviews,
             verificationStatus: data.verified ? 'VERIFIED' : existingGirl.verificationStatus,
             isActive: data.isAvailable !== undefined ? data.isAvailable : existingGirl.isActive,
+            tags: (data.tags && data.tags.length > 0 ? data.tags : existingGirl.tags) as string[] | undefined,
+            location: data.location || existingGirl.location,
+            province: data.province || existingGirl.province,
+            price: data.price || existingGirl.price,
             updatedAt: new Date(),
           },
         });
@@ -106,6 +110,10 @@ export class CrawlerService {
           totalReviews: data.totalReviews || 0,
           verificationStatus: data.verified ? 'VERIFIED' : 'PENDING',
           isActive: data.isAvailable !== false,
+          tags: data.tags || [],
+          location: data.location,
+          province: data.province,
+          price: data.price,
           districts: [], // Can be populated later based on location/province
         },
       });

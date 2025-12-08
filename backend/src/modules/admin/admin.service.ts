@@ -544,8 +544,9 @@ export class AdminService {
     isActive?: boolean;
     page?: number;
     limit?: number;
+    search?: string;
   }) {
-    const { role, isActive, page = 1, limit = 20 } = filters || {};
+    const { role, isActive, page = 1, limit = 20, search } = filters || {};
 
     const where: Prisma.UserWhereInput = {};
 
@@ -555,6 +556,14 @@ export class AdminService {
 
     if (isActive !== undefined) {
       where.isActive = isActive;
+    }
+
+    if (search) {
+      where.OR = [
+        { email: { contains: search } },
+        { fullName: { contains: search } },
+        { phone: { contains: search } },
+      ];
     }
 
     const [users, total] = await Promise.all([
@@ -677,6 +686,69 @@ export class AdminService {
     return { message: 'User deleted successfully' };
   }
 
+  async createUser(createUserDto: {
+    email: string;
+    password: string;
+    fullName: string;
+    phone?: string;
+    role: UserRole;
+    avatarUrl?: string;
+  }) {
+    const { email, password, fullName, phone, role, avatarUrl } = createUserDto;
+
+    // Check if user already exists
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      throw new ConflictException('User with this email already exists');
+    }
+
+    // Hash password
+    const hashedPassword = await hashPassword(password);
+
+    // Create user
+    const user = await this.prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        fullName,
+        phone: phone || null,
+        role,
+        avatarUrl: avatarUrl || null,
+        isActive: true,
+      },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        phone: true,
+        role: true,
+        isActive: true,
+        avatarUrl: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    // Create girl profile if role is GIRL
+    if (role === UserRole.GIRL) {
+      await this.prisma.girl.create({
+        data: {
+          userId: user.id,
+          name: fullName,
+          images: [],
+          tags: [],
+          services: [],
+          districts: [],
+        },
+      });
+    }
+
+    return user;
+  }
+
   async getSettings() {
     const settings = await this.prisma.setting.findMany();
     
@@ -725,5 +797,422 @@ export class AdminService {
     await Promise.all(updates);
 
     return this.getSettings();
+  }
+
+  // ============================================
+  // Girls Management
+  // ============================================
+
+  async getAllGirls(filters?: {
+    search?: string;
+    isActive?: boolean;
+    verificationStatus?: VerificationStatus;
+    isFeatured?: boolean;
+    isPremium?: boolean;
+    page?: number;
+    limit?: number;
+  }) {
+    const {
+      search,
+      isActive,
+      verificationStatus,
+      isFeatured,
+      isPremium,
+      page = 1,
+      limit = 20,
+    } = filters || {};
+
+    const where: Prisma.GirlWhereInput = {};
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search } },
+        { bio: { contains: search } },
+      ];
+    }
+
+    if (isActive !== undefined) {
+      where.isActive = isActive;
+    }
+
+    if (verificationStatus) {
+      where.verificationStatus = verificationStatus;
+    }
+
+    if (isFeatured !== undefined) {
+      where.isFeatured = isFeatured;
+    }
+
+    if (isPremium !== undefined) {
+      where.isPremium = isPremium;
+    }
+
+    const [girls, total] = await Promise.all([
+      this.prisma.girl.findMany({
+        where,
+        include: {
+          // TODO: Uncomment after running: npx prisma generate (need to stop server first)
+          // managedBy: {
+          //   select: {
+          //     id: true,
+          //     fullName: true,
+          //     email: true,
+          //   },
+          // },
+          _count: {
+            select: {
+              posts: true,
+              reviews: true,
+              bookings: true,
+            },
+          },
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.girl.count({ where }),
+    ]);
+
+    return {
+      data: girls,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async getGirlDetails(girlId: string) {
+    const girl = await this.prisma.girl.findUnique({
+      where: { id: girlId },
+      include: {
+        // TODO: Uncomment after running: npx prisma generate (need to stop server first)
+        // managedBy: {
+        //   select: {
+        //     id: true,
+        //     fullName: true,
+        //     email: true,
+        //     phone: true,
+        //   },
+        // },
+        posts: {
+          take: 10,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            title: true,
+            status: true,
+            createdAt: true,
+          },
+        },
+        reviews: {
+          take: 10,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            rating: true,
+            status: true,
+            createdAt: true,
+          },
+        },
+        bookings: {
+          take: 10,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            status: true,
+            createdAt: true,
+          },
+        },
+        _count: {
+          select: {
+            posts: true,
+            reviews: true,
+            bookings: true,
+          },
+        },
+      },
+    });
+
+    if (!girl) {
+      throw new NotFoundException('Girl not found');
+    }
+
+    return girl;
+  }
+
+  async deleteGirl(girlId: string) {
+    const girl = await this.prisma.girl.findUnique({
+      where: { id: girlId },
+    });
+
+    if (!girl) {
+      throw new NotFoundException('Girl not found');
+    }
+
+    await this.prisma.girl.delete({
+      where: { id: girlId },
+    });
+
+    return { message: 'Girl deleted successfully' };
+  }
+
+  // ============================================
+  // Posts Management
+  // ============================================
+
+  async getAllPosts(filters?: {
+    search?: string;
+    status?: PostStatus;
+    girlId?: string;
+    authorId?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const {
+      search,
+      status,
+      girlId,
+      authorId,
+      page = 1,
+      limit = 20,
+    } = filters || {};
+
+    const where: Prisma.PostWhereInput = {};
+
+    if (search) {
+      where.OR = [
+        { title: { contains: search } },
+        { content: { contains: search } },
+      ];
+    }
+
+    if (status) {
+      where.status = status;
+    }
+
+    if (girlId) {
+      where.girlId = girlId;
+    }
+
+    if (authorId) {
+      where.authorId = authorId;
+    }
+
+    const [posts, total] = await Promise.all([
+      this.prisma.post.findMany({
+        where,
+        include: {
+          author: {
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+              avatarUrl: true,
+              role: true,
+            },
+          },
+          girl: {
+            select: {
+              id: true,
+              name: true,
+              images: true,
+            },
+          },
+          _count: {
+            select: {
+              likes: true,
+              comments: true,
+            },
+          },
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.post.count({ where }),
+    ]);
+
+    return {
+      data: posts,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async getPostDetails(postId: string) {
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+      include: {
+        author: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            avatarUrl: true,
+            role: true,
+          },
+        },
+        girl: {
+          select: {
+            id: true,
+            name: true,
+            images: true,
+            // TODO: Uncomment after running: npx prisma generate (need to stop server first)
+            // phone: true,
+          },
+        },
+        likes: {
+          take: 10,
+          include: {
+            user: {
+              select: {
+                id: true,
+                fullName: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        },
+        comments: {
+          take: 10,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            user: {
+              select: {
+                id: true,
+                fullName: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
+          },
+        },
+      },
+    });
+
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+
+    return post;
+  }
+
+  async createPostAsAdmin(
+    adminId: string,
+    createPostDto: {
+      title: string;
+      content?: string;
+      images?: string[];
+      girlId?: string;
+      status?: PostStatus;
+    },
+  ) {
+    return this.prisma.post.create({
+      data: {
+        title: createPostDto.title,
+        content: createPostDto.content || '',
+        images: createPostDto.images || [],
+        authorId: adminId,
+        ...(createPostDto.girlId !== undefined && {
+          girlId: createPostDto.girlId,
+        }),
+        status: createPostDto.status || PostStatus.APPROVED,
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            role: true,
+          },
+        },
+        girl: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+  }
+
+  async updatePostAsAdmin(
+    postId: string,
+    updatePostDto: {
+      title?: string;
+      content?: string;
+      images?: string[];
+      girlId?: string;
+      status?: PostStatus;
+    },
+  ) {
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+    });
+
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+
+    return this.prisma.post.update({
+      where: { id: postId },
+      data: {
+        ...(updatePostDto.title && { title: updatePostDto.title }),
+        ...(updatePostDto.content !== undefined && {
+          content: updatePostDto.content,
+        }),
+        ...(updatePostDto.images && { images: updatePostDto.images }),
+        ...(updatePostDto.girlId !== undefined && {
+          girlId: updatePostDto.girlId,
+        }),
+        ...(updatePostDto.status && { status: updatePostDto.status }),
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            role: true,
+          },
+        },
+        girl: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+  }
+
+  async deletePostAsAdmin(postId: string) {
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+    });
+
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+
+    await this.prisma.post.delete({
+      where: { id: postId },
+    });
+
+    return { message: 'Post deleted successfully' };
   }
 }

@@ -11,6 +11,7 @@ import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { PostStatus, UserRole, Prisma } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
+import { generateSlug, generateUniqueSlug } from '../../common/utils/slug.util';
 
 @Injectable()
 export class PostsService {
@@ -32,9 +33,19 @@ export class PostsService {
       }
     }
 
+    // Generate slug from title
+    const baseSlug = generateSlug(createPostDto.title);
+    const existingPosts = await this.prisma.post.findMany({
+      where: { slug: { startsWith: baseSlug } },
+      select: { slug: true },
+    });
+    const existingSlugs = existingPosts.map(p => p.slug).filter(Boolean) as string[];
+    const slug = generateUniqueSlug(baseSlug, existingSlugs);
+
     return (this.prisma.post.create as any)({
       data: {
         ...createPostDto,
+        slug,
         authorId: userId,
         girlId: girlId || createPostDto.girlId || null,
         status: PostStatus.PENDING,
@@ -151,9 +162,15 @@ export class PostsService {
     };
   }
 
-  async findOne(id: string) {
-    const post = await (this.prisma.post.findUnique as any)({
-      where: { id },
+  async findOne(idOrSlug: string, incrementView: boolean = true) {
+    // Try to find by ID first, then by slug
+    const post = await (this.prisma.post.findFirst as any)({
+      where: {
+        OR: [
+          { id: idOrSlug },
+          { slug: idOrSlug },
+        ],
+      },
       include: {
           author: {
             select: {
@@ -187,10 +204,15 @@ export class PostsService {
       throw new NotFoundException('Post not found');
     }
 
+    // Increment view count if requested
+    if (incrementView) {
+      await this.incrementViewCount(post.id);
+    }
+
     // Get likes and comments count
     const [likesCount, commentsCount] = await Promise.all([
-      (this.prisma as any).postLike.count({ where: { postId: id } }),
-      (this.prisma as any).postComment.count({ where: { postId: id } }),
+      (this.prisma as any).postLike.count({ where: { postId: post.id } }),
+      (this.prisma as any).postComment.count({ where: { postId: post.id } }),
     ]);
 
     return {
@@ -200,6 +222,17 @@ export class PostsService {
         comments: commentsCount,
       },
     };
+  }
+
+  async incrementViewCount(id: string) {
+    await this.prisma.post.update({
+      where: { id },
+      data: {
+        viewCount: {
+          increment: 1,
+        },
+      },
+    });
   }
 
   async findByGirl(girlId: string, status?: PostStatus) {
@@ -237,15 +270,66 @@ export class PostsService {
   }
 
   async findMyPosts(userId: string, status?: PostStatus) {
-    const girl = await this.prisma.girl.findUnique({
-      where: { userId },
-    });
+    const where: Prisma.PostWhereInput = {
+      authorId: userId,
+    };
 
-    if (!girl) {
-      throw new NotFoundException('Girl profile not found');
+    if (status !== undefined) {
+      where.status = status;
     }
 
-    return this.findByGirl(girl.id, status);
+    const posts = await (this.prisma.post.findMany as any)({
+      where,
+      include: {
+        author: {
+          select: {
+            id: true,
+            fullName: true,
+            avatarUrl: true,
+            role: true,
+          },
+        },
+        girl: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                fullName: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        },
+        approvedBy: {
+          select: {
+            id: true,
+            fullName: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    // Get likes and comments count for each post
+    const postsWithCounts = await Promise.all(
+      posts.map(async (post) => {
+        const [likesCount, commentsCount] = await Promise.all([
+          (this.prisma as any).postLike.count({ where: { postId: post.id } }),
+          (this.prisma as any).postComment.count({ where: { postId: post.id } }),
+        ]);
+        return {
+          ...post,
+          _count: {
+            likes: likesCount,
+            comments: commentsCount,
+          },
+        };
+      }),
+    );
+
+    return postsWithCounts;
   }
 
   async update(id: string, userId: string, updatePostDto: UpdatePostDto) {
@@ -261,9 +345,27 @@ export class PostsService {
       throw new BadRequestException('Can only update pending posts');
     }
 
+    // Generate slug if title changed
+    let slug: string | undefined;
+    if (updatePostDto.title && updatePostDto.title !== post.title) {
+      const baseSlug = generateSlug(updatePostDto.title);
+      const existingPosts = await this.prisma.post.findMany({
+        where: { 
+          slug: { startsWith: baseSlug },
+          NOT: { id },
+        },
+        select: { slug: true },
+      });
+      const existingSlugs = existingPosts.map(p => p.slug).filter(Boolean) as string[];
+      slug = generateUniqueSlug(baseSlug, existingSlugs);
+    }
+
     return (this.prisma.post.update as any)({
       where: { id },
-      data: updatePostDto,
+      data: {
+        ...updatePostDto,
+        ...(slug && { slug }),
+      },
       include: {
         author: {
           select: {
@@ -291,11 +393,74 @@ export class PostsService {
   async delete(id: string, userId: string, userRole: UserRole) {
     const post = await this.findOne(id);
 
-    // Users can only delete their own posts, Admins can delete any
-    if (userRole !== UserRole.ADMIN && (post as any).authorId !== userId) {
+    // Users can only delete their own posts, Admins/Staff can delete any
+    if (
+      userRole !== UserRole.ADMIN &&
+      userRole !== UserRole.STAFF_UPLOAD &&
+      (post as any).authorId !== userId
+    ) {
         throw new ForbiddenException('You can only delete your own posts');
     }
 
+    return this.prisma.post.delete({
+      where: { id },
+    });
+  }
+
+  async updateAsAdmin(id: string, userId: string, updatePostDto: UpdatePostDto) {
+    const post = await this.findOne(id);
+
+    // Generate slug if title changed
+    let slug: string | undefined;
+    if (updatePostDto.title && updatePostDto.title !== post.title) {
+      const baseSlug = generateSlug(updatePostDto.title);
+      const existingPosts = await this.prisma.post.findMany({
+        where: { 
+          slug: { startsWith: baseSlug },
+          NOT: { id },
+        },
+        select: { slug: true },
+      });
+      const existingSlugs = existingPosts.map(p => p.slug).filter(Boolean) as string[];
+      slug = generateUniqueSlug(baseSlug, existingSlugs);
+    }
+
+    // Admin/Staff can update any post, regardless of status
+    return (this.prisma.post.update as any)({
+      where: { id },
+      data: {
+        ...updatePostDto,
+        ...(slug && { slug }),
+        images: updatePostDto.images !== undefined ? updatePostDto.images : undefined,
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            fullName: true,
+            avatarUrl: true,
+            role: true,
+          },
+        },
+        girl: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                fullName: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async deleteAsAdmin(id: string, userId: string) {
+    const post = await this.findOne(id);
+
+    // Admin/Staff can delete any post
     return this.prisma.post.delete({
       where: { id },
     });
@@ -467,6 +632,7 @@ export class PostsService {
     postId: string,
     userId: string,
     content: string,
+    parentId?: string,
   ) {
     const post = await this.prisma.post.findUnique({
       where: { id: postId },
@@ -481,11 +647,26 @@ export class PostsService {
       throw new BadRequestException('Only approved posts can be commented');
     }
 
+    // If parentId provided, verify it exists and belongs to same post
+    if (parentId) {
+      const parentComment = await (this.prisma as any).postComment.findUnique({
+        where: { id: parentId },
+        select: { postId: true },
+      });
+      if (!parentComment) {
+        throw new NotFoundException('Parent comment not found');
+      }
+      if (parentComment.postId !== postId) {
+        throw new BadRequestException('Parent comment does not belong to this post');
+      }
+    }
+
     return (this.prisma as any).postComment.create({
       data: {
         postId,
         userId,
         content,
+        parentId: parentId || null,
       },
       include: {
         user: {
@@ -509,9 +690,91 @@ export class PostsService {
       throw new NotFoundException('Post not found');
     }
 
+    // Get only top-level comments (no parentId)
     const [comments, total] = await Promise.all([
       (this.prisma as any).postComment.findMany({
-        where: { postId },
+        where: { 
+          postId,
+          parentId: null, // Only top-level comments
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              avatarUrl: true,
+            },
+          },
+          replies: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  avatarUrl: true,
+                },
+              },
+              replies: {
+                include: {
+                  user: {
+                    select: {
+                      id: true,
+                      fullName: true,
+                      avatarUrl: true,
+                    },
+                  },
+                },
+                orderBy: { createdAt: 'asc' },
+              },
+            },
+            orderBy: { createdAt: 'asc' },
+          },
+          _count: {
+            select: { replies: true },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      (this.prisma as any).postComment.count({ 
+        where: { 
+          postId,
+          parentId: null,
+        } 
+      }),
+    ]);
+
+    // Get total comments count (including replies)
+    const totalAll = await (this.prisma as any).postComment.count({ 
+      where: { postId } 
+    });
+
+    return {
+      data: comments,
+      meta: {
+        total,
+        totalAll,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async getReplies(commentId: string, page = 1, limit = 10) {
+    const comment = await (this.prisma as any).postComment.findUnique({
+      where: { id: commentId },
+      select: { id: true },
+    });
+
+    if (!comment) {
+      throw new NotFoundException('Comment not found');
+    }
+
+    const [replies, total] = await Promise.all([
+      (this.prisma as any).postComment.findMany({
+        where: { parentId: commentId },
         include: {
           user: {
             select: {
@@ -521,15 +784,15 @@ export class PostsService {
             },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: 'asc' },
         skip: (page - 1) * limit,
         take: limit,
       }),
-      (this.prisma as any).postComment.count({ where: { postId } }),
+      (this.prisma as any).postComment.count({ where: { parentId: commentId } }),
     ]);
 
     return {
-      data: comments,
+      data: replies,
       meta: {
         total,
         page,

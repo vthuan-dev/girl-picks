@@ -68,32 +68,27 @@ export const authApi = {
 
   // Get Current User
   getCurrentUser: async (): Promise<ApiResponse<User>> => {
-    try {
-      const response = await apiClient.get<ApiResponse<User>>('/auth/me');
-      const responseData = response.data;
-      
-      // Handle both wrapped and unwrapped responses
-      if (responseData.success && responseData.data) {
-        return responseData;
-      }
-      
-      // If already unwrapped, wrap it
-      if (responseData && !responseData.success) {
-        return {
-          success: true,
-          data: responseData as unknown as User,
-        };
-      }
-      
-      return responseData;
-    } catch (error) {
-      // Return error response if backend is not available
+    const response = await apiClient.get<any>('/users/me');
+    const responseData = response.data;
+    
+    // Backend wraps response in {success: true, data: {...}}
+    if (responseData.success && responseData.data) {
       return {
-        success: false,
-        data: null as any,
-        message: 'Backend not available',
+        success: true,
+        data: responseData.data,
       };
     }
+    
+    // If already unwrapped (direct user object), wrap it
+    if (responseData && !responseData.success && (responseData.id || responseData.email)) {
+      return {
+        success: true,
+        data: responseData as User,
+      };
+    }
+    
+    // Return as is if already in correct format
+    return responseData;
   },
 };
 

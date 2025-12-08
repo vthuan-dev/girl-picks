@@ -5,11 +5,16 @@ import {
 } from '@nestjs/common';
 import { Prisma, VerificationStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { generateSlug, generateUniqueSlug } from '../../common/utils/slug.util';
 import { UpdateGirlDto } from './dto/update-girl.dto';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class GirlsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cacheService: CacheService,
+  ) {}
 
   async findAll(filters?: {
     districts?: string[];
@@ -19,6 +24,14 @@ export class GirlsService {
     isPremium?: boolean;
     page?: number;
     limit?: number;
+    priceFilter?: string;
+    ageFilter?: string;
+    heightFilter?: string;
+    weightFilter?: string;
+    originFilter?: string;
+    locationFilter?: string;
+    province?: string;
+    tags?: string[]; // Array of tags to filter by
   }) {
     const {
       districts,
@@ -28,13 +41,47 @@ export class GirlsService {
       isPremium,
       page = 1,
       limit = 20,
+      priceFilter,
+      ageFilter,
+      heightFilter,
+      weightFilter,
+      originFilter,
+      locationFilter,
+      province,
+      tags,
     } = filters || {};
 
+    // Generate cache key based on all filter parameters
+    const cacheKey = this.cacheService.generateKey(
+      'girls:list',
+      page,
+      limit,
+      districts?.join(',') || '',
+      rating || 0,
+      verification || '',
+      isFeatured ? 'true' : isFeatured === false ? 'false' : '',
+      isPremium ? 'true' : isPremium === false ? 'false' : '',
+      priceFilter || '',
+      ageFilter || '',
+      heightFilter || '',
+      weightFilter || '',
+      originFilter || '',
+      locationFilter || '',
+      province || '',
+      tags?.join(',') || '',
+    );
+
+    // Try to get from cache first
+    const cachedData = await this.cacheService.get(cacheKey);
+    if (cachedData) {
+      console.log('[GirlsService] Cache hit for:', cacheKey);
+      return cachedData;
+    }
+
+    console.log('[GirlsService] Cache miss, fetching from database...');
+
     const where: Prisma.GirlWhereInput = {
-      user: {
-        isActive: true,
-      },
-      isActive: true,
+      isActive: true, // Girl is independent, no need to check user
     };
 
     if (districts && districts.length > 0) {
@@ -61,8 +108,299 @@ export class GirlsService {
       where.isPremium = isPremium;
     }
 
-    const [girls, total] = await Promise.all([
-      this.prisma.girl.findMany({
+    // Price filter
+    if (priceFilter) {
+      const priceConditions: Prisma.GirlWhereInput[] = [];
+      switch (priceFilter) {
+        case 'under-600k':
+          priceConditions.push({
+            OR: [
+              { price: { contains: '200' } },
+              { price: { contains: '300' } },
+              { price: { contains: '400' } },
+              { price: { contains: '500' } },
+            ],
+          });
+          break;
+        case '600k-1000k':
+          priceConditions.push({
+            OR: [
+              { price: { contains: '600' } },
+              { price: { contains: '700' } },
+              { price: { contains: '800' } },
+              { price: { contains: '900' } },
+              { price: { contains: '1000' } },
+            ],
+          });
+          break;
+        case 'over-1000k':
+          priceConditions.push({
+            AND: [
+              { price: { not: null } },
+              {
+                NOT: {
+                  OR: [
+                    { price: { contains: '200' } },
+                    { price: { contains: '300' } },
+                    { price: { contains: '400' } },
+                    { price: { contains: '500' } },
+                    { price: { contains: '600' } },
+                    { price: { contains: '700' } },
+                    { price: { contains: '800' } },
+                    { price: { contains: '900' } },
+                    { price: { contains: '1000' } },
+                  ],
+                },
+              },
+            ],
+          });
+          break;
+      }
+      if (priceConditions.length > 0) {
+        where.AND = where.AND 
+          ? Array.isArray(where.AND) 
+            ? [...where.AND, ...priceConditions]
+            : [where.AND, ...priceConditions]
+          : priceConditions;
+      }
+    }
+
+    // Age filter
+    if (ageFilter) {
+      const currentYear = new Date().getFullYear();
+      const ageConditions: Prisma.GirlWhereInput[] = [];
+      switch (ageFilter) {
+        case '18-22':
+          ageConditions.push({
+            birthYear: {
+              gte: currentYear - 22,
+              lte: currentYear - 18,
+            },
+          });
+          break;
+        case '23-27':
+          ageConditions.push({
+            birthYear: {
+              gte: currentYear - 27,
+              lte: currentYear - 23,
+            },
+          });
+          break;
+        case '28-32':
+          ageConditions.push({
+            birthYear: {
+              gte: currentYear - 32,
+              lte: currentYear - 28,
+            },
+          });
+          break;
+        case 'over-32':
+          ageConditions.push({
+            birthYear: {
+              lt: currentYear - 32,
+            },
+          });
+          break;
+      }
+      if (ageConditions.length > 0) {
+        where.AND = where.AND 
+          ? Array.isArray(where.AND) 
+            ? [...where.AND, ...ageConditions]
+            : [where.AND, ...ageConditions]
+          : ageConditions;
+      }
+    }
+
+    // Height filter
+    if (heightFilter) {
+      const heightConditions: Prisma.GirlWhereInput[] = [];
+      switch (heightFilter) {
+        case 'under-155':
+          heightConditions.push({
+            height: {
+              contains: '150',
+            },
+          });
+          break;
+        case '155-165':
+          heightConditions.push({
+            OR: [
+              { height: { contains: '155' } },
+              { height: { contains: '160' } },
+              { height: { contains: '165' } },
+            ],
+          });
+          break;
+        case '165-175':
+          heightConditions.push({
+            OR: [
+              { height: { contains: '165' } },
+              { height: { contains: '170' } },
+              { height: { contains: '175' } },
+            ],
+          });
+          break;
+        case 'over-175':
+          heightConditions.push({
+            OR: [
+              { height: { contains: '180' } },
+              { height: { contains: '185' } },
+              { height: { contains: '190' } },
+            ],
+          });
+          break;
+      }
+      if (heightConditions.length > 0) {
+        where.AND = where.AND 
+          ? Array.isArray(where.AND) 
+            ? [...where.AND, ...heightConditions]
+            : [where.AND, ...heightConditions]
+          : heightConditions;
+      }
+    }
+
+    // Weight filter
+    if (weightFilter) {
+      const weightConditions: Prisma.GirlWhereInput[] = [];
+      switch (weightFilter) {
+        case 'under-45':
+          weightConditions.push({
+            weight: {
+              contains: '40',
+            },
+          });
+          break;
+        case '45-55':
+          weightConditions.push({
+            OR: [
+              { weight: { contains: '45' } },
+              { weight: { contains: '50' } },
+              { weight: { contains: '55' } },
+            ],
+          });
+          break;
+        case '55-65':
+          weightConditions.push({
+            OR: [
+              { weight: { contains: '55' } },
+              { weight: { contains: '60' } },
+              { weight: { contains: '65' } },
+            ],
+          });
+          break;
+        case 'over-65':
+          weightConditions.push({
+            OR: [
+              { weight: { contains: '70' } },
+              { weight: { contains: '75' } },
+              { weight: { contains: '80' } },
+            ],
+          });
+          break;
+      }
+      if (weightConditions.length > 0) {
+        where.AND = where.AND 
+          ? Array.isArray(where.AND) 
+            ? [...where.AND, ...weightConditions]
+            : [where.AND, ...weightConditions]
+          : weightConditions;
+      }
+    }
+
+    // Origin filter
+    if (originFilter) {
+      const originConditions: Prisma.GirlWhereInput[] = [];
+      switch (originFilter) {
+        case 'mien-bac':
+          originConditions.push({
+            OR: [
+              { origin: { contains: 'Bắc' } },
+              { origin: { contains: 'bac' } },
+              { origin: { contains: 'Bac' } },
+            ],
+          });
+          break;
+        case 'mien-trung':
+          originConditions.push({
+            origin: { contains: 'Trung' },
+          });
+          break;
+        case 'mien-nam':
+          originConditions.push({
+            origin: { contains: 'Nam' },
+          });
+          break;
+        case 'nuoc-ngoai':
+          originConditions.push({
+            AND: [
+              { origin: { not: null } },
+              {
+                NOT: {
+                  OR: [
+                    { origin: { contains: 'Bắc' } },
+                    { origin: { contains: 'Trung' } },
+                    { origin: { contains: 'Nam' } },
+                    { origin: { contains: 'Việt' } },
+                    { origin: { contains: 'Viet' } },
+                  ],
+                },
+              },
+            ],
+          });
+          break;
+      }
+      if (originConditions.length > 0) {
+        where.AND = where.AND 
+          ? Array.isArray(where.AND) 
+            ? [...where.AND, ...originConditions]
+            : [where.AND, ...originConditions]
+          : originConditions;
+      }
+    }
+
+    // Location filter (district)
+    if (locationFilter) {
+      const locationMap: Record<string, string> = {
+        'quan-1': 'Quận 1',
+        'quan-2': 'Quận 2',
+        'quan-3': 'Quận 3',
+        'quan-7': 'Quận 7',
+        'quan-10': 'Quận 10',
+      };
+      const targetLocation = locationMap[locationFilter];
+      if (targetLocation) {
+        const locationCondition = {
+          OR: [
+            { location: { contains: targetLocation } },
+            { province: { contains: targetLocation } },
+          ],
+        };
+        where.AND = where.AND 
+          ? Array.isArray(where.AND) 
+            ? [...where.AND, locationCondition]
+            : [where.AND, locationCondition]
+          : [locationCondition];
+      }
+    }
+
+    // Province filter (from LocationFilters)
+    if (province) {
+      const provinceCondition = {
+        OR: [
+          { province: { contains: province } },
+          { location: { contains: province } },
+        ],
+      };
+      where.AND = where.AND 
+        ? Array.isArray(where.AND) 
+          ? [...where.AND, provinceCondition]
+          : [where.AND, provinceCondition]
+        : [provinceCondition];
+    }
+
+    // If tags filter is provided, we need to fetch all and filter in application layer
+    // because MySQL JSON array filtering is complex
+    let allGirls = await this.prisma.girl.findMany({
         where,
         include: {
           user: {
@@ -82,19 +420,38 @@ export class GirlsService {
             },
           },
         },
-        skip: (page - 1) * limit,
-        take: limit,
         orderBy: [
           { isFeatured: 'desc' },
           { ratingAverage: 'desc' },
           { lastActiveAt: 'desc' },
         ],
-      }),
-      this.prisma.girl.count({ where }),
-    ]);
+    });
 
-    return {
-      data: girls,
+    // Filter by tags if provided
+    if (tags && tags.length > 0) {
+      const normalizedTags = tags.map(tag => tag.trim().toLowerCase());
+      allGirls = allGirls.filter((girl) => {
+        if (!girl.tags || !Array.isArray(girl.tags)) {
+          return false;
+        }
+        const girlTags = (girl.tags as string[]).map(tag => 
+          typeof tag === 'string' ? tag.trim().toLowerCase() : ''
+        );
+        // Check if any of the filter tags match any of the girl's tags
+        return normalizedTags.some(filterTag => 
+          girlTags.some(girlTag => girlTag === filterTag || girlTag.includes(filterTag))
+        );
+      });
+    }
+
+    // Get total count after tag filtering
+    const total = allGirls.length;
+
+    // Apply pagination
+    const paginatedGirls = allGirls.slice((page - 1) * limit, page * limit);
+
+    const result = {
+      data: paginatedGirls,
       meta: {
         total,
         page,
@@ -102,11 +459,46 @@ export class GirlsService {
         totalPages: Math.ceil(total / limit),
       },
     };
+
+    // Cache the result for 5 minutes (300 seconds)
+    // Cache longer for first page, shorter for filtered results
+    const ttl = page === 1 && !province && !priceFilter && !ageFilter ? 600 : 300;
+    await this.cacheService.set(cacheKey, result, ttl);
+
+    return result;
   }
 
-  async findOne(id: string) {
+  async findOne(idOrSlug: string, incrementView: boolean = true) {
+    // Try to find by ID first, then by slug
+    console.log(`[GirlsService] Finding girl with idOrSlug: ${idOrSlug}`);
+    
+    // Generate cache key
+    const cacheKey = this.cacheService.generateKey('girls:detail', idOrSlug);
+    
+    // Try to get from cache first
+    const cachedGirl = await this.cacheService.get(cacheKey);
+    if (cachedGirl) {
+      console.log('[GirlsService] Cache hit for girl:', idOrSlug);
+      // Still increment view count even if cached
+      if (incrementView) {
+        await this.incrementViewCount((cachedGirl as any).id);
+      }
+      return cachedGirl;
+    }
+
+    console.log('[GirlsService] Cache miss, fetching from database...');
     const girl = await this.prisma.girl.findFirst({
-      where: { id, isActive: true },
+      where: {
+        AND: [
+          {
+            OR: [
+              { id: idOrSlug },
+              { slug: idOrSlug },
+            ],
+          },
+          { isActive: true },
+        ],
+      },
       include: {
         user: {
           select: {
@@ -153,10 +545,85 @@ export class GirlsService {
     });
 
     if (!girl) {
+      console.log(`[GirlsService] Girl not found with idOrSlug: ${idOrSlug}`);
+      // Try to find without isActive check to see if girl exists but is inactive
+      const inactiveGirl = await this.prisma.girl.findFirst({
+        where: {
+          OR: [
+            { id: idOrSlug },
+            { slug: idOrSlug },
+          ],
+        },
+        select: { id: true, isActive: true },
+      });
+      if (inactiveGirl) {
+        console.log(`[GirlsService] Girl exists but isActive: ${inactiveGirl.isActive}`);
+      }
       throw new NotFoundException('Girl not found');
     }
+    
+    console.log(`[GirlsService] Found girl: ${girl.id}, isActive: ${girl.isActive}`);
 
-    // Increment view count
+    // Increment view count if requested
+    if (incrementView) {
+      await this.incrementViewCount(girl.id);
+    }
+
+    // Cache the result for 10 minutes (600 seconds)
+    await this.cacheService.set(cacheKey, girl, 600);
+
+    return girl;
+  }
+
+  /**
+   * Get count of girls by province
+   */
+  async getCountByProvince(): Promise<Array<{ province: string; count: number }>> {
+    const cacheKey = this.cacheService.generateKey('girls:count:by-province');
+    
+    // Try to get from cache first
+    const cachedData = await this.cacheService.get<Array<{ province: string; count: number }>>(cacheKey);
+    if (cachedData && Array.isArray(cachedData)) {
+      return cachedData;
+    }
+
+    // Get all active girls with province
+    const girls = await this.prisma.girl.findMany({
+      where: {
+        isActive: true,
+      },
+      select: {
+        province: true,
+      },
+    });
+
+    // Count by province
+    const provinceCountMap = new Map<string, number>();
+
+    girls.forEach((girl) => {
+      if (girl.province) {
+        const province = girl.province.trim();
+        if (province) {
+          provinceCountMap.set(
+            province,
+            (provinceCountMap.get(province) || 0) + 1,
+          );
+        }
+      }
+    });
+
+    // Convert to array and sort by count
+    const result = Array.from(provinceCountMap.entries())
+      .map(([province, count]) => ({ province, count }))
+      .sort((a, b) => b.count - a.count);
+
+    // Cache for 10 minutes
+    await this.cacheService.set(cacheKey, result, 600);
+
+    return result;
+  }
+
+  async incrementViewCount(id: string) {
     await this.prisma.girl.update({
       where: { id },
       data: {
@@ -165,8 +632,131 @@ export class GirlsService {
         },
       },
     });
+  }
 
-    return girl;
+  async create(createGirlDto: any, managedById: string) {
+    const {
+      districts,
+      images,
+      tags,
+      services,
+      name,
+      ...rest
+    } = createGirlDto;
+
+    // Generate slug from name
+    let slug: string | undefined;
+    if (name) {
+      const baseSlug = generateSlug(name);
+      // Check for existing slugs
+      const existingGirls = await this.prisma.girl.findMany({
+        where: { slug: { startsWith: baseSlug } },
+        select: { slug: true },
+      });
+      const existingSlugs = existingGirls.map(g => g.slug).filter(Boolean) as string[];
+      slug = generateUniqueSlug(baseSlug, existingSlugs);
+    }
+
+    const newGirl = await this.prisma.girl.create({
+      data: {
+        ...rest,
+        name,
+        slug,
+        managedById, // Track who manages this girl
+        userId: null, // Girl is independent, not linked to user
+        districts: districts ? (Array.isArray(districts) ? districts : [districts]) : [],
+        images: images ? (Array.isArray(images) ? images : [images]) : [],
+        tags: tags ? (Array.isArray(tags) ? tags : [tags]) : [],
+        services: services ? (Array.isArray(services) ? services : [services]) : [],
+      },
+      // include: {
+      //   managedBy: {
+      //     select: {
+      //       id: true,
+      //       fullName: true,
+      //       email: true,
+      //     },
+      //   },
+      // },
+    });
+
+    // Invalidate list cache when new girl is created
+    await this.invalidateListCache();
+
+    return newGirl;
+  }
+
+  async updateById(id: string, updateGirlDto: any, managedById: string) {
+    const girl = await this.prisma.girl.findUnique({ where: { id } });
+
+    if (!girl) {
+      throw new NotFoundException('Girl not found');
+    }
+
+    // Check permission - only admin or manager can update
+    const currentUser = await this.prisma.user.findUnique({
+      where: { id: managedById },
+      select: { role: true },
+    });
+
+    // @ts-ignore - managedById will exist after migration
+    const girlManagedById = (girl as any).managedById;
+    
+    if (
+      currentUser?.role !== 'ADMIN' &&
+      girlManagedById !== managedById
+    ) {
+      throw new BadRequestException(
+        'You do not have permission to update this girl',
+      );
+    }
+
+    const { districts, images, tags, services, name, ...rest } = updateGirlDto;
+
+    // Generate slug if name changed
+    let slug: string | undefined;
+    if (name && name !== girl.name) {
+      const baseSlug = generateSlug(name);
+      const existingGirls = await this.prisma.girl.findMany({
+        where: { 
+          slug: { startsWith: baseSlug },
+          NOT: { id },
+        },
+        select: { slug: true },
+      });
+      const existingSlugs = existingGirls.map(g => g.slug).filter(Boolean) as string[];
+      slug = generateUniqueSlug(baseSlug, existingSlugs);
+    }
+
+    const updatedGirl = await this.prisma.girl.update({
+      where: { id },
+      data: {
+        ...rest,
+        name,
+        ...(slug && { slug }),
+        // @ts-ignore - managedById will exist after migration
+        managedById: currentUser?.role === 'ADMIN' ? managedById : (girl as any).managedById,
+        districts: districts !== undefined ? districts : undefined,
+        images: images !== undefined ? images : undefined,
+        tags: tags !== undefined ? tags : undefined,
+        services: services !== undefined ? services : undefined,
+      },
+      // include: {
+      //   managedBy: {
+      //     select: {
+      //       id: true,
+      //       fullName: true,
+      //       email: true,
+      //     },
+      //   },
+      // },
+    });
+
+    // Invalidate cache for this specific girl and list cache
+    await this.invalidateGirlCache(id);
+    await this.invalidateListCache();
+
+    return updatedGirl;
   }
 
   async findByUserId(userId: string) {
@@ -203,9 +793,14 @@ export class GirlsService {
   async update(userId: string, updateGirlDto: UpdateGirlDto) {
     const girl = await this.findByUserId(userId);
 
-    return this.prisma.girl.update({
+    const { districts, ...rest } = updateGirlDto as any;
+
+    const updatedGirl = await this.prisma.girl.update({
       where: { id: girl.id },
-      data: updateGirlDto,
+      data: {
+        ...rest,
+        districts: districts !== undefined ? districts : undefined,
+      },
       include: {
         user: {
           select: {
@@ -218,6 +813,44 @@ export class GirlsService {
         },
       },
     });
+
+    // Invalidate cache for this specific girl and list cache
+    await this.invalidateGirlCache(girl.id);
+    await this.invalidateListCache();
+
+    return updatedGirl;
+  }
+
+  async remove(id: string, managedById: string) {
+    const girl = await this.prisma.girl.findUnique({ where: { id } });
+
+    if (!girl) {
+      throw new NotFoundException('Girl not found');
+    }
+
+    // Check permission
+    const currentUser = await this.prisma.user.findUnique({
+      where: { id: managedById },
+      select: { role: true },
+    });
+
+    // @ts-ignore - managedById will exist after migration
+    const girlManagedById = (girl as any).managedById;
+    
+    if (
+      currentUser?.role !== 'ADMIN' &&
+      girlManagedById !== managedById
+    ) {
+      throw new BadRequestException(
+        'You do not have permission to delete this girl',
+      );
+    }
+
+    await this.prisma.girl.delete({ where: { id } });
+
+    // Invalidate cache for this specific girl and list cache
+    await this.invalidateGirlCache(id);
+    await this.invalidateListCache();
   }
 
   async requestVerification(
@@ -443,5 +1076,26 @@ export class GirlsService {
         images: true,
       },
     });
+
+    // Invalidate cache when images are updated
+    await this.invalidateGirlCache(girlId);
+  }
+
+  // Helper methods for cache invalidation
+  private async invalidateGirlCache(idOrSlug: string): Promise<void> {
+    // Invalidate detail cache
+    const detailKey = this.cacheService.generateKey('girls:detail', idOrSlug);
+    await this.cacheService.del(detailKey);
+    console.log('[GirlsService] Invalidated cache for girl:', idOrSlug);
+  }
+
+  private async invalidateListCache(): Promise<void> {
+    // Invalidate all list caches by pattern
+    // Since we can't easily pattern match, we'll use a simple approach:
+    // Set a version number that changes when list is invalidated
+    const versionKey = 'girls:list:version';
+    const currentVersion = await this.cacheService.get<number>(versionKey) || 0;
+    await this.cacheService.set(versionKey, currentVersion + 1, 86400); // 24 hours
+    console.log('[GirlsService] Invalidated list cache, new version:', currentVersion + 1);
   }
 }

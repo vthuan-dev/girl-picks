@@ -18,7 +18,7 @@ function AdminHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-30 bg-background-light border-b border-secondary/30 backdrop-blur-xl">
+    <header className="fixed top-0 left-0 right-0 z-30 bg-background-light border-b border-secondary/30 backdrop-blur-xl">
       <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
         {/* Left: Search & Actions */}
         <div className="flex items-center gap-4 flex-1">

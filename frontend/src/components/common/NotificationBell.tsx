@@ -9,13 +9,6 @@ export default function NotificationBell() {
 
   const notifications = [
     {
-      id: '1',
-      title: 'Đặt lịch mới',
-      message: 'Bạn có một đặt lịch mới từ Nguyễn Văn A',
-      time: '5 phút trước',
-      isRead: false,
-    },
-    {
       id: '2',
       title: 'Tin nhắn mới',
       message: 'Trần Thị B đã gửi tin nhắn cho bạn',

@@ -1,8 +1,12 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useAuthStore } from '@/store/auth.store';
+import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
+import { reviewsApi, type Review as ApiReview, type ReviewComment } from '@/modules/reviews/api/reviews.api';
 
 interface Review {
   id: string;
@@ -14,7 +18,9 @@ interface Review {
   images?: string[];
   createdAt: string;
   likes: number;
+  liked?: boolean;
   replies?: Reply[];
+  status?: 'PENDING' | 'APPROVED' | 'REJECTED';
 }
 
 interface Reply {
@@ -33,76 +39,206 @@ interface ReviewsSectionProps {
 }
 
 export default function ReviewsSection({ girlId, totalReviews, averageRating }: ReviewsSectionProps) {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
+  const router = useRouter();
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState('');
+  const [title, setTitle] = useState('');
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [loadingLikes, setLoadingLikes] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [reviews, setReviews] = useState<Review[]>([
-    // Mock data
-    {
-      id: '1',
-      userId: 'user1',
-      userName: 'H hoanggiahann',
-      userAvatar: null,
-      rating: 5,
-      comment: 'Em cũng dễ là một cô gái tuyệt vời trong phân khúc tầm trung với nét xinh đẹp duyên dáng lại còn tình cảm, đôi mắt ướt át giao tiếp nhẹ nhàng',
-      images: [
-        'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop',
-        'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop',
-      ],
-      createdAt: '2025-12-06T10:00:00Z',
-      likes: 12,
-      replies: [],
-    },
-  ]);
 
-  const handleSubmitReview = (e: React.FormEvent) => {
+  // Load reviews from API
+  useEffect(() => {
+    loadReviews();
+  }, [girlId]);
+
+  const loadReviews = async () => {
+    try {
+      setLoading(true);
+      const apiReviews = await reviewsApi.getByGirlId(girlId);
+      
+      // Transform API reviews to component format
+      const transformedReviews: Review[] = await Promise.all(
+        apiReviews.map(async (apiReview) => {
+          // Get likes count
+          let likesCount = 0;
+          try {
+            likesCount = await reviewsApi.getLikes(apiReview.id);
+          } catch (error) {
+            console.error('Error loading likes:', error);
+          }
+
+          return {
+            id: apiReview.id,
+            userId: apiReview.customer.id,
+            userName: apiReview.customer.fullName,
+            userAvatar: apiReview.customer.avatarUrl || null,
+            rating: apiReview.rating,
+            comment: apiReview.content,
+            images: apiReview.images || [],
+            createdAt: apiReview.createdAt,
+            likes: likesCount,
+            liked: false, // TODO: Check if current user liked this
+            status: apiReview.status,
+            replies: [], // Will load separately if needed
+          };
+        })
+      );
+
+      setReviews(transformedReviews);
+    } catch (error: any) {
+      console.error('Error loading reviews:', error);
+      toast.error('Không thể tải đánh giá. Vui lòng thử lại sau.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const uploadImage = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch('/api/upload/review', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to upload image');
+    }
+
+    const data = await response.json();
+    return data.url;
+  };
+
+  const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isAuthenticated) {
-      alert('Vui lòng đăng nhập để viết đánh giá');
+    if (!isAuthenticated || !user) {
+      router.push('/auth/login');
       return;
     }
     if (rating === 0) {
-      alert('Vui lòng chọn số sao đánh giá');
+      toast.error('Vui lòng chọn số sao đánh giá');
       return;
     }
     if (!comment.trim()) {
-      alert('Vui lòng nhập nội dung đánh giá');
+      toast.error('Vui lòng nhập nội dung đánh giá');
       return;
     }
 
-    // TODO: Call API to submit review
-    console.log('Submit review:', { girlId, rating, comment });
-    
-    // TODO: Upload images to Cloudinary/CDN
-    // For now, use local URLs (Object URLs)
-    const imageUrls = selectedImages;
+    try {
+      setSubmitting(true);
+
+      // Upload images to server
+      const imageUrls: string[] = [];
+      
+      // Upload local files
+      for (let i = 0; i < imageFiles.length; i++) {
+        const file = imageFiles[i];
+        const previewUrl = selectedImages[i];
+        
+        try {
+          const uploadedUrl = await uploadImage(file);
+          imageUrls.push(uploadedUrl);
+          
+          // Clean up object URL after successful upload
+          if (previewUrl && previewUrl.startsWith('blob:')) {
+            URL.revokeObjectURL(previewUrl);
+          }
+        } catch (error: any) {
+          console.error('Error uploading image:', error);
+          toast.error(`Không thể upload ảnh: ${file.name}`);
+        }
+      }
+      
+      // Add any manually entered URLs from selectedImages (if they're full URLs)
+      // Skip blob URLs as they're already being uploaded above
+      selectedImages.forEach((url, index) => {
+        // Skip if this is a blob URL that corresponds to a file we're uploading
+        if (index < imageFiles.length && url.startsWith('blob:')) {
+          return;
+        }
+        
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+          imageUrls.push(url);
+        } else if (url.startsWith('/')) {
+          // Already uploaded to server
+          imageUrls.push(url);
+        }
+      });
+
+      // Submit review to API
+      const reviewData = {
+        girlId,
+        title: title.trim() || `Đánh giá ${rating} sao`,
+        content: comment.trim(),
+        rating,
+        images: imageUrls.length > 0 ? imageUrls : undefined,
+      };
+
+      await reviewsApi.create(reviewData);
+
+      toast.success('Đánh giá của bạn đã được gửi và đang chờ duyệt!');
     
     // Reset form
     setRating(0);
     setComment('');
+      setTitle('');
     setSelectedImages([]);
     setImageFiles([]);
     setShowReviewForm(false);
     
-    // Add to reviews (mock)
-    const newReview: Review = {
-      id: Date.now().toString(),
-      userId: 'current-user',
-      userName: 'Bạn',
-      userAvatar: null,
-      rating,
-      comment,
-      images: imageUrls.length > 0 ? imageUrls : undefined,
-      createdAt: new Date().toISOString(),
-      likes: 0,
-      replies: [],
-    };
-    setReviews([newReview, ...reviews]);
+      // Reload reviews
+      await loadReviews();
+    } catch (error: any) {
+      console.error('Error submitting review:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Không thể gửi đánh giá';
+      toast.error(errorMessage);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleToggleLike = async (reviewId: string) => {
+    if (!isAuthenticated || !user) {
+      router.push('/auth/login');
+      return;
+    }
+
+    try {
+      setLoadingLikes((prev) => new Set(prev).add(reviewId));
+      const result = await reviewsApi.toggleLike(reviewId);
+      
+      // Update review in state
+      setReviews((prevReviews) =>
+        prevReviews.map((review) =>
+          review.id === reviewId
+            ? {
+                ...review,
+                likes: result.likesCount,
+                liked: result.liked,
+              }
+            : review
+        )
+      );
+    } catch (error: any) {
+      console.error('Error toggling like:', error);
+      toast.error('Không thể thích đánh giá này');
+    } finally {
+      setLoadingLikes((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(reviewId);
+        return newSet;
+      });
+    }
   };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -120,7 +256,9 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
 
   const removeImage = (index: number) => {
     // Revoke object URL to free memory
+    if (selectedImages[index]?.startsWith('blob:')) {
     URL.revokeObjectURL(selectedImages[index]);
+    }
     
     setSelectedImages(selectedImages.filter((_, i) => i !== index));
     setImageFiles(imageFiles.filter((_, i) => i !== index));
@@ -149,7 +287,7 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
                 return (
                   <div key={i} className="relative">
                     <svg
-                      className={`w-4 h-4 ${
+                      className={`w-7 h-7 ${
                         isFull
                           ? 'text-yellow-400 fill-current'
                           : 'text-secondary/30'
@@ -162,7 +300,7 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
                     {isHalf && (
                       <div className="absolute inset-0 overflow-hidden" style={{ width: '50%' }}>
                         <svg
-                          className="w-4 h-4 text-yellow-400 fill-current"
+                          className="w-7 h-7 text-yellow-400 fill-current"
                           fill="currentColor"
                           viewBox="0 0 20 20"
                         >
@@ -178,6 +316,7 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
             <span className="text-text-muted">({totalReviews} đánh giá)</span>
           </div>
         </div>
+        {isAuthenticated && user ? (
         <button
           onClick={() => setShowReviewForm(!showReviewForm)}
           className="px-4 py-2.5 bg-gradient-to-r from-primary to-primary-hover text-white rounded-lg hover:shadow-lg hover:shadow-primary/30 active:scale-95 transition-all text-sm font-medium cursor-pointer flex items-center justify-center gap-2 flex-shrink-0"
@@ -187,11 +326,38 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
           </svg>
           Viết đánh giá
         </button>
+        ) : (
+          <Link
+            href="/auth/login"
+            className="px-4 py-2.5 bg-gradient-to-r from-primary to-primary-hover text-white rounded-lg hover:shadow-lg hover:shadow-primary/30 active:scale-95 transition-all text-sm font-medium cursor-pointer flex items-center justify-center gap-2 flex-shrink-0"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+            </svg>
+            Đăng nhập để đánh giá
+          </Link>
+        )}
       </div>
 
       {/* Review Form */}
       {showReviewForm && (
         <div className="mb-6 p-5 bg-background rounded-xl border border-primary/20 animate-fadeIn">
+          {!isAuthenticated || !user ? (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 mx-auto mb-4 bg-primary/20 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <p className="text-text mb-4">Vui lòng đăng nhập để viết đánh giá</p>
+              <Link
+                href="/auth/login"
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-primary to-primary-hover text-white rounded-lg hover:shadow-lg hover:shadow-primary/30 transition-all font-medium cursor-pointer"
+              >
+                Đăng nhập ngay
+              </Link>
+            </div>
+          ) : (
           <form onSubmit={handleSubmitReview} className="space-y-5">
             {/* Rating Stars */}
             <div>
@@ -211,7 +377,7 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
                       className="focus:outline-none transition-transform hover:scale-110 active:scale-95 cursor-pointer"
                     >
                       <svg
-                        className={`w-8 h-8 transition-colors ${
+                          className={`w-12 h-12 transition-colors ${
                           starValue <= (hoverRating || rating)
                             ? 'text-yellow-400 fill-current'
                             : 'text-secondary/30'
@@ -296,6 +462,7 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
                   </svg>
                   <span>Thêm ảnh</span>
                   <input
+                      ref={fileInputRef}
                     type="file"
                     accept="image/*"
                     multiple
@@ -314,10 +481,17 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
             <div className="flex items-center gap-3 pt-2">
               <button
                 type="submit"
-                disabled={rating === 0 || !comment.trim()}
-                className="px-6 py-2.5 bg-gradient-to-r from-primary to-primary-hover text-white rounded-lg hover:shadow-lg hover:shadow-primary/30 active:scale-95 transition-all font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none"
+                  disabled={rating === 0 || !comment.trim() || submitting}
+                  className="px-6 py-2.5 bg-gradient-to-r from-primary to-primary-hover text-white rounded-lg hover:shadow-lg hover:shadow-primary/30 active:scale-95 transition-all font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none flex items-center gap-2"
               >
-                Gửi đánh giá
+                  {submitting ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Đang gửi...</span>
+                    </>
+                  ) : (
+                    'Gửi đánh giá'
+                  )}
               </button>
               <button
                 type="button"
@@ -325,8 +499,13 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
                   setShowReviewForm(false);
                   setRating(0);
                   setComment('');
+                    setTitle('');
                   // Clean up object URLs
-                  selectedImages.forEach((url) => URL.revokeObjectURL(url));
+                    selectedImages.forEach((url) => {
+                      if (url.startsWith('blob:')) {
+                        URL.revokeObjectURL(url);
+                      }
+                    });
                   setSelectedImages([]);
                   setImageFiles([]);
                 }}
@@ -336,11 +515,17 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
               </button>
             </div>
           </form>
+          )}
         </div>
       )}
 
       {/* Reviews List */}
-      {reviews.length === 0 ? (
+      {loading ? (
+        <div className="text-center py-12">
+          <span className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin inline-block" />
+          <p className="text-text-muted mt-4">Đang tải đánh giá...</p>
+        </div>
+      ) : reviews.length === 0 ? (
         <div className="text-center py-12">
           <div className="w-16 h-16 mx-auto mb-4 bg-secondary/20 rounded-full flex items-center justify-center">
             <svg className="w-8 h-8 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -377,21 +562,25 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2">
                     <h4 className="font-semibold text-text text-sm sm:text-base">{review.userName}</h4>
-                    {review.userId === 'current-user' && (
+                    {review.userId === user?.id && (
                       <span className="px-2 py-0.5 bg-primary/20 text-primary text-xs rounded-full font-medium border border-primary/30">
                         Bạn
+                      </span>
+                    )}
+                    {review.status === 'PENDING' && (
+                      <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs rounded-full font-medium border border-yellow-500/30">
+                        Chờ duyệt
                       </span>
                     )}
                   </div>
                   <div className="flex items-center gap-3 mb-3">
                     <div className="flex items-center gap-0.5">
                       {[...Array(5)].map((_, i) => {
-                        const isHalf = i < review.rating && i + 1 > review.rating;
                         const isFull = i < Math.floor(review.rating);
                         return (
-                          <div key={i} className="relative">
                             <svg
-                              className={`w-4 h-4 ${
+                            key={i}
+                            className={`w-7 h-7 ${
                                 isFull
                                   ? 'text-yellow-400 fill-current'
                                   : 'text-secondary/30'
@@ -401,18 +590,6 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
                             >
                               <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                             </svg>
-                            {isHalf && (
-                              <div className="absolute inset-0 overflow-hidden" style={{ width: '50%' }}>
-                                <svg
-                                  className="w-4 h-4 text-yellow-400 fill-current"
-                                  fill="currentColor"
-                                  viewBox="0 0 20 20"
-                                >
-                                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                </svg>
-                              </div>
-                            )}
-                          </div>
                         );
                       })}
                     </div>
@@ -429,17 +606,30 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
               {/* Review Images */}
               {review.images && review.images.length > 0 && (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4 pl-0 sm:pl-16">
-                  {review.images.map((imageUrl, index) => (
+                  {review.images.map((imageUrl, index) => {
+                    // Handle both relative and absolute URLs
+                    const displayUrl = imageUrl.startsWith('/') 
+                      ? imageUrl 
+                      : imageUrl.startsWith('http://') || imageUrl.startsWith('https://')
+                      ? imageUrl
+                      : `/${imageUrl}`;
+                    
+                    const fullUrl = imageUrl.startsWith('http://') || imageUrl.startsWith('https://')
+                      ? imageUrl
+                      : typeof window !== 'undefined' 
+                        ? `${window.location.origin}${displayUrl}`
+                        : displayUrl;
+
+                    return (
                     <div
                       key={index}
                       className="relative aspect-square rounded-lg overflow-hidden bg-secondary/20 border border-secondary/30 group cursor-pointer"
                       onClick={() => {
-                        // TODO: Open image in lightbox/modal
-                        window.open(imageUrl, '_blank');
+                          window.open(fullUrl, '_blank');
                       }}
                     >
                       <Image
-                        src={imageUrl}
+                          src={displayUrl}
                         alt={`Review image ${index + 1}`}
                         fill
                         className="object-cover group-hover:scale-110 transition-transform duration-300"
@@ -452,16 +642,30 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
                         </svg>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 
               {/* Actions */}
               <div className="flex items-center gap-4 sm:gap-6 pt-4 border-t border-secondary/20 pl-0 sm:pl-16">
-                <button className="flex items-center gap-2 text-text-muted hover:text-primary transition-colors text-sm cursor-pointer group">
-                  <svg className="w-4 h-4 group-hover:fill-current transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button
+                  onClick={() => handleToggleLike(review.id)}
+                  disabled={loadingLikes.has(review.id)}
+                  className="flex items-center gap-2 text-text-muted hover:text-primary transition-colors text-sm cursor-pointer group disabled:opacity-50"
+                >
+                  {loadingLikes.has(review.id) ? (
+                    <span className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                  ) : (
+                    <svg
+                      className={`w-4 h-4 transition-all ${review.liked ? 'fill-current text-primary' : 'group-hover:fill-current'}`}
+                      fill={review.liked ? 'currentColor' : 'none'}
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                   </svg>
+                  )}
                   <span>Thích ({review.likes})</span>
                 </button>
                 <button className="flex items-center gap-2 text-text-muted hover:text-primary transition-colors text-sm cursor-pointer">
@@ -470,7 +674,7 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
                   </svg>
                   <span>Phản hồi</span>
                 </button>
-                {review.userId !== 'current-user' && (
+                {review.userId !== user?.id && (
                   <button className="flex items-center gap-2 text-text-muted hover:text-primary transition-colors text-sm cursor-pointer ml-auto">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
@@ -508,4 +712,3 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
     </div>
   );
 }
-

@@ -13,50 +13,59 @@ export default function GirlGallery({ images, name }: GirlGalleryProps) {
   const mainImage = images[selectedIndex] || images[0] || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=1200&h=800&fit=crop';
 
   return (
-    <div className="bg-background-light rounded-2xl overflow-hidden border border-secondary/30 shadow-lg">
-      {/* Main Image */}
-      <div className="relative w-full aspect-[4/3] bg-secondary/20 overflow-hidden group">
-        <Image
-          src={mainImage}
-          alt={`${name} - Ảnh ${selectedIndex + 1}`}
-          fill
-          className="object-cover transition-opacity duration-300"
-          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 66vw, 50vw"
-          priority
-          unoptimized
-        />
-        
-        {/* Image Navigation Arrows */}
-        {images.length > 1 && (
-          <>
-            <button
-              onClick={() => setSelectedIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1))}
-              className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-background/90 backdrop-blur-md rounded-full hover:bg-background transition-all opacity-0 group-hover:opacity-100 cursor-pointer z-10 shadow-xl"
-              aria-label="Ảnh trước"
-            >
-              <svg className="w-6 h-6 text-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <button
-              onClick={() => setSelectedIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0))}
-              className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-background/90 backdrop-blur-md rounded-full hover:bg-background transition-all opacity-0 group-hover:opacity-100 cursor-pointer z-10 shadow-xl"
-              aria-label="Ảnh tiếp theo"
-            >
-              <svg className="w-6 h-6 text-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          </>
-        )}
+    <>
+      <div className="bg-background-light rounded-2xl overflow-hidden border border-secondary/30 shadow-lg">
+        {/* Main Image */}
+        <div 
+          className="relative w-full aspect-[4/3] bg-secondary/20 overflow-hidden group"
+        >
+          <Image
+            src={mainImage}
+            alt={`${name} - Ảnh ${selectedIndex + 1}`}
+            fill
+            className="object-cover transition-opacity duration-300"
+            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 66vw, 50vw"
+            priority
+            unoptimized
+          />
+          
+          {/* Image Navigation Arrows */}
+          {images.length > 1 && (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
+                }}
+                className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-background/90 backdrop-blur-md rounded-full hover:bg-background transition-all opacity-0 group-hover:opacity-100 cursor-pointer z-10 shadow-xl"
+                aria-label="Ảnh trước"
+              >
+                <svg className="w-6 h-6 text-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0));
+                }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-background/90 backdrop-blur-md rounded-full hover:bg-background transition-all opacity-0 group-hover:opacity-100 cursor-pointer z-10 shadow-xl"
+                aria-label="Ảnh tiếp theo"
+              >
+                <svg className="w-6 h-6 text-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </>
+          )}
 
-        {/* Image Counter */}
-        {images.length > 1 && (
-          <div className="absolute bottom-4 right-4 px-3 py-1.5 bg-background/90 backdrop-blur-md rounded-lg text-sm text-text font-medium shadow-xl">
-            {selectedIndex + 1} / {images.length}
-          </div>
-        )}
-      </div>
+          {/* Image Counter */}
+          {images.length > 1 && (
+            <div className="absolute bottom-4 right-4 px-3 py-1.5 bg-background/90 backdrop-blur-md rounded-lg text-sm text-text font-medium shadow-xl">
+              {selectedIndex + 1} / {images.length}
+            </div>
+          )}
+        </div>
 
       {/* Thumbnails */}
       {images.length > 1 && (
@@ -94,6 +103,8 @@ export default function GirlGallery({ images, name }: GirlGalleryProps) {
         </div>
       )}
     </div>
+
+    </>
   );
 }
 

@@ -92,3 +92,5 @@ Nếu xử lý thường xuyên, cân nhắc:
 - Chi phí ban đầu cao nhưng dài hạn rẻ hơn
 
 
+
+

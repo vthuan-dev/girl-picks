@@ -89,7 +89,7 @@ export class NotificationsService {
       include: { user: true },
     });
 
-    if (girl) {
+    if (girl && girl.userId) {
       await this.create(
         girl.userId,
         NotificationType.BOOKING_CREATED,
@@ -151,8 +151,10 @@ export class NotificationsService {
     });
 
     if (girl) {
+      // If girl has userId, notify girl; otherwise notify customer
+      const notifyUserId = isCustomer && girl.userId ? girl.userId : customerId;
       await this.create(
-        isCustomer ? girl.userId : customerId,
+        notifyUserId,
         NotificationType.BOOKING_CANCELLED,
         message,
         { bookingId, cancelledBy },

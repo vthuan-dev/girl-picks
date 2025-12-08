@@ -20,4 +20,30 @@ export class CreatePostDto {
   @IsArray()
   @IsString({ each: true })
   images?: string[];
+
+  @ApiPropertyOptional({ description: 'Video URL' })
+  @IsOptional()
+  @IsString()
+  videoUrl?: string;
+
+  @ApiPropertyOptional({ description: 'Thumbnail URL' })
+  @IsOptional()
+  @IsString()
+  thumbnail?: string;
+
+  @ApiPropertyOptional({ description: 'Video duration (e.g., "10:30")' })
+  @IsOptional()
+  @IsString()
+  duration?: string;
+
+  @ApiPropertyOptional({ description: 'Category' })
+  @IsOptional()
+  @IsString()
+  category?: string;
+
+  @ApiPropertyOptional({ description: 'Tags', type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[];
 }

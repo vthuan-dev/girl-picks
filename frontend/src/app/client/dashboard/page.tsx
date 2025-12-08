@@ -9,7 +9,7 @@ export default function ClientDashboard() {
 
   const stats = [
     {
-      title: 'Đặt lịch đã tạo',
+      title: 'Tin nhắn',
       value: '8',
       change: '+3',
       trend: 'up' as const,
@@ -105,21 +105,6 @@ export default function ClientDashboard() {
             </div>
           </Link>
 
-          <Link
-            href="/customer/bookings"
-            className="group relative p-5 sm:p-6 bg-background-light rounded-xl border border-secondary/30 hover:border-accent/50 transition-all duration-300 hover:shadow-xl hover:shadow-accent/20 overflow-hidden cursor-pointer"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-accent/0 via-accent/0 to-accent/0 group-hover:from-accent/10 group-hover:via-accent/5 group-hover:to-accent/10 transition-all duration-500" />
-            <div className="relative">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-accent/20 to-accent/10 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg shadow-accent/10">
-                <svg className="w-6 h-6 sm:w-7 sm:h-7 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <h3 className="font-bold text-text mb-2 text-base sm:text-lg group-hover:text-accent transition-colors">Đặt lịch của tôi</h3>
-              <p className="text-xs sm:text-sm text-text-muted">Xem và quản lý các đặt lịch</p>
-            </div>
-          </Link>
 
           <Link
             href="/customer/messages"
@@ -138,12 +123,12 @@ export default function ClientDashboard() {
           </Link>
         </div>
 
-        {/* Recent Bookings - Cải thiện responsive */}
+        {/* Recent Messages - Cải thiện responsive */}
         <div className="bg-background-light rounded-xl border border-secondary/30 p-4 sm:p-5 lg:p-6 hover:border-primary/30 transition-all duration-300">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4 sm:mb-5">
-            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-text">Đặt lịch gần đây</h2>
+            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-text">Tin nhắn gần đây</h2>
             <Link 
-              href="/customer/bookings" 
+              href="/messages" 
               className="text-primary hover:text-primary-hover text-sm font-medium flex items-center gap-1.5 group cursor-pointer w-fit"
             >
               Xem tất cả
@@ -153,42 +138,12 @@ export default function ClientDashboard() {
             </Link>
           </div>
           <div className="space-y-2.5 sm:space-y-3">
-            {[1, 2, 3].map((item) => (
-              <div
-                key={item}
-                className="group flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 p-3 sm:p-4 bg-background rounded-xl border border-secondary/20 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 cursor-pointer"
-              >
-                <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
-                  <div className="relative flex-shrink-0">
-                    <div className="absolute inset-0 bg-primary/20 rounded-full blur-md opacity-50 group-hover:opacity-75 transition-opacity" />
-                    <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center border-2 border-primary/30 group-hover:border-primary/50 group-hover:scale-110 transition-all duration-300">
-                      <span className="text-primary font-bold text-sm sm:text-base">GG</span>
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold sm:font-bold text-text text-sm sm:text-base truncate group-hover:text-primary transition-colors">Gái gọi #{item}</p>
-                    <p className="text-xs sm:text-sm text-text-muted flex items-center gap-1.5 mt-0.5">
-                      <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <div className="text-center py-8 text-text-muted">
+              <svg className="w-12 h-12 mx-auto mb-3 text-text-muted/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                       </svg>
-                      Ngày mai, 20:00
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-                  <span className="px-2.5 sm:px-3 py-1 sm:py-1.5 bg-accent/20 text-accent rounded-lg text-xs sm:text-sm font-semibold border border-accent/30">
-                    Đang chờ
-                  </span>
-                  <Link
-                    href={`/customer/bookings/${item}`}
-                    className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-primary to-primary-hover text-white rounded-lg hover:shadow-lg hover:shadow-primary/30 active:scale-95 transition-all text-xs sm:text-sm font-medium cursor-pointer"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    Chi tiết
-                  </Link>
-                </div>
+              <p className="text-sm">Chưa có tin nhắn nào</p>
               </div>
-            ))}
           </div>
         </div>
 

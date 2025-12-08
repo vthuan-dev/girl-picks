@@ -1,5 +1,5 @@
 import apiClient from '@/lib/api/client';
-import { ApiResponse } from '@/lib/api/types';
+import { ApiResponse, PaginatedResponse } from '@/lib/api/types';
 
 export interface User {
   id: string;
@@ -13,22 +13,15 @@ export interface User {
   updatedAt: string;
 }
 
-export interface PaginatedResponse<T> {
-  data: T[];
-  meta: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
-}
+// Use PaginatedResponse from @/lib/api/types
 
 export const usersApi = {
   // Get all users (Admin only)
-  getAll: async (role?: string, isActive?: boolean, page = 1, limit = 20): Promise<PaginatedResponse<User>> => {
+  getAll: async (role?: string, isActive?: boolean, page = 1, limit = 20, search?: string): Promise<PaginatedResponse<User>> => {
     const params = new URLSearchParams();
     if (role) params.append('role', role);
     if (isActive !== undefined) params.append('isActive', isActive.toString());
+    if (search) params.append('search', search);
     params.append('page', page.toString());
     params.append('limit', limit.toString());
     
@@ -107,6 +100,29 @@ export const usersApi = {
   // Delete user
   delete: async (id: string): Promise<void> => {
     await apiClient.delete(`/admin/users/${id}`);
+  },
+
+  // Create user
+  create: async (data: {
+    email: string;
+    password: string;
+    fullName: string;
+    phone?: string;
+    role: 'ADMIN' | 'GIRL' | 'CUSTOMER' | 'STAFF_UPLOAD';
+    avatarUrl?: string;
+  }): Promise<User> => {
+    const response = await apiClient.post<any>('/admin/users', data);
+    const responseData = response.data;
+    
+    if (responseData.success && responseData.data) {
+      return responseData.data;
+    }
+    
+    if (responseData.id) {
+      return responseData;
+    }
+    
+    throw new Error('Invalid response format from server');
   },
 };
 

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useAuthStore } from '@/store/auth.store';
 import StatsCard from '@/components/dashboard/StatsCard';
 
@@ -16,30 +17,6 @@ export default function GirlDashboard() {
   const { user } = useAuthStore();
 
   const stats: Stat[] = [
-    {
-      title: 'Tổng đặt lịch',
-      value: '24',
-      change: '+12%',
-      trend: 'up',
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-      ),
-      color: 'primary',
-    },
-    {
-      title: 'Đang chờ xác nhận',
-      value: '5',
-      change: '+2',
-      trend: 'up',
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-      color: 'accent',
-    },
     {
       title: 'Đánh giá trung bình',
       value: '4.8',
@@ -74,7 +51,7 @@ export default function GirlDashboard() {
           Chào mừng, {user?.fullName || 'Gái gọi'}! 👋
         </h1>
         <p className="text-text-muted">
-          Quản lý profile, đặt lịch và thu nhập của bạn
+          Quản lý profile và thu nhập của bạn
         </p>
       </div>
 
@@ -85,13 +62,13 @@ export default function GirlDashboard() {
         ))}
       </div>
 
-      {/* Recent Bookings */}
+      {/* Recent Messages */}
       <div className="bg-background-light rounded-lg border border-secondary/30 p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-text">Đặt lịch gần đây</h2>
-          <button className="text-primary hover:text-primary-hover text-sm font-medium">
+          <h2 className="text-xl font-bold text-text">Tin nhắn gần đây</h2>
+          <Link href="/messages" className="text-primary hover:text-primary-hover text-sm font-medium">
             Xem tất cả
-          </button>
+          </Link>
         </div>
         <div className="space-y-3">
           {[1, 2, 3].map((item) => (
