@@ -1,20 +1,27 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import GirlList from '@/modules/girls/components/GirlList';
-import { girlsApi } from '@/modules/girls/api/girls.api';
-import { getPaginatedData } from '@/lib/api/response-helper';
 
 interface GirlListWithStatsProps {
   onTotalChange?: (total: number) => void;
   selectedProvince?: string | null;
   onPageChange?: (page: number, limit: number) => void;
+  filters?: {
+    verified?: boolean;
+    price?: string;
+    age?: string;
+    height?: string;
+    weight?: string;
+    origin?: string;
+    location?: string;
+  };
 }
 
-export default function GirlListWithStats({ onTotalChange, selectedProvince, onPageChange }: GirlListWithStatsProps) {
+export default function GirlListWithStats({ onTotalChange, selectedProvince, onPageChange, filters }: GirlListWithStatsProps) {
   return (
     <GirlList
       selectedProvince={selectedProvince}
+      filters={filters}
       onPageInfoChange={(info) => {
         if (onTotalChange) {
           onTotalChange(info.total);
