@@ -31,15 +31,21 @@ else
     echo "⚠ .env.production not found, will set via PM2 env"
 fi
 
-# 3. Restart frontend
+# 3. Rebuild frontend (NEXT_PUBLIC_* vars are embedded at build time)
+echo ""
+echo "==> Rebuilding frontend with new domain config"
+cd "$APP_DIR/frontend"
+npm run build
+echo "✓ Frontend rebuilt"
+
+# 4. Restart frontend
 echo ""
 echo "==> Restarting frontend"
 pm2 delete girl-pick-frontend || true
-cd "$APP_DIR/frontend"
 PORT=3000 HOST=0.0.0.0 pm2 start "npm run start" --name girl-pick-frontend --time --env production
 echo "✓ Frontend restarted"
 
-# 4. Restart backend with CORS_ORIGIN
+# 5. Restart backend with CORS_ORIGIN
 echo ""
 echo "==> Restarting backend with CORS_ORIGIN"
 pm2 delete girl-pick-backend || true
@@ -47,7 +53,7 @@ cd "$APP_DIR/backend"
 CORS_ORIGIN=http://gaigo1.net,http://www.gaigo1.net pm2 start "npm run start:prod" --name girl-pick-backend --time
 echo "✓ Backend restarted with CORS_ORIGIN"
 
-# 5. Save PM2
+# 6. Save PM2
 pm2 save
 
 echo ""
