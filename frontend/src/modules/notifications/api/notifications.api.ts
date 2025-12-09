@@ -24,17 +24,29 @@ export const notificationsApi = {
     const response = await apiClient.get<any>(
       `/notifications${params.toString() ? `?${params.toString()}` : ''}`
     );
-    const unwrapped = unwrapResponse(response.data);
+    const unwrapped = unwrapResponse<any>(response.data);
     // Backend may return array directly or wrapped
-    return Array.isArray(unwrapped) ? unwrapped : (unwrapped.data || unwrapped || []);
+    if (Array.isArray(unwrapped)) {
+      return unwrapped;
+    }
+    if (unwrapped && typeof unwrapped === 'object' && 'data' in unwrapped && Array.isArray(unwrapped.data)) {
+      return unwrapped.data;
+    }
+    return [];
   },
 
   // Get unread count
   getUnreadCount: async (): Promise<number> => {
     const response = await apiClient.get<any>('/notifications/unread-count');
-    const unwrapped = unwrapResponse(response.data);
+    const unwrapped = unwrapResponse<any>(response.data);
     // Backend may return { count: number } or just number
-    return unwrapped.count || unwrapped || 0;
+    if (typeof unwrapped === 'number') {
+      return unwrapped;
+    }
+    if (unwrapped && typeof unwrapped === 'object' && 'count' in unwrapped && typeof unwrapped.count === 'number') {
+      return unwrapped.count;
+    }
+    return 0;
   },
 
   // Get notification by ID
