@@ -19,6 +19,6 @@ export function generateSlug(text: string): string {
  */
 export function getGirlDetailUrl(id: string, fullName: string): string {
   const slug = generateSlug(fullName);
-  return `/gai-goi/${id}/${slug}`;
+  return `/girls/${id}/${slug}`;
 }
 

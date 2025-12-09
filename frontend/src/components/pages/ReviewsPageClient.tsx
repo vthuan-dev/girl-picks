@@ -5,6 +5,7 @@ import { useQuery } from 'react-query';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Review } from '@/modules/reviews/api/reviews.api';
+import { getGirlDetailUrl } from '@/lib/utils/slug';
 
 export default function ReviewsPageClient() {
   const [page, setPage] = useState(1);
@@ -119,7 +120,9 @@ export default function ReviewsPageClient() {
 
 
 function ReviewCard({ review, formatDate }: { review: Review; formatDate: (date: string) => string }) {
-  const girlUrl = review.girl ? `/girls/${review.girl.id}` : '#';
+  const girlId = (review as any)?.girlId || review.girl?.id;
+  const girlName = review.girl?.name || 'Xem bài gốc';
+  const girlUrl = girlId ? getGirlDetailUrl(girlId, girlName) : '#';
 
   return (
     <div className="bg-background-light rounded-lg border border-secondary/30 hover:border-primary/50 transition-all overflow-hidden">
@@ -146,13 +149,23 @@ function ReviewCard({ review, formatDate }: { review: Review; formatDate: (date:
 
           {/* Info */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-semibold text-text">{review.customer?.fullName || 'Ẩn danh'}</span>
-              <span className="text-text-muted text-sm">• {formatDate(review.createdAt)}</span>
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-semibold text-text">{review.customer?.fullName || 'Ẩn danh'}</span>
+                <span className="text-text-muted text-sm">• {formatDate(review.createdAt)}</span>
+              </div>
+              {girlId && (
+                <Link
+                  href={girlUrl}
+                  className="inline-flex items-center gap-1 px-3 py-1 bg-primary text-white rounded-full text-xs sm:text-sm hover:bg-primary-hover transition-colors"
+                >
+                  Xem gái
+                </Link>
+              )}
             </div>
             
             {/* Rating */}
-            <div className="flex items-center gap-1 mt-1">
+            <div className="flex items-center gap-1 mt-2">
               {[...Array(5)].map((_, i) => (
                 <svg
                   key={i}
@@ -172,12 +185,12 @@ function ReviewCard({ review, formatDate }: { review: Review; formatDate: (date:
           <p className="text-text whitespace-pre-wrap">{review.content}</p>
           
           {/* Girl Tag */}
-          {review.girl && (
+          {girlId && (
             <Link 
               href={girlUrl}
               className="inline-flex items-center gap-1 mt-3 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm hover:bg-primary/20 transition-colors"
             >
-              @{review.girl.name}
+              @{girlName}
             </Link>
           )}
         </div>
@@ -186,11 +199,12 @@ function ReviewCard({ review, formatDate }: { review: Review; formatDate: (date:
       {/* Images */}
       {review.images && review.images.length > 0 && (
         <div className="px-4 pb-4">
-          <div className={`grid gap-2 ${review.images.length === 1 ? 'grid-cols-1 max-w-md' : review.images.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+          <div className={`grid gap-3 ${review.images.length === 1 ? 'grid-cols-1' : review.images.length === 2 ? 'grid-cols-2' : 'grid-cols-2 md:grid-cols-3'}`}>
             {review.images.slice(0, 6).map((imageUrl, index) => (
               <div 
                 key={index} 
-                className="relative aspect-video rounded-lg overflow-hidden bg-secondary/20 group cursor-pointer"
+                className="relative overflow-hidden rounded-xl bg-secondary/20 group cursor-pointer"
+                style={{ aspectRatio: '4 / 5' }}
               >
                 <Image
                   src={imageUrl}

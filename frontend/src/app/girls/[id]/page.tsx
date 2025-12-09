@@ -10,6 +10,8 @@ import ExpandableText from '@/components/common/ExpandableText';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import ViewTracker from '@/components/common/ViewTracker';
 import { Girl } from '@/types/girl';
+import { generateSlug } from '@/lib/utils/slug';
+import Header from '@/components/layout/Header';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gaigo1.net';
 
@@ -18,12 +20,12 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 interface PageProps {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string; slug?: string }>;
 }
 
 // Generate metadata for SEO - Tối ưu cho số điện thoại
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { id } = await params;
+  const { id, slug: slugFromUrl } = await params;
   
   try {
     const response = await getGirlById(id);
@@ -65,9 +67,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const description = descParts.join('. ') + '.';
     
     const imageUrl = girl.images?.[0] || girl.avatar || `${siteUrl}/images/logo/logo.png`;
-    const url = girl.slug 
-      ? `${siteUrl}/girls/${girl.id}/${girl.slug}`
-      : `${siteUrl}/girls/${id}`;
+    const canonicalSlug = girl.slug || generateSlug(girlName || '');
+    const slug = canonicalSlug || slugFromUrl || '';
+    const url = slug ? `${siteUrl}/girls/${girl.id}/${slug}` : `${siteUrl}/girls/${id}`;
 
     // Keywords bao gồm SĐT
     const phoneVariants = girlPhone ? [
@@ -129,7 +131,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function GirlDetailPage({ params }: PageProps) {
-  const { id } = await params;
+  const { id, slug: slugFromUrl } = await params;
 
   let girl: Girl;
   try {
@@ -141,9 +143,12 @@ export default async function GirlDetailPage({ params }: PageProps) {
       notFound();
     }
 
-    // Redirect to slug URL if slug exists
-    if (girl.slug) {
-      redirect(`/girls/${girl.id}/${girl.slug}`);
+    const canonicalSlug = girl.slug || generateSlug(girl.fullName || (girl as any).name || '');
+    if (canonicalSlug) {
+      // If URL has slug and mismatched -> redirect; if no slug -> redirect to canonical
+      if (!slugFromUrl || slugFromUrl !== canonicalSlug) {
+        redirect(`/girls/${girl.id}/${canonicalSlug}`);
+      }
     }
   } catch (error: any) {
     console.error('Error fetching girl:', error);
@@ -210,6 +215,7 @@ export default async function GirlDetailPage({ params }: PageProps) {
 
   return (
     <>
+      <Header />
       {/* Track view count */}
       <ViewTracker type="girl" id={girl.id} />
 
@@ -276,8 +282,8 @@ export default async function GirlDetailPage({ params }: PageProps) {
                           </svg>
                         ))}
                       </div>
-                      <span className="text-text font-bold text-lg">{girl.rating.toFixed(1)}</span>
-                      <span className="text-text-muted text-sm">({girl.totalReviews})</span>
+                      <span className="text-text font-bold text-lg">{(girl.rating ?? 0).toFixed(1)}</span>
+                      <span className="text-text-muted text-sm">({girl.totalReviews ?? 0})</span>
                     </div>
                     
                     {/* Status Badges */}
