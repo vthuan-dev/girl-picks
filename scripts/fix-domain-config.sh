@@ -44,15 +44,20 @@ echo ""
 echo "==> Rebuilding frontend with new domain config"
 cd "$APP_DIR/frontend"
 
-# Remove old build cache
+# Remove old build cache and reinstall dependencies
+echo "Cleaning up and reinstalling dependencies..."
 rm -rf .next
+rm -rf node_modules package-lock.json
+npm ci
 
 # Verify env vars before build
+echo ""
 echo "Environment variables before build:"
-echo "NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-NOT SET}"
+cat .env.production | grep NEXT_PUBLIC
 echo ""
 
 # Build with explicit env vars
+echo "Starting build..."
 NEXT_PUBLIC_API_URL=http://gaigo1.net/api NEXT_PUBLIC_SITE_URL=http://gaigo1.net npm run build
 echo "✓ Frontend rebuilt"
 
