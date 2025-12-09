@@ -23,7 +23,7 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-// Generate metadata for SEO
+// Generate metadata for SEO - Tối ưu cho số điện thoại
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
   
@@ -37,30 +37,62 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       };
     }
 
-    const title = `${girl.fullName || (girl as any).name} - Gái gọi ${girl.district?.name || ''} | Tìm Gái gọi`;
-    const description = girl.bio || `Thông tin chi tiết về ${girl.fullName || (girl as any).name}. ${girl.district?.name ? `Khu vực: ${girl.district.name}.` : ''} Xem ảnh, đánh giá và đặt lịch ngay.`;
+    const girlName = girl.fullName || (girl as any).name || '';
+    const girlPhone = (girl as any).phone || '';
+    const girlProvince = (girl as any).province || girl.district?.name || '';
+    const girlLocation = (girl as any).location || '';
+    const girlPrice = (girl as any).price || '';
+    const girlHeight = (girl as any).height || '';
+    const girlWeight = (girl as any).weight || '';
+    const girlMeasurements = (girl as any).measurements || '';
+    const girlBirthYear = (girl as any).birthYear;
+    
+    // Title tối ưu cho SĐT
+    const title = girlPhone 
+      ? `${girlName}_ ${Array.isArray(girl.tags) ? girl.tags.slice(0, 3).join(', ') : ''}`
+      : `${girlName} - Gái gọi ${girlProvince} | Tìm Gái gọi`;
+    
+    // Description chi tiết với SĐT
+    const descParts = [
+      girlName,
+      girlPhone ? `Điện thoại: ${girlPhone}` : '',
+      girlProvince ? `Khu vực: ${girlProvince}` : '',
+      girlLocation || '',
+      girlBirthYear ? `Năm sinh: ${girlBirthYear}` : '',
+      girlHeight ? `Chiều cao: ${girlHeight}` : '',
+      girlWeight ? `Cân nặng: ${girlWeight}` : '',
+      girlMeasurements ? `Số đo: ${girlMeasurements}` : '',
+      girlPrice ? `Giá: ${girlPrice}` : '',
+    ].filter(Boolean);
+    const description = descParts.join('. ') + '.';
+    
     const imageUrl = girl.images?.[0] || girl.avatar || `${siteUrl}/images/logo/logo.png`;
-    // Use slug in URL if available, otherwise use ID
     const url = girl.slug 
       ? `${siteUrl}/girls/${girl.id}/${girl.slug}`
       : `${siteUrl}/girls/${id}`;
+
+    // Keywords bao gồm SĐT
+    const phoneVariants = girlPhone ? [
+      girlPhone,
+      girlPhone.replace(/\s/g, ''),
+      `gái gọi ${girlPhone}`,
+    ] : [];
 
     return {
       title,
       description,
       keywords: [
-        girl.fullName,
-        'gái gọi',
-        girl.district?.name || '',
-        'gaigu',
-        'tìm gái gọi',
-        girl.tags?.join(', ') || '',
+        girlName,
+        ...phoneVariants,
+        girlProvince ? `gái gọi ${girlProvince}` : '',
+        'gái gọi', 'gaigu', 'tìm gái gọi',
+        ...(Array.isArray(girl.tags) ? girl.tags : []),
       ].filter(Boolean),
       alternates: {
         canonical: url,
       },
       openGraph: {
-        title,
+        title: girlPhone ? `${girlName} — ${girlPhone}` : title,
         description,
         url,
         type: 'profile',
@@ -69,13 +101,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
             url: imageUrl,
             width: 1200,
             height: 630,
-            alt: girl.fullName,
+            alt: `${girlName} ${girlPhone}`,
           },
         ],
       },
       twitter: {
         card: 'summary_large_image',
-        title,
+        title: girlPhone ? `${girlName} — ${girlPhone}` : title,
         description,
         images: [imageUrl],
       },

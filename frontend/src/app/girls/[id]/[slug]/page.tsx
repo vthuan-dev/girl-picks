@@ -23,7 +23,7 @@ interface PageProps {
   params: Promise<{ id: string; slug: string }>;
 }
 
-// Generate metadata for SEO
+// Generate metadata for SEO - Tối ưu cho số điện thoại
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
   
@@ -37,30 +37,72 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       };
     }
 
-    const title = `${girl.fullName || (girl as any).name} - Gái gọi ${girl.district?.name || ''} | Tìm Gái gọi`;
-    const description = girl.bio || `Thông tin chi tiết về ${girl.fullName || (girl as any).name}. ${girl.district?.name ? `Khu vực: ${girl.district.name}.` : ''} Xem ảnh, đánh giá và đặt lịch ngay.`;
+    const girlName = girl.fullName || (girl as any).name || '';
+    const girlPhone = (girl as any).phone || '';
+    const girlProvince = (girl as any).province || girl.district?.name || '';
+    const girlLocation = (girl as any).location || '';
+    const girlPrice = (girl as any).price || '';
+    const girlHeight = (girl as any).height || '';
+    const girlWeight = (girl as any).weight || '';
+    const girlMeasurements = (girl as any).measurements || '';
+    const girlOrigin = (girl as any).origin || '';
+    const girlBirthYear = (girl as any).birthYear;
+    const girlAge = girlBirthYear ? new Date().getFullYear() - girlBirthYear : null;
+    
+    // Title tối ưu cho SĐT - đặt SĐT ở đầu để Google dễ index
+    const title = girlPhone 
+      ? `${girlName}_ ${Array.isArray(girl.tags) ? girl.tags.slice(0, 3).join(', ') : ''}`
+      : `${girlName} - Gái gọi ${girlProvince} | Tìm Gái gọi`;
+    
+    // Description chi tiết với SĐT, thông số - Google sẽ hiển thị trong snippet
+    const descParts = [
+      girlName,
+      girlPhone ? `Điện thoại: ${girlPhone}` : '',
+      girlProvince ? `Khu vực: ${girlProvince}` : '',
+      girlLocation ? girlLocation : '',
+      girlAge ? `Năm sinh: ${girlBirthYear}` : '',
+      girlHeight ? `Chiều cao: ${girlHeight}` : '',
+      girlWeight ? `Cân nặng: ${girlWeight}` : '',
+      girlMeasurements ? `Số đo 3 vòng: ${girlMeasurements}` : '',
+      girlOrigin ? `Xuất xứ: ${girlOrigin}` : '',
+      girlPrice ? `Giá: ${girlPrice}` : '',
+    ].filter(Boolean);
+    
+    const description = descParts.join('. ') + '.';
+    
     const imageUrl = girl.images?.[0] || girl.avatar || `${siteUrl}/images/logo/logo.png`;
     const { slug } = await params;
     const url = `${siteUrl}/girls/${girl.id}/${slug}`;
+
+    // Keywords bao gồm SĐT và các biến thể
+    const phoneVariants = girlPhone ? [
+      girlPhone,
+      girlPhone.replace(/\s/g, ''),
+      girlPhone.replace(/^0/, '+84'),
+      girlPhone.replace(/^0/, '84'),
+      `sdt ${girlPhone}`,
+      `số điện thoại ${girlPhone}`,
+      `gái gọi ${girlPhone}`,
+    ] : [];
 
     return {
       title,
       description,
       keywords: [
-        girl.fullName,
-        'gái gọi', 'gaigu', 'gaigoi', 'gái gọi sài gòn', 'gái gọi hà nội',
-        'gái gọi cao cấp', 'gái gọi giá rẻ', 'gái gọi online', 'gái gọi kỹ nữ',
-        'tìm gái gọi', 'gái gọi xinh', 'gái gọi vú to', 'gái gọi làm tình',
-        'gái dâm', 'gái xinh', 'hot girl', 'sinh viên', 'người mẫu', 'chân dài',
-        'eo thon', 'mông to', 'ngực khủng', 'da trắng',
-        girl.district?.name || '',
+        girlName,
+        ...phoneVariants,
+        girlProvince ? `gái gọi ${girlProvince}` : '',
+        girlLocation || '',
+        'gái gọi', 'gaigu', 'gaigoi',
+        'gái gọi cao cấp', 'gái gọi giá rẻ', 'gái gọi online',
+        'tìm gái gọi', 'gái gọi xinh', 'hot girl',
         ...(Array.isArray(girl.tags) ? girl.tags : []),
       ].filter(Boolean),
       alternates: {
         canonical: url,
       },
       openGraph: {
-        title,
+        title: girlPhone ? `${girlName} — ${girlPhone}` : title,
         description,
         url,
         type: 'profile',
@@ -69,13 +111,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
             url: imageUrl,
             width: 1200,
             height: 630,
-            alt: girl.fullName,
+            alt: `${girlName} ${girlPhone}`,
           },
         ],
       },
       twitter: {
         card: 'summary_large_image',
-        title,
+        title: girlPhone ? `${girlName} — ${girlPhone}` : title,
         description,
         images: [imageUrl],
       },
@@ -126,43 +168,82 @@ export default async function GirlDetailWithSlugPage({ params }: PageProps) {
     notFound();
   }
 
+  const girlName = girl.fullName || (girl as any).name || '';
+  const girlPhone = (girl as any).phone || '';
+  const girlProvince = (girl as any).province || girl.district?.name || '';
+  const girlLocation = (girl as any).location || '';
+  const girlPrice = (girl as any).price || '';
+  const girlHeight = (girl as any).height || '';
+  const girlWeight = (girl as any).weight || '';
+  const girlMeasurements = (girl as any).measurements || '';
+  const girlOrigin = (girl as any).origin || '';
+  const girlBirthYear = (girl as any).birthYear;
+  
   const imageUrl = girl.images?.[0] || girl.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=1200&h=800&fit=crop';
-  const title = `${girl.fullName || (girl as any).name} - Gái gọi ${girl.district?.name || ''}`;
-  const description = girl.bio || `Thông tin chi tiết về ${girl.fullName || (girl as any).name}`;
+  const title = girlPhone 
+    ? `${girlName} — ${girlPhone} - Gái gọi ${girlProvince}`
+    : `${girlName} - Gái gọi ${girlProvince}`;
+  
+  // Description chi tiết cho SEO
+  const descParts = [
+    girlName,
+    girlPhone ? `Điện thoại: ${girlPhone}` : '',
+    girlProvince ? `Khu vực: ${girlProvince}` : '',
+    girlHeight ? `Chiều cao: ${girlHeight}` : '',
+    girlWeight ? `Cân nặng: ${girlWeight}` : '',
+    girlMeasurements ? `Số đo: ${girlMeasurements}` : '',
+    girlPrice ? `Giá: ${girlPrice}` : '',
+  ].filter(Boolean);
+  const description = girl.bio || descParts.join('. ') + '.';
+  
   const url = `${siteUrl}/girls/${girl.id}/${slug}`;
 
   // Breadcrumbs data
   const breadcrumbs = [
     { label: 'Trang chủ', href: '/' },
     { label: 'Gái gọi', href: '/girls' },
-    { label: girl.fullName || (girl as any).name || 'Chi tiết', href: url },
+    { label: girlPhone ? `${girlName} - ${girlPhone}` : girlName || 'Chi tiết', href: url },
   ];
 
-  // Structured data for SEO
+  // Structured data for SEO - Tối ưu cho SĐT
   const personStructuredData = {
     '@context': 'https://schema.org',
     '@type': 'Person',
-    name: girl.fullName,
+    name: girlName,
     description: description,
     image: girl.images || [imageUrl],
-    ...(girl.district && {
-      address: {
-        '@type': 'PostalAddress',
-        addressLocality: girl.district.name,
-        addressRegion: girl.district.name,
-        addressCountry: 'VN',
+    url: url,
+    // Telephone - quan trọng cho SEO SĐT
+    ...(girlPhone && {
+      telephone: girlPhone,
+      contactPoint: {
+        '@type': 'ContactPoint',
+        telephone: girlPhone,
+        contactType: 'customer service',
+        areaServed: 'VN',
+        availableLanguage: 'Vietnamese',
       },
     }),
-    ...(girl.phone && {
-      telephone: girl.phone,
-    }),
-    aggregateRating: {
+    // Address
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: girlProvince || girlLocation,
+      addressRegion: girlProvince,
+      addressCountry: 'VN',
+    },
+    // Additional info
+    ...(girlHeight && { height: girlHeight }),
+    ...(girlWeight && { weight: girlWeight }),
+    ...(girlOrigin && { birthPlace: girlOrigin }),
+    ...(girlBirthYear && { birthDate: `${girlBirthYear}` }),
+    // Rating
+    aggregateRating: girl.totalReviews && girl.totalReviews > 0 ? {
       '@type': 'AggregateRating',
       ratingValue: girl.rating || 0,
       reviewCount: girl.totalReviews || 0,
       bestRating: 5,
       worstRating: 1,
-    },
+    } : undefined,
   };
 
   const breadcrumbStructuredData = {
@@ -207,7 +288,7 @@ export default async function GirlDetailWithSlugPage({ params }: PageProps) {
                   <div className="mb-3">
                     <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-3">
                       <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-text">
-                        {girl.fullName || (girl as any).name}
+                        {girlName}
                       </h1>
                       
                       {/* Tags with Emoji Separator */}
@@ -219,11 +300,27 @@ export default async function GirlDetailWithSlugPage({ params }: PageProps) {
                       )}
                     </div>
                     
+                    {/* Phone Number - SEO optimized */}
+                    {girlPhone && (
+                      <div className="mb-2">
+                        <a 
+                          href={`tel:${girlPhone}`}
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-full text-sm sm:text-base font-bold hover:bg-green-600 transition-colors"
+                          title={`Gọi ${girlPhone}`}
+                        >
+                          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                          </svg>
+                          <span>{girlPhone}</span>
+                        </a>
+                      </div>
+                    )}
+                    
                     {/* District Button */}
-                    {girl.district?.name && (
+                    {girlProvince && (
                       <div>
                         <span className="inline-block px-4 py-1.5 bg-red-500 text-white rounded-full text-xs sm:text-sm font-semibold hover:bg-red-600 transition-colors cursor-pointer">
-                          Gái gọi {girl.district.name}
+                          Gái gọi {girlProvince}
                         </span>
                       </div>
                     )}
