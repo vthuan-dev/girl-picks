@@ -150,31 +150,31 @@ function ReviewCard({ review, onRefetch }: { review: Review; onRefetch: () => vo
     }
   };
 
+  const images = review.images || [];
+  const mainImg = images[0];
+  const sideImgs = images.slice(1, 4);
+
   return (
-    <div className="border-b border-secondary/20 pb-3">
-      {/* Main Content */}
-      <div 
-        className="cursor-pointer hover:bg-secondary/5 rounded-lg p-2 -m-2 transition-colors"
-        onClick={() => setExpanded(!expanded)}
-      >
-        {/* User + Date + Stars */}
-        <div className="flex items-center gap-2 mb-1">
-          <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-            <span className="text-white font-bold text-xs">
-              {review.customer?.fullName?.charAt(0)?.toUpperCase() || 'N'}
-            </span>
-          </div>
-          <span className="font-semibold text-text text-sm">
-            {review.customer?.fullName || 'Ẩn danh'}
+    <div className="border border-secondary/20 rounded-xl p-3 md:p-4 bg-background-light/60">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+          <span className="text-white font-bold text-sm">
+            {review.customer?.fullName?.charAt(0)?.toUpperCase() || 'N'}
           </span>
-          <span className="text-text-muted text-xs">• {formatDate(review.createdAt)}</span>
-          
-          {/* Stars - Right aligned */}
-          <div className="flex items-center gap-0.5 ml-auto">
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-semibold text-text text-sm md:text-base truncate">
+              {review.customer?.fullName || 'Ẩn danh'}
+            </span>
+            <span className="text-text-muted text-xs md:text-sm">• {formatDate(review.createdAt)}</span>
+          </div>
+          <div className="flex items-center gap-1 mt-1">
             {[...Array(5)].map((_, i) => (
               <svg
                 key={i}
-                className={`w-5 h-5 ${i < review.rating ? 'text-yellow-400 fill-current' : 'text-secondary/30'}`}
+                className={`w-4 h-4 md:w-5 md:h-5 ${i < review.rating ? 'text-yellow-400 fill-current' : 'text-secondary/30'}`}
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
@@ -183,75 +183,86 @@ function ReviewCard({ review, onRefetch }: { review: Review; onRefetch: () => vo
             ))}
           </div>
         </div>
+      </div>
 
-        {/* Content */}
-        <p className="text-text text-sm line-clamp-2 mb-1">{review.content}</p>
-        
-        {/* Girl Tag */}
-        {review.girl && (
-          <Link 
-            href={girlUrl}
-            onClick={(e) => e.stopPropagation()}
-            className="text-xs text-primary hover:text-primary-hover"
-          >
-            @{review.girl.name}<span className="text-text-muted">#{review.girl.id?.slice(-6)}</span>
-          </Link>
-        )}
+      {/* Content */}
+      <p className="text-text text-sm md:text-base mb-2 leading-relaxed">{review.content}</p>
 
-        {/* Images - Below girl tag */}
-        {review.images && review.images.length > 0 && (
-          <div className="flex gap-2 mt-2 flex-wrap">
-            {review.images.slice(0, 4).map((img, i) => (
+      {/* Girl Tag */}
+      {review.girl && (
+        <Link 
+          href={girlUrl}
+          className="inline-flex items-center gap-1 text-sm text-primary hover:text-primary-hover mb-3"
+        >
+          @{review.girl.name}
+          <span className="text-text-muted">#{review.girl.id?.slice(-6)}</span>
+        </Link>
+      )}
+
+      {/* Images collage */}
+      {mainImg && (
+        <div className="flex flex-col gap-2 mt-2">
+          <div className="grid gap-2 md:grid-cols-3">
+            <div className={sideImgs.length > 0 ? 'md:col-span-2' : 'md:col-span-3'}>
               <div 
-                key={i}
-                className="relative w-20 h-20 rounded-lg overflow-hidden bg-secondary/20 group"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setLightboxImage(img);
-                }}
+                className="relative w-full aspect-[4/3] md:aspect-video rounded-xl overflow-hidden bg-secondary/20 cursor-pointer group"
+                onClick={() => setLightboxImage(mainImg)}
               >
                 <Image
-                  src={img}
+                  src={mainImg}
                   alt="Review"
                   fill
-                  className="object-cover group-hover:scale-110 transition-transform duration-300"
+                  className="object-cover group-hover:scale-105 transition-transform duration-300"
                   unoptimized
                 />
-                {i === 3 && review.images!.length > 4 && (
-                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">+{review.images!.length - 4}</span>
-                  </div>
-                )}
-                {/* Zoom icon on hover */}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                  <svg className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                  </svg>
-                </div>
               </div>
-            ))}
+            </div>
+            {sideImgs.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-1 gap-2">
+                {sideImgs.map((img, i) => (
+                  <div 
+                    key={i}
+                    className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-secondary/20 cursor-pointer group"
+                    onClick={() => setLightboxImage(img)}
+                  >
+                    <Image
+                      src={img}
+                      alt=""
+                      fill
+                      className="object-cover group-hover:scale-110 transition-transform duration-300"
+                      unoptimized
+                    />
+                    {i === sideImgs.length - 1 && images.length > 4 && (
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                        <span className="text-white font-bold text-sm">+{images.length - 4}</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        )}
-
-        {/* Stats */}
-        <div className="flex items-center gap-4 mt-2 text-sm text-text-muted">
-          <button 
-            onClick={(e) => { e.stopPropagation(); handleLike(); }}
-            disabled={liking}
-            className={`flex items-center gap-1.5 hover:text-primary transition-colors ${liked ? 'text-primary' : ''}`}
-          >
-            <svg className="w-5 h-5" fill={liked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-            </svg>
-            {likesCount}
-          </button>
-          <span className="flex items-center gap-1.5">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-            {review._count?.comments || 0}
-          </span>
         </div>
+      )}
+
+      {/* Stats */}
+      <div className="flex items-center gap-4 mt-3 text-sm text-text-muted">
+        <button 
+          onClick={(e) => { e.stopPropagation(); handleLike(); }}
+          disabled={liking}
+          className={`flex items-center gap-1.5 hover:text-primary transition-colors ${liked ? 'text-primary' : ''}`}
+        >
+          <svg className="w-5 h-5" fill={liked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+          </svg>
+          {likesCount}
+        </button>
+        <span className="flex items-center gap-1.5">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          </svg>
+          {review._count?.comments || 0}
+        </span>
       </div>
 
       {/* Expanded Section */}
