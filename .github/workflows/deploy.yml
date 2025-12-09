@@ -70,16 +70,27 @@ jobs:
 
             echo "==> Restart backend with PM2"
             pm2 delete girl-pick-backend || true
-            pm2 start "npm run start:prod" --name girl-pick-backend --time --cwd "$APP_DIR/backend"
+            # Set CORS_ORIGIN for backend to allow requests from domain
+            CORS_ORIGIN=http://gaigo1.net,http://www.gaigo1.net pm2 start "npm run start:prod" --name girl-pick-backend --time --cwd "$APP_DIR/backend"
 
             echo "==> Frontend install and build"
             cd "$APP_DIR/frontend"
+            
+            # Create frontend .env.production with domain
+            cat > .env.production <<'ENVEOF'
+NEXT_PUBLIC_API_URL=http://gaigo1.net/api
+NEXT_PUBLIC_SITE_URL=http://gaigo1.net
+PORT=3000
+HOST=0.0.0.0
+NODE_ENV=production
+ENVEOF
+            
             npm ci
             npm run build
 
             echo "==> Restart frontend with PM2"
             pm2 delete girl-pick-frontend || true
-            PORT=${PORT:-3000} HOST=${HOST:-0.0.0.0} pm2 start "npm run start" --name girl-pick-frontend --time --cwd "$APP_DIR/frontend" --env production
+            PORT=3000 HOST=0.0.0.0 pm2 start "npm run start" --name girl-pick-frontend --time --cwd "$APP_DIR/frontend" --env production
 
             pm2 save
 

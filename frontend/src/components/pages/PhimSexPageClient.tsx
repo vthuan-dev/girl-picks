@@ -229,10 +229,10 @@ export default function PhimSexPageClient() {
                     )}
                     <span className="relative">{category.name}</span>
                     {selectedCategory === category.id && (
-                      <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-8 h-0.5 bg-white rounded-full"></div>
-                    )}
-                  </button>
-                ))}
+                  <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-8 h-0.5 bg-white rounded-full"></div>
+                )}
+              </button>
+            ))}
                 
                 {/* Show More/Less button */}
                 {categories.length > categoriesToShow && (
