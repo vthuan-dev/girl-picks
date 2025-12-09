@@ -8,6 +8,11 @@ APP_DIR=/var/www/girl-pick
 # 1. Update frontend .env.production
 echo "==> Updating frontend .env.production"
 cd "$APP_DIR/frontend"
+
+# Remove any existing .env files that might override
+rm -f .env .env.local .env.development
+
+# Create .env.production with domain
 cat > .env.production <<'EOF'
 NEXT_PUBLIC_API_URL=http://gaigo1.net/api
 NEXT_PUBLIC_SITE_URL=http://gaigo1.net
@@ -15,7 +20,10 @@ PORT=3000
 HOST=0.0.0.0
 NODE_ENV=production
 EOF
-echo "✓ Frontend .env.production updated"
+
+# Verify the file was created correctly
+echo "✓ Frontend .env.production updated:"
+cat .env.production
 
 # 2. Update backend CORS_ORIGIN in .env.production (if exists)
 echo ""
@@ -35,7 +43,17 @@ fi
 echo ""
 echo "==> Rebuilding frontend with new domain config"
 cd "$APP_DIR/frontend"
-npm run build
+
+# Remove old build cache
+rm -rf .next
+
+# Verify env vars before build
+echo "Environment variables before build:"
+echo "NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-NOT SET}"
+echo ""
+
+# Build with explicit env vars
+NEXT_PUBLIC_API_URL=http://gaigo1.net/api NEXT_PUBLIC_SITE_URL=http://gaigo1.net npm run build
 echo "✓ Frontend rebuilt"
 
 # 4. Restart frontend
