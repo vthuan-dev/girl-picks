@@ -77,13 +77,11 @@ jobs:
             cd "$APP_DIR/frontend"
             
             # Create frontend .env.production with domain (supports both www and non-www)
-            cat > .env.production <<'ENVEOF'
-NEXT_PUBLIC_API_URL=http://gaigo1.net/api
-NEXT_PUBLIC_SITE_URL=http://gaigo1.net
-PORT=3000
-HOST=0.0.0.0
-NODE_ENV=production
-ENVEOF
+            echo "NEXT_PUBLIC_API_URL=http://gaigo1.net/api" > .env.production
+            echo "NEXT_PUBLIC_SITE_URL=http://gaigo1.net" >> .env.production
+            echo "PORT=3000" >> .env.production
+            echo "HOST=0.0.0.0" >> .env.production
+            echo "NODE_ENV=production" >> .env.production
             
             npm ci
             npm run build
