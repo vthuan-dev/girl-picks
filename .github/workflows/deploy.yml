@@ -76,7 +76,7 @@ jobs:
             echo "==> Frontend install and build"
             cd "$APP_DIR/frontend"
             
-            # Create frontend .env.production with domain
+            # Create frontend .env.production with domain (supports both www and non-www)
             cat > .env.production <<'ENVEOF'
 NEXT_PUBLIC_API_URL=http://gaigo1.net/api
 NEXT_PUBLIC_SITE_URL=http://gaigo1.net
