@@ -60,7 +60,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       const girls = girlsData?.data?.data || girlsData?.data || [];
 
       const girlRoutes: MetadataRoute.Sitemap = girls.map((girl: any) => ({
-        url: `${siteUrl}/girls/${girl.id}`,
+        url: girl.slug ? `${siteUrl}/girls/${girl.id}/${girl.slug}` : `${siteUrl}/girls/${girl.id}`,
         lastModified: girl.updatedAt ? new Date(girl.updatedAt) : new Date(),
         changeFrequency: 'weekly' as const,
         priority: 0.7,

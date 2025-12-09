@@ -146,6 +146,9 @@ export default function GirlList({ filters = {}, selectedProvince = null, search
             images = girl.images;
           }
         }
+
+        // Sanitize image URLs; keep only http(s) to avoid blob/file errors
+        images = images.filter((url) => typeof url === 'string' && /^https?:\/\//i.test(url));
         
         // Use first image as avatar if available
         const avatar = images[0] || girl.avatarUrl || mockImages[index % mockImages.length];
