@@ -408,13 +408,6 @@ export default async function GirlDetailPage({ params }: PageProps) {
                   </div>
                 </div>
               )}
-
-              {/* Comments & Reviews Section */}
-              <ReviewsSection 
-                girlId={girl.id} 
-                totalReviews={girl.totalReviews} 
-                averageRating={girl.rating} 
-              />
             </div>
 
             {/* Right Column - Related Girls - Desktop Only */}

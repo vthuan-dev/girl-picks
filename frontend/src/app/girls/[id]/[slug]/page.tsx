@@ -4,9 +4,7 @@ import StructuredData from '@/components/seo/StructuredData';
 import GirlGallery from '@/components/girls/GirlGallery';
 import GirlInfoCard from '@/components/girls/GirlInfoCard';
 import RelatedGirls from '@/components/girls/RelatedGirls';
-import ReviewsSection from '@/components/girls/ReviewsSection';
 import GirlBioSection from '@/components/girls/GirlBioSection';
-import GirlTagsSection from '@/components/girls/GirlTagsSection';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import ViewTracker from '@/components/common/ViewTracker';
 import Header from '@/components/layout/Header';
@@ -361,31 +359,14 @@ export default async function GirlDetailWithSlugPage({ params }: PageProps) {
               </div>
             </div>
 
-            {/* Tags Section - Moved below title for cleaner layout */}
-            {girl.tags && girl.tags.length > 0 && (
-              <div className="bg-background-light rounded-2xl p-4 border border-secondary/30">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-pink-500 text-lg">❤️</span>
-                  <GirlTagsSection tags={girl.tags} maxVisible={20} />
-                </div>
-              </div>
-            )}
-
             {/* Gallery */}
             <GirlGallery images={girl.images || [imageUrl]} name={girl.fullName} />
 
-            {/* Info Card */}
-            <GirlInfoCard girl={girl} />
+            {/* Info Card - Tags will be displayed below Share button */}
+            <GirlInfoCard girl={girl} tags={girl.tags} />
 
             {/* Bio Section */}
             <GirlBioSection bio={girl.bio} />
-
-            {/* Comments & Reviews Section */}
-            <ReviewsSection 
-              girlId={girl.id} 
-              totalReviews={girl.totalReviews || 0}
-              averageRating={girl.rating || 0}
-            />
           </div>
 
           {/* Right Column - Related Girls */}

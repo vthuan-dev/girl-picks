@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 interface GirlInfoCardProps {
   girl: Girl;
+  tags?: string[];
 }
 
 // Mock data for additional fields (in real app, these should come from API)
@@ -23,7 +24,7 @@ const getAdditionalInfo = (girl: Girl) => {
   };
 };
 
-export default function GirlInfoCard({ girl }: GirlInfoCardProps) {
+export default function GirlInfoCard({ girl, tags }: GirlInfoCardProps) {
   const [copied, setCopied] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const info = getAdditionalInfo(girl);
@@ -245,8 +246,8 @@ export default function GirlInfoCard({ girl }: GirlInfoCardProps) {
       {/* Share Button */}
       <div className="mt-4 pt-4 border-t border-secondary/30 flex justify-start">
         <div className="relative">
-        <button
-          onClick={handleCopyLink}
+          <button
+            onClick={handleCopyLink}
             className="group relative px-4 py-2.5 rounded-lg bg-background border border-secondary/30 hover:border-primary/50 hover:bg-primary/10 transition-all cursor-pointer flex items-center gap-2"
             aria-label="Chia sẻ link"
           >
@@ -257,12 +258,12 @@ export default function GirlInfoCard({ girl }: GirlInfoCardProps) {
             ) : (
               <svg className="w-5 h-5 text-text-muted group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.89 12.938 9 12.482 9 12c0-.482-.11-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-          </svg>
+              </svg>
             )}
             <span className="text-sm font-medium text-text-muted group-hover:text-primary transition-colors">
               Chia sẻ
             </span>
-        </button>
+          </button>
           
           {/* Toast Notification */}
           {showToast && (
@@ -277,6 +278,25 @@ export default function GirlInfoCard({ girl }: GirlInfoCardProps) {
           )}
         </div>
       </div>
+
+      {/* Tags Section - Below Share Button */}
+      {tags && tags.length > 0 && (
+        <div className="mt-4 pt-4 border-t border-secondary/30">
+          <div className="flex flex-wrap items-center gap-1 text-sm leading-relaxed">
+            <span className="text-pink-500">❤️</span>
+            {tags.map((tag, index) => (
+              <span key={index}>
+                <span className="text-primary hover:text-primary-hover cursor-pointer">
+                  #{tag}
+                </span>
+                {index < tags.length - 1 && (
+                  <span className="text-pink-500 mx-1">❤️</span>
+                )}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

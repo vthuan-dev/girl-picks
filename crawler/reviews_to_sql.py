@@ -51,6 +51,15 @@ def main():
     ]
     inserts_reviews = []
 
+    # Dummy girl to satisfy NOT NULL / FK on girlId
+    dummy_girl_id = str(uuid.uuid4())
+    dummy_girl_name = "Gái gọi nhập khẩu"
+    dummy_girl_slug = "gai-goi-nhap-khau"
+    inserts_girl = (
+        "INSERT INTO girls (id, name, slug, createdAt, updatedAt) "
+        f"VALUES ('{dummy_girl_id}', '{dummy_girl_name}', '{dummy_girl_slug}', '{now}', '{now}');"
+    )
+
     for item in data:
         user_id = dummy_user_id
         review_id = str(uuid.uuid4())
@@ -64,11 +73,14 @@ def main():
 
         inserts_reviews.append(
             "INSERT INTO reviews (id, customerId, girlId, title, content, rating, images, status, createdAt, updatedAt) "
-            f"VALUES ('{review_id}', '{user_id}', NULL, '{title}', "
+            f"VALUES ('{review_id}', '{user_id}', '{dummy_girl_id}', '{title}', "
             f"'{content}', {rating}, '{esc_images}', 'APPROVED', '{now}', '{now}');"
         )
 
-    print("-- Users (dummy)")
+    print("-- Girl (dummy)")
+    print(inserts_girl)
+
+    print("\n-- Users (dummy)")
     for sql in inserts_users:
         print(sql)
     print("\n-- Reviews")
