@@ -87,7 +87,12 @@ function ReviewCard({ review, onRefetch }: { review: Review; onRefetch: () => vo
   const [likesCount, setLikesCount] = useState(review._count?.likes || 0);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   
-  const girlUrl = review.girl ? `/girls/${review.girl.id}` : '#';
+  const girlUrl =
+    review.girl && (review.girl as any).slug
+      ? `/girls/${review.girl.id}/${(review.girl as any).slug}`
+      : review.girl
+        ? `/girls/${review.girl.id}`
+        : '#';
   
   // Lock body scroll when lightbox is open
   useEffect(() => {
