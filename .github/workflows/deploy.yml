@@ -76,7 +76,7 @@ jobs:
             . ./.env.production
             set +a
             cd "$APP_DIR/backend"
-            CORS_ORIGIN=http://gaigo1.net,http://www.gaigo1.net pm2 start "npm run start:prod" --name girl-pick-backend --time
+            CORS_ORIGIN=http://gaigo1.net,http://www.gaigo1.net,https://gaigo1.net,https://www.gaigo1.net pm2 start "npm run start:prod" --name girl-pick-backend --time
             
             # Wait a moment and check if backend started
             sleep 3
@@ -93,9 +93,9 @@ jobs:
             # Remove old build cache and env files
             rm -rf .next .env .env.local .env.development
 
-            # Create frontend .env.production with domain (supports both www and non-www)
-            echo "NEXT_PUBLIC_API_URL=http://gaigo1.net/api" > .env.production
-            echo "NEXT_PUBLIC_SITE_URL=http://gaigo1.net" >> .env.production
+            # Create frontend .env.production with domain (use HTTPS if SSL is configured)
+            echo "NEXT_PUBLIC_API_URL=https://gaigo1.net/api" > .env.production
+            echo "NEXT_PUBLIC_SITE_URL=https://gaigo1.net" >> .env.production
             echo "PORT=3000" >> .env.production
             echo "HOST=0.0.0.0" >> .env.production
             echo "NODE_ENV=production" >> .env.production
@@ -103,7 +103,7 @@ jobs:
             npm ci
             
             # Build with explicit env vars (build traces error is non-critical if .next exists)
-            NEXT_PUBLIC_API_URL=http://gaigo1.net/api NEXT_PUBLIC_SITE_URL=http://gaigo1.net npm run build || {
+            NEXT_PUBLIC_API_URL=https://gaigo1.net/api NEXT_PUBLIC_SITE_URL=https://gaigo1.net npm run build || {
               echo "Build completed with warnings, checking if .next directory exists..."
               if [ -d ".next" ]; then
                 echo "✓ Build output exists, continuing despite warnings..."

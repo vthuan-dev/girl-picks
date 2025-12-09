@@ -12,10 +12,10 @@ cd "$APP_DIR/frontend"
 # Remove any existing .env files that might override
 rm -f .env .env.local .env.development
 
-# Create .env.production with domain
+# Create .env.production with domain (use HTTPS)
 cat > .env.production <<'EOF'
-NEXT_PUBLIC_API_URL=http://gaigo1.net/api
-NEXT_PUBLIC_SITE_URL=http://gaigo1.net
+NEXT_PUBLIC_API_URL=https://gaigo1.net/api
+NEXT_PUBLIC_SITE_URL=https://gaigo1.net
 PORT=3000
 HOST=0.0.0.0
 NODE_ENV=production
@@ -32,8 +32,8 @@ cd "$APP_DIR"
 if [ -f .env.production ]; then
     # Remove old CORS_ORIGIN if exists
     sed -i '/^CORS_ORIGIN=/d' .env.production
-    # Add new CORS_ORIGIN
-    echo "CORS_ORIGIN=http://gaigo1.net,http://www.gaigo1.net" >> .env.production
+    # Add new CORS_ORIGIN (both HTTP and HTTPS)
+    echo "CORS_ORIGIN=http://gaigo1.net,http://www.gaigo1.net,https://gaigo1.net,https://www.gaigo1.net" >> .env.production
     echo "✓ Backend CORS_ORIGIN updated in .env.production"
 else
     echo "⚠ .env.production not found, will set via PM2 env"
@@ -56,9 +56,9 @@ echo "Environment variables before build:"
 cat .env.production | grep NEXT_PUBLIC
 echo ""
 
-# Build with explicit env vars
+# Build with explicit env vars (use HTTPS)
 echo "Starting build..."
-NEXT_PUBLIC_API_URL=http://gaigo1.net/api NEXT_PUBLIC_SITE_URL=http://gaigo1.net npm run build
+NEXT_PUBLIC_API_URL=https://gaigo1.net/api NEXT_PUBLIC_SITE_URL=https://gaigo1.net npm run build
 echo "✓ Frontend rebuilt"
 
 # 4. Restart frontend
@@ -73,7 +73,7 @@ echo ""
 echo "==> Restarting backend with CORS_ORIGIN"
 pm2 delete girl-pick-backend || true
 cd "$APP_DIR/backend"
-CORS_ORIGIN=http://gaigo1.net,http://www.gaigo1.net pm2 start "npm run start:prod" --name girl-pick-backend --time
+CORS_ORIGIN=http://gaigo1.net,http://www.gaigo1.net,https://gaigo1.net,https://www.gaigo1.net pm2 start "npm run start:prod" --name girl-pick-backend --time
 echo "✓ Backend restarted with CORS_ORIGIN"
 
 # 6. Save PM2
@@ -81,8 +81,8 @@ pm2 save
 
 echo ""
 echo "==> Configuration updated successfully!"
-echo "Frontend API URL: http://gaigo1.net/api"
-echo "Backend CORS Origin: http://gaigo1.net,http://www.gaigo1.net"
+echo "Frontend API URL: https://gaigo1.net/api"
+echo "Backend CORS Origin: http://gaigo1.net,http://www.gaigo1.net,https://gaigo1.net,https://www.gaigo1.net"
 echo ""
 echo "Please test the website now: http://gaigo1.net"
 
