@@ -33,7 +33,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
 
     const title = `${post.title} | Phim sex`;
-    const description = post.content || `Xem phim ${post.title} chất lượng cao. ${post.category ? `Thể loại: ${post.category}.` : ''}`;
+    const categoryName = typeof post.category === 'string' ? post.category : post.category?.name;
+    const description = post.content || `Xem phim ${post.title} chất lượng cao. ${categoryName ? `Thể loại: ${categoryName}.` : ''}`;
     
     // Get poster or thumbnail or first image
     let imageUrl = post.poster || post.thumbnail;
@@ -60,9 +61,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       keywords: [
         post.title,
         'phim sex',
-        post.category || '',
+        categoryName || '',
         ...(Array.isArray(tags) ? tags : []),
-      ].filter(Boolean),
+      ].filter(Boolean) as string[],
       alternates: {
         canonical: url,
       },
