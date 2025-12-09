@@ -13,7 +13,7 @@ interface MoviePost {
   id: string;
   title: string;
   thumbnail: string;
-  duration: string;
+  duration: string | null;
   views: number;
   rating: string;
   detailUrl: string;
@@ -84,8 +84,38 @@ export default function PhimSexPageClient() {
         // Get category name from post.category relation or use default
         const categoryName = (post.category as any)?.name || 'Khác';
 
-        // Mock duration
-        const duration = `${Math.floor(Math.random() * 30) + 10}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}`;
+        // Duration: lấy từ post.duration nếu có, format nếu là số giây
+        let duration: string | null = null;
+        const rawDuration = (post as any)?.duration || (post as any)?.videoDuration;
+        
+        if (rawDuration) {
+          // Nếu là số (giây), format thành MM:SS hoặc HH:MM:SS
+          if (typeof rawDuration === 'number') {
+            const hours = Math.floor(rawDuration / 3600);
+            const minutes = Math.floor((rawDuration % 3600) / 60);
+            const seconds = Math.floor(rawDuration % 60);
+            
+            if (hours > 0) {
+              duration = `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            } else {
+              duration = `${minutes}:${String(seconds).padStart(2, '0')}`;
+            }
+          } else if (typeof rawDuration === 'string') {
+            // Nếu đã là string format MM:SS hoặc HH:MM:SS, dùng trực tiếp
+            duration = rawDuration;
+          }
+        }
+        
+        // Debug: log để kiểm tra API response nếu không có duration
+        if (!duration && post.videoUrl) {
+          console.log('[PhimSexPageClient] Post without duration:', {
+            id: post.id,
+            title: post.title,
+            videoUrl: post.videoUrl,
+            rawDuration,
+            availableFields: Object.keys(post),
+          });
+        }
 
         // Generate URL with slug if available
         const detailUrl = post.slug 

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState, useMemo, memo } from 'react';
+import { useState, useMemo, memo, useEffect } from 'react';
 
 const menuItems = [
   {
@@ -84,6 +84,18 @@ function AdminSidebar() {
   const pathname = usePathname();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
+  // Lock body scroll khi mở sidebar trên mobile
+  useEffect(() => {
+    if (isMobileOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobileOpen]);
+
   // Memoize active path để tránh re-render
   const activePath = useMemo(() => pathname, [pathname]);
 
@@ -103,10 +115,10 @@ function AdminSidebar() {
         </svg>
       </button>
 
-      {/* Mobile Overlay - Phải đặt trước sidebar để z-index hoạt động đúng */}
+      {/* Mobile Overlay - Chỉ hiển thị trên mobile khi sidebar mở */}
       {isMobileOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-30"
+          className="lg:hidden fixed inset-0 bg-black/50 z-30"
           onClick={() => setIsMobileOpen(false)}
           onTouchStart={() => setIsMobileOpen(false)}
           aria-hidden="true"
@@ -116,15 +128,16 @@ function AdminSidebar() {
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-16 left-0 h-[calc(100vh-4rem)] w-64 bg-background-light border-r border-secondary/30 z-20
+          fixed top-16 left-0 h-[calc(100vh-4rem)] w-64 border-r border-secondary/30
           transform transition-transform duration-300 ease-in-out overflow-y-auto
-          ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
-          lg:translate-x-0
+          ${isMobileOpen ? 'translate-x-0 z-40' : '-translate-x-full z-20'}
+          lg:translate-x-0 lg:z-20
+          bg-[#1a1a2e]
         `}
       >
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full bg-[#1a1a2e]">
           {/* Logo */}
-          <div className="p-6 border-b border-secondary/30">
+          <div className="p-6 border-b border-secondary/30 bg-[#1a1a2e]">
             <Link href="/admin/dashboard" className="flex items-center gap-3 group">
               <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary-hover rounded-lg flex items-center justify-center shadow-lg shadow-primary/30 group-hover:shadow-xl group-hover:shadow-primary/40 transition-all">
                 <span className="text-white font-bold text-lg">AD</span>
@@ -137,7 +150,7 @@ function AdminSidebar() {
           </div>
 
           {/* Menu Items */}
-          <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+          <nav className="flex-1 overflow-y-auto p-4 space-y-1 bg-[#1a1a2e]">
             {menuItems.map((item) => {
               const isActive = activePath === item.href || activePath?.startsWith(item.href + '/');
               return (
