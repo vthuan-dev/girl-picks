@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import GirlList from '@/modules/girls/components/GirlList';
 import PopularTags from '@/components/sections/PopularTags';
 import LocationFilters from '@/components/sections/LocationFilters';
+import Header from '@/components/layout/Header';
 
 function SearchContent() {
   const searchParams = useSearchParams();
@@ -124,16 +125,19 @@ function SearchContent() {
 
 export default function SearchPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-text-muted">Đang tải...</p>
+    <>
+      <Header />
+      <Suspense fallback={
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-text-muted">Đang tải...</p>
+          </div>
         </div>
-      </div>
-    }>
-      <SearchContent />
-    </Suspense>
+      }>
+        <SearchContent />
+      </Suspense>
+    </>
   );
 }
 

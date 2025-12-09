@@ -90,7 +90,8 @@ export default function GirlList({ filters = {}, selectedProvince = null, search
         originFilter: filters.origin || undefined,
         locationFilter: filters.location || undefined,
         province: selectedProvince || undefined,
-        search: searchQuery || undefined,
+        // Nếu đã chọn tỉnh, không gửi search để tránh conflict bộ lọc (vd: search=Cần Thơ nhưng chọn Thừa Thiên Huế)
+        search: selectedProvince ? undefined : (searchQuery || undefined),
         tags: selectedTag ? [selectedTag] : undefined,
   }), [params.page, params.limit, filters.verified, filters.price, filters.age, filters.height, filters.weight, filters.origin, filters.location, selectedProvince, searchQuery, selectedTag]);
 
