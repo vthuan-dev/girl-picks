@@ -5,6 +5,8 @@ import GirlGallery from '@/components/girls/GirlGallery';
 import GirlInfoCard from '@/components/girls/GirlInfoCard';
 import RelatedGirls from '@/components/girls/RelatedGirls';
 import ReviewsSection from '@/components/girls/ReviewsSection';
+import GirlBioSection from '@/components/girls/GirlBioSection';
+import GirlTagsSection from '@/components/girls/GirlTagsSection';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import ViewTracker from '@/components/common/ViewTracker';
 import Header from '@/components/layout/Header';
@@ -212,16 +214,7 @@ export default async function GirlDetailWithSlugPage({ params }: PageProps) {
                       {girl.tags && girl.tags.length > 0 && (
                         <>
                           <span className="text-pink-500 text-lg sm:text-xl">❤️</span>
-                          {girl.tags.map((tag, index) => (
-                            <span key={index} className="flex items-center">
-                              <span className="text-text text-sm sm:text-base lg:text-lg font-medium">
-                                {tag}
-                              </span>
-                              {index < girl.tags!.length - 1 && (
-                                <span className="mx-1 sm:mx-2 text-pink-500 text-lg sm:text-xl">❤️</span>
-                              )}
-                            </span>
-                          ))}
+                          <GirlTagsSection tags={girl.tags} maxVisible={15} />
                         </>
                       )}
                     </div>
@@ -288,6 +281,9 @@ export default async function GirlDetailWithSlugPage({ params }: PageProps) {
 
             {/* Info Card */}
             <GirlInfoCard girl={girl} />
+
+            {/* Bio Section */}
+            <GirlBioSection bio={girl.bio} />
 
             {/* Comments & Reviews Section */}
             <ReviewsSection 

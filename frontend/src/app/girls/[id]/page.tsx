@@ -7,6 +7,7 @@ import StructuredData from '@/components/seo/StructuredData';
 import GirlGallery from '@/components/girls/GirlGallery';
 import GirlInfoCard from '@/components/girls/GirlInfoCard';
 import RelatedGirls from '@/components/girls/RelatedGirls';
+import GirlBioSection from '@/components/girls/GirlBioSection';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import ViewTracker from '@/components/common/ViewTracker';
 import { Girl } from '@/types/girl';
@@ -282,11 +283,7 @@ export default async function GirlDetailPage({ params }: PageProps) {
             {girl.bio && (
               <div className="bg-background-light rounded-2xl p-4 sm:p-6 border border-secondary/30 shadow-lg">
                 <h2 className="text-xl font-bold text-text mb-4">Mô tả</h2>
-                <div className="prose prose-invert max-w-none">
-                  <p className="text-text-muted leading-relaxed whitespace-pre-line">
-                    {girl.bio}
-                  </p>
-                </div>
+                <GirlBioSection bio={girl.bio} />
               </div>
             )}
 
