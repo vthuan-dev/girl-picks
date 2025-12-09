@@ -6,6 +6,7 @@ import GirlListWithStats from '@/components/girls/GirlListWithStats';
 import LocationFilters from '@/components/sections/LocationFilters';
 import PopularTags from '@/components/sections/PopularTags';
 import LatestPosts from '@/components/sections/LatestPosts';
+import LatestReviews from '@/components/sections/LatestReviews';
 import GirlFilters from '@/components/filters/GirlFilters';
 
 export default function HomePageClient() {
@@ -76,6 +77,9 @@ export default function HomePageClient() {
           }}
         />
       </div>
+
+      {/* Latest Reviews Section - Đánh giá gái gọi - ĐẶT LÊN ĐẦU */}
+      <LatestReviews limit={5} />
 
       {/* Main Content with Sidebar Layout - Gái gọi cho bạn */}
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 mb-6 lg:mb-10">

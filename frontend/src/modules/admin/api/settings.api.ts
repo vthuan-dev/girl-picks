@@ -15,6 +15,10 @@ export interface SystemSettings {
   emailFrom?: string;
   storageProvider?: 'local' | 'cloudinary' | 's3';
   storageConfig?: Record<string, any>;
+  // Content pages
+  rulesContent?: string;
+  termsContent?: string;
+  privacyContent?: string;
 }
 
 export const settingsApi = {

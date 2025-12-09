@@ -1,7 +1,5 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
-import Image from 'next/image';
-import Link from 'next/link';
 import { getGirlById } from '@/lib/api/server-client';
 import StructuredData from '@/components/seo/StructuredData';
 import GirlGallery from '@/components/girls/GirlGallery';

@@ -284,47 +284,35 @@ export default async function GirlDetailWithSlugPage({ params }: PageProps) {
             <div className="bg-background-light rounded-2xl p-4 sm:p-6 border border-secondary/30 shadow-lg">
               <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                 <div className="flex-1">
-                  {/* Name with Tags and Emoji - All in one line */}
-                  <div className="mb-3">
-                    <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-3">
-                      <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-text">
-                        {girlName}
-                      </h1>
-                      
-                      {/* Tags with Emoji Separator */}
-                      {girl.tags && girl.tags.length > 0 && (
-                        <>
-                          <span className="text-pink-500 text-lg sm:text-xl">❤️</span>
-                          <GirlTagsSection tags={girl.tags} maxVisible={15} />
-                        </>
-                      )}
+                  {/* Name */}
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-text mb-3">
+                    {girlName}
+                  </h1>
+                  
+                  {/* Phone Number - SEO optimized */}
+                  {girlPhone && (
+                    <div className="mb-3">
+                      <a 
+                        href={`tel:${girlPhone}`}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-full text-sm sm:text-base font-bold hover:bg-green-600 transition-colors"
+                        title={`Gọi ${girlPhone}`}
+                      >
+                        <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                        </svg>
+                        <span>{girlPhone}</span>
+                      </a>
                     </div>
-                    
-                    {/* Phone Number - SEO optimized */}
-                    {girlPhone && (
-                      <div className="mb-2">
-                        <a 
-                          href={`tel:${girlPhone}`}
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-full text-sm sm:text-base font-bold hover:bg-green-600 transition-colors"
-                          title={`Gọi ${girlPhone}`}
-                        >
-                          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                          </svg>
-                          <span>{girlPhone}</span>
-                        </a>
-                      </div>
-                    )}
-                    
-                    {/* District Button */}
-                    {girlProvince && (
-                      <div>
-                        <span className="inline-block px-4 py-1.5 bg-red-500 text-white rounded-full text-xs sm:text-sm font-semibold hover:bg-red-600 transition-colors cursor-pointer">
-                          Gái gọi {girlProvince}
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                  )}
+                  
+                  {/* District Button */}
+                  {girlProvince && (
+                    <div className="mb-3">
+                      <span className="inline-block px-4 py-1.5 bg-red-500 text-white rounded-full text-xs sm:text-sm font-semibold hover:bg-red-600 transition-colors cursor-pointer">
+                        Gái gọi {girlProvince}
+                      </span>
+                    </div>
+                  )}
                 </div>
                 
                 {/* Rating & Status */}
@@ -372,6 +360,16 @@ export default async function GirlDetailWithSlugPage({ params }: PageProps) {
                 </div>
               </div>
             </div>
+
+            {/* Tags Section - Moved below title for cleaner layout */}
+            {girl.tags && girl.tags.length > 0 && (
+              <div className="bg-background-light rounded-2xl p-4 border border-secondary/30">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-pink-500 text-lg">❤️</span>
+                  <GirlTagsSection tags={girl.tags} maxVisible={20} />
+                </div>
+              </div>
+            )}
 
             {/* Gallery */}
             <GirlGallery images={girl.images || [imageUrl]} name={girl.fullName} />

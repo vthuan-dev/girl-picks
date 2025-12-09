@@ -777,6 +777,10 @@ export class AdminService {
       emailFrom: settingsObj.emailFrom || '',
       storageProvider: settingsObj.storageProvider || 'local',
       storageConfig: settingsObj.storageConfig || {},
+      // Content pages
+      rulesContent: settingsObj.rulesContent || '',
+      termsContent: settingsObj.termsContent || '',
+      privacyContent: settingsObj.privacyContent || '',
     };
   }
 

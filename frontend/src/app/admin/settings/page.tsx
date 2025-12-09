@@ -57,6 +57,15 @@ export default function AdminSettingsPage() {
         </svg>
       ),
     },
+    {
+      id: 'pages',
+      label: 'Nội dung trang',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      ),
+    },
   ];
 
   useEffect(() => {
@@ -353,6 +362,59 @@ export default function AdminSettingsPage() {
                           </span>
                         ))}
                       </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'pages' && (
+                <div className="space-y-6">
+                  <h2 className="text-xl font-bold text-text mb-4">Nội dung trang</h2>
+                  
+                  <div className="space-y-6">
+                    {/* Quy định */}
+                    <div>
+                      <label className="block text-sm font-semibold text-text mb-2">
+                        Nội dung trang Quy định
+                      </label>
+                      <p className="text-xs text-text-muted mb-2">Hỗ trợ HTML. Nội dung sẽ hiển thị tại /quy-dinh</p>
+                      <textarea
+                        value={settings.rulesContent || ''}
+                        onChange={(e) => updateSetting('rulesContent', e.target.value)}
+                        rows={10}
+                        className="w-full px-4 py-3 bg-background border border-secondary/50 rounded-xl text-text placeholder:text-text-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 cursor-text resize-y font-mono text-sm"
+                        placeholder="<h2>Quy định sử dụng</h2>&#10;<p>Nội dung quy định...</p>"
+                      />
+                    </div>
+
+                    {/* Điều khoản */}
+                    <div>
+                      <label className="block text-sm font-semibold text-text mb-2">
+                        Nội dung trang Điều khoản
+                      </label>
+                      <p className="text-xs text-text-muted mb-2">Hỗ trợ HTML. Nội dung sẽ hiển thị tại /terms</p>
+                      <textarea
+                        value={settings.termsContent || ''}
+                        onChange={(e) => updateSetting('termsContent', e.target.value)}
+                        rows={10}
+                        className="w-full px-4 py-3 bg-background border border-secondary/50 rounded-xl text-text placeholder:text-text-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 cursor-text resize-y font-mono text-sm"
+                        placeholder="<h2>Điều khoản sử dụng</h2>&#10;<p>Nội dung điều khoản...</p>"
+                      />
+                    </div>
+
+                    {/* Chính sách bảo mật */}
+                    <div>
+                      <label className="block text-sm font-semibold text-text mb-2">
+                        Nội dung trang Chính sách bảo mật
+                      </label>
+                      <p className="text-xs text-text-muted mb-2">Hỗ trợ HTML. Nội dung sẽ hiển thị tại /privacy</p>
+                      <textarea
+                        value={settings.privacyContent || ''}
+                        onChange={(e) => updateSetting('privacyContent', e.target.value)}
+                        rows={10}
+                        className="w-full px-4 py-3 bg-background border border-secondary/50 rounded-xl text-text placeholder:text-text-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 cursor-text resize-y font-mono text-sm"
+                        placeholder="<h2>Chính sách bảo mật</h2>&#10;<p>Nội dung chính sách...</p>"
+                      />
                     </div>
                   </div>
                 </div>
