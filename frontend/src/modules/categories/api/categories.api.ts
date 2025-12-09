@@ -43,8 +43,14 @@ export const categoriesApi = {
     const response = await apiClient.get<any>(
       `/categories${params.toString() ? `?${params.toString()}` : ''}`
     );
-    const unwrapped = unwrapResponse(response.data);
-    return Array.isArray(unwrapped) ? unwrapped : (unwrapped.data || unwrapped || []);
+    const unwrapped = unwrapResponse<any>(response.data);
+    if (Array.isArray(unwrapped)) {
+      return unwrapped;
+    }
+    if (unwrapped && typeof unwrapped === 'object' && 'data' in unwrapped && Array.isArray(unwrapped.data)) {
+      return unwrapped.data;
+    }
+    return [];
   },
 
   // Get category by ID
