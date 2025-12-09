@@ -11,7 +11,14 @@ import Link from 'next/link';
 
 function SearchContent() {
   const searchParams = useSearchParams();
-  const query = searchParams.get('q') || '';
+  const rawQuery = searchParams.get('q') || '';
+  const query = useMemo(() => {
+    try {
+      return decodeURIComponent(rawQuery).replace(/\+/g, ' ');
+    } catch {
+      return rawQuery.replace(/\+/g, ' ');
+    }
+  }, [rawQuery]);
   const tagParam = searchParams.get('tag') || '';
   
   const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
@@ -54,6 +61,8 @@ function SearchContent() {
     }
   }, [query, selectedTag, isPhoneQuery]);
 
+  const displayTitle = selectedProvince || query || selectedTag || 'Tìm kiếm';
+
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
       {/* Page Header */}
@@ -61,13 +70,7 @@ function SearchContent() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
           <div className="flex-1">
             <h1 className="text-2xl lg:text-3xl font-bold text-text mb-2">
-              {query || selectedTag ? (
-                <>
-                  Kết Quả Tìm Kiếm Cho: <span className="text-primary">{query || selectedTag}</span>
-                </>
-              ) : (
-                'Tìm kiếm'
-              )}
+              Kết Quả Tìm Kiếm Cho: <span className="text-primary">{displayTitle}</span>
             </h1>
             {selectedTag && (
               <p className="text-sm text-text-muted">

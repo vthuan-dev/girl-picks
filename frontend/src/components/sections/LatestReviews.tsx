@@ -14,21 +14,46 @@ interface LatestReviewsProps {
 }
 
 export default function LatestReviews({ limit = 6 }: LatestReviewsProps) {
-  const { data, isLoading, error, refetch } = useQuery(
-    ['reviews', 'latest', limit],
+  const pageSize = 10;
+  const [page, setPage] = useState(1);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [hasMore, setHasMore] = useState(true);
+
+  const { data, isLoading, isFetching, error, refetch } = useQuery(
+    ['reviews', 'latest', page],
     async () => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/reviews?limit=${limit}&status=APPROVED`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/reviews?limit=${pageSize}&page=${page}&status=APPROVED`);
       if (!response.ok) throw new Error('Failed to fetch reviews');
       const result = await response.json();
       return result.data?.data || result.data || [];
     },
     {
+      keepPreviousData: true,
       staleTime: 2 * 60 * 1000,
       cacheTime: 5 * 60 * 1000,
     }
   );
 
-  if (isLoading) {
+  useEffect(() => {
+    if (data) {
+      setReviews((prev) => (page === 1 ? (data as Review[]) : [...prev, ...(data as Review[])]));
+      setHasMore((data as Review[]).length === pageSize);
+    }
+  }, [data, page]);
+
+  const handleLoadMore = () => {
+    if (hasMore && !isFetching) {
+      setPage((p) => p + 1);
+    }
+  };
+
+  const handleRefetch = () => {
+    setPage(1);
+    setReviews([]);
+    refetch();
+  };
+
+  if (isLoading && reviews.length === 0) {
     return (
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
@@ -48,11 +73,9 @@ export default function LatestReviews({ limit = 6 }: LatestReviewsProps) {
     );
   }
 
-  if (error || !data?.length) {
+  if (error || reviews.length === 0) {
     return null;
   }
-
-  const reviews = data as Review[];
 
   return (
     <div className="mb-8">
@@ -70,9 +93,22 @@ export default function LatestReviews({ limit = 6 }: LatestReviewsProps) {
       {/* Reviews List */}
       <div className="space-y-3">
         {reviews.map((review) => (
-          <ReviewCard key={review.id} review={review} onRefetch={refetch} />
+          <ReviewCard key={review.id} review={review} onRefetch={handleRefetch} />
         ))}
       </div>
+
+      {/* Load more */}
+      {hasMore && (
+        <div className="mt-4 flex justify-center">
+          <button
+            onClick={handleLoadMore}
+            disabled={isFetching}
+            className="px-4 py-2 text-sm rounded-lg border border-primary text-primary hover:bg-primary/10 disabled:opacity-50 transition-colors"
+          >
+            {isFetching ? 'Đang tải...' : 'Xem thêm'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
