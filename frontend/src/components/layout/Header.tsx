@@ -203,9 +203,9 @@ export default function Header() {
                 />
               </div>
             </div>
-            <div className="hidden xs:block min-w-0">
-              <h1 className="text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl font-bold text-text group-hover:text-primary transition-colors truncate">
-                Tìm Gái gọi
+            <div className="block min-w-0">
+              <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-text group-hover:text-primary transition-colors truncate leading-tight">
+                Tìm gái gọi
               </h1>
               <p className="text-xs text-text-muted hidden md:block">Kết nối nhanh chóng</p>
             </div>

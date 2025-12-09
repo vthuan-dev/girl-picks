@@ -24,7 +24,7 @@ export default function SearchSection() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Tìm kiếm theo tên, địa điểm, tags..."
+                placeholder="Tìm kiếm theo tên, số điện thoại, địa điểm, tags..."
                 className="w-full px-6 py-4 bg-transparent text-text placeholder:text-text-muted focus:outline-none text-lg"
               />
             </div>

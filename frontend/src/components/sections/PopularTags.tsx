@@ -108,7 +108,7 @@ export default function PopularTags({
             </button>
             {process.env.NODE_ENV === 'development' && (
               <div className="text-xs text-red-400 mt-2">
-                {error instanceof Error ? error.message : 'Unknown error'}
+                {error instanceof Error ? error.message : 'Lỗi không xác định'}
               </div>
             )}
           </div>

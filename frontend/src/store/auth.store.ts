@@ -28,15 +28,15 @@ export const useAuthStore = create<AuthState>()(
         try {
           // Validate required fields
           if (!authData) {
-            throw new Error('Auth data is missing');
+            throw new Error('Thiếu dữ liệu xác thực');
           }
 
           if (!authData.accessToken || !authData.refreshToken) {
-            throw new Error('Authentication tokens are missing');
+            throw new Error('Thiếu token xác thực');
           }
 
           if (!authData.user) {
-            throw new Error('User data is missing from auth response');
+            throw new Error('Thiếu dữ liệu người dùng trong phản hồi xác thực');
           }
 
           // Store tokens in cookies for HTTP-only security

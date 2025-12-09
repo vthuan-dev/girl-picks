@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Error uploading file:', error);
     return NextResponse.json(
-      { error: 'Failed to upload file', message: error.message },
+      { error: 'Không thể tải file lên', message: error.message },
       { status: 500 }
     );
   }

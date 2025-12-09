@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 async function createAdmin() {
   // Lấy thông tin từ environment variables hoặc dùng giá trị mặc định
   const email = process.env.ADMIN_EMAIL || 'admin@admin.com';
-  const password = process.env.ADMIN_PASSWORD || 'Admin123';
+  const password = process.env.ADMIN_PASSWORD || '  ';
   const fullName = process.env.ADMIN_NAME || 'Admin User';
   const phone = process.env.ADMIN_PHONE || undefined;
 

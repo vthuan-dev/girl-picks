@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from 'react-query';
+import { useSearchParams } from 'next/navigation';
 import GirlList from '@/modules/girls/components/GirlList';
 import LocationFilters from '@/components/sections/LocationFilters';
 import PopularTags from '@/components/sections/PopularTags';
@@ -10,6 +11,7 @@ import Header from '@/components/layout/Header';
 import { girlsApi } from '@/modules/girls/api/girls.api';
 
 export default function GirlsPageClient() {
+  const searchParams = useSearchParams();
   const [filters, setFilters] = useState({
     verified: false,
     price: '',
@@ -24,6 +26,12 @@ export default function GirlsPageClient() {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [total, setTotal] = useState<number>(0);
   const [isLoadingTotal, setIsLoadingTotal] = useState<boolean>(true);
+
+  const searchParamValue = searchParams?.get('search') || '';
+
+  useEffect(() => {
+    setSearchQuery((prev) => (prev === searchParamValue ? prev : searchParamValue));
+  }, [searchParamValue]);
 
   return (
     <>
@@ -86,7 +94,7 @@ export default function GirlsPageClient() {
       </div>
 
       {/* Additional Filters */}
-      <div className="mb-4 sm:mb-6 lg:mb-8">
+      <div className="mb-4 sm:mb-6 lg:mb-8 relative overflow-visible">
         <div className="flex items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-2">
             <div className="w-1 h-5 bg-primary rounded-full"></div>
@@ -120,7 +128,8 @@ export default function GirlsPageClient() {
             </button>
           )}
         </div>
-        <div className="flex flex-wrap gap-2 sm:gap-2.5">
+        {/* Horizontal scroll on mobile to keep filters in one line */}
+        <div className="flex gap-2 sm:gap-2.5 overflow-x-auto overflow-y-visible pb-1 -mx-2 px-2 sm:overflow-visible sm:flex-wrap sm:pb-0 sm:mx-0 sm:px-0">
           {/* Mới xác thực */}
           <button
             onClick={() => setFilters({ ...filters, verified: !filters.verified })}

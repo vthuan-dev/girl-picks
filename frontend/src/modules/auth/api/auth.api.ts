@@ -27,7 +27,7 @@ export const authApi = {
       return responseData;
     }
     
-    throw new Error('Invalid response format from server');
+    throw new Error('Định dạng phản hồi từ server không hợp lệ');
   },
 
   // Register
@@ -45,7 +45,7 @@ export const authApi = {
       return responseData;
     }
     
-    throw new Error('Invalid response format from server');
+    throw new Error('Định dạng phản hồi từ server không hợp lệ');
   },
 
   // Refresh Token

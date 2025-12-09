@@ -43,7 +43,7 @@ export default function CreatePostPage() {
     const response = await fetch(endpoint, { method: 'POST', body: formData });
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error || 'Upload failed');
+      throw new Error(error.error || 'Tải lên thất bại');
     }
     return (await response.json()).url;
   };

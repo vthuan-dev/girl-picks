@@ -25,6 +25,7 @@ const getAdditionalInfo = (girl: Girl) => {
 
 export default function GirlInfoCard({ girl }: GirlInfoCardProps) {
   const [copied, setCopied] = useState(false);
+  const [showToast, setShowToast] = useState(false);
   const info = getAdditionalInfo(girl);
 
   const copyPhone = () => {
@@ -44,7 +45,11 @@ export default function GirlInfoCard({ girl }: GirlInfoCardProps) {
     if (typeof navigator !== 'undefined') {
       navigator.clipboard.writeText(shareUrl);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setShowToast(true);
+      setTimeout(() => {
+        setCopied(false);
+        setShowToast(false);
+      }, 3000);
     }
   };
 
@@ -238,16 +243,39 @@ export default function GirlInfoCard({ girl }: GirlInfoCardProps) {
       </div>
 
       {/* Share Button */}
-      <div className="mt-6 pt-6 border-t border-secondary/30">
+      <div className="mt-4 pt-4 border-t border-secondary/30 flex justify-start">
+        <div className="relative">
         <button
           onClick={handleCopyLink}
-          className="w-full px-4 py-3 bg-gradient-to-r from-primary to-primary-hover text-white rounded-xl hover:shadow-xl hover:shadow-primary/30 transition-all font-semibold cursor-pointer flex items-center justify-center gap-2"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342c-.396 0-.72-.316-.72-.705 0-.39.324-.705.72-.705h2.748v-2.124c0-.39.324-.705.72-.705.397 0 .72.316.72.705v2.124h2.748c.396 0 .72.316.72.705 0 .39-.324.705-.72.705H13.172v2.124c0 .39-.323.705-.72.705-.396 0-.72-.316-.72-.705v-2.124H8.684z" />
+            className="group relative px-4 py-2.5 rounded-lg bg-background border border-secondary/30 hover:border-primary/50 hover:bg-primary/10 transition-all cursor-pointer flex items-center gap-2"
+            aria-label="Chia sẻ link"
+          >
+            {copied ? (
+              <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              <svg className="w-5 h-5 text-text-muted group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.89 12.938 9 12.482 9 12c0-.482-.11-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
           </svg>
-          {copied ? 'Đã copy link' : 'Chia sẻ (copy link)'}
+            )}
+            <span className="text-sm font-medium text-text-muted group-hover:text-primary transition-colors">
+              Chia sẻ
+            </span>
         </button>
+          
+          {/* Toast Notification */}
+          {showToast && (
+            <div className="absolute bottom-full left-0 mb-2 px-4 py-2 bg-green-500 text-white text-sm font-medium rounded-lg shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-200 z-50 whitespace-nowrap">
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Đã chia sẻ
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

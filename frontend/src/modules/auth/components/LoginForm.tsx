@@ -52,18 +52,18 @@ export default function LoginForm() {
       // Validate response structure
       if (!response || !response.user) {
         console.error('❌ Invalid response:', response);
-        throw new Error('Invalid response from server');
+        throw new Error('Phản hồi từ server không hợp lệ');
       }
 
       if (!response.accessToken || !response.refreshToken) {
         console.error('❌ Missing tokens in response:', response);
-        throw new Error('Missing authentication tokens');
+        throw new Error('Thiếu token xác thực');
       }
 
       // Validate user data
       if (!response.user.id || !response.user.email || !response.user.role) {
         console.error('❌ Incomplete user data:', response.user);
-        throw new Error('Incomplete user data from server');
+        throw new Error('Dữ liệu người dùng không đầy đủ từ server');
       }
 
       // Set auth state immediately - this stores tokens in cookies and updates state
@@ -80,7 +80,7 @@ export default function LoginForm() {
         }
       } catch (authError: any) {
         console.error('❌ Error setting auth state:', authError);
-        throw new Error('Failed to save authentication data');
+        throw new Error('Không thể lưu dữ liệu xác thực');
       }
       
       // Get redirect path based on user role

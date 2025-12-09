@@ -60,7 +60,7 @@ export const reviewsApi = {
       return responseData;
     }
     
-    throw new Error('Invalid response format from server');
+    throw new Error('Định dạng phản hồi từ server không hợp lệ');
   },
 
   // Get review by ID
@@ -76,7 +76,7 @@ export const reviewsApi = {
       return responseData;
     }
     
-    throw new Error('Invalid response format from server');
+    throw new Error('Định dạng phản hồi từ server không hợp lệ');
   },
 
   // Approve review
@@ -95,7 +95,7 @@ export const reviewsApi = {
       return responseData;
     }
     
-    throw new Error('Invalid response format from server');
+    throw new Error('Định dạng phản hồi từ server không hợp lệ');
   },
 
   // Reject review
@@ -114,7 +114,7 @@ export const reviewsApi = {
       return responseData;
     }
     
-    throw new Error('Invalid response format from server');
+    throw new Error('Định dạng phản hồi từ server không hợp lệ');
   },
 
   // Delete review

@@ -16,6 +16,155 @@ export class GirlsService {
     private cacheService: CacheService,
   ) {}
 
+  async searchByPhone(query: string, page = 1, limit = 20) {
+    if (!query || !query.trim()) {
+      return {
+        data: [],
+        meta: { total: 0, page, limit, totalPages: 0 },
+      };
+    }
+
+    const normalizedSearch = query.trim();
+    const digits = normalizedSearch.replace(/\D/g, '');
+
+    const where: Prisma.GirlWhereInput = {
+      isActive: true,
+      OR: [
+        { phone: { contains: normalizedSearch } },
+        ...(digits ? [{ phone: { contains: digits } }] : []),
+        {
+          user: {
+            is: {
+              fullName: { contains: normalizedSearch },
+            },
+          },
+        },
+        {
+          user: {
+            is: {
+              phone: { contains: normalizedSearch },
+            },
+          },
+        },
+        ...(digits
+          ? [
+              {
+                user: {
+                  is: {
+                    phone: { contains: digits },
+                  },
+                },
+              },
+            ]
+          : []),
+        { name: { contains: normalizedSearch } },
+        { bio: { contains: normalizedSearch } },
+      ],
+    };
+
+    const [data, total] = await Promise.all([
+      this.prisma.girl.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              avatarUrl: true,
+              phone: true,
+            },
+          },
+          _count: {
+            select: {
+              posts: { where: { status: 'APPROVED' } },
+              reviews: { where: { status: 'APPROVED' } },
+              bookings: true,
+            },
+          },
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: [{ isFeatured: 'desc' }, { ratingAverage: 'desc' }],
+      }),
+      this.prisma.girl.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async searchByName(query: string, page = 1, limit = 20) {
+    if (!query || !query.trim()) {
+      return {
+        data: [],
+        meta: { total: 0, page, limit, totalPages: 0 },
+      };
+    }
+
+    const normalizedSearch = query.trim();
+
+    const where: Prisma.GirlWhereInput = {
+      isActive: true,
+      OR: [
+        { name: { contains: normalizedSearch } },
+        { bio: { contains: normalizedSearch } },
+        { province: { contains: normalizedSearch } },
+        { location: { contains: normalizedSearch } },
+        {
+          user: {
+            is: {
+              fullName: { contains: normalizedSearch },
+            },
+          },
+        },
+      ],
+    };
+
+    const [data, total] = await Promise.all([
+      this.prisma.girl.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              avatarUrl: true,
+              phone: true,
+            },
+          },
+          _count: {
+            select: {
+              posts: { where: { status: 'APPROVED' } },
+              reviews: { where: { status: 'APPROVED' } },
+              bookings: true,
+            },
+          },
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: [{ isFeatured: 'desc' }, { ratingAverage: 'desc' }],
+      }),
+      this.prisma.girl.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
   async findAll(filters?: {
     districts?: string[];
     rating?: number;
@@ -31,6 +180,7 @@ export class GirlsService {
     originFilter?: string;
     locationFilter?: string;
     province?: string;
+    search?: string;
     tags?: string[]; // Array of tags to filter by
   }) {
     const {
@@ -48,6 +198,7 @@ export class GirlsService {
       originFilter,
       locationFilter,
       province,
+      search,
       tags,
     } = filters || {};
 
@@ -68,6 +219,7 @@ export class GirlsService {
       originFilter || '',
       locationFilter || '',
       province || '',
+      search || '',
       tags?.join(',') || '',
     );
 
@@ -106,6 +258,57 @@ export class GirlsService {
 
     if (isPremium !== undefined) {
       where.isPremium = isPremium;
+    }
+
+    if (search && search.trim()) {
+      const normalizedSearch = search.trim();
+      const digits = normalizedSearch.replace(/\D/g, '');
+      const searchCondition: Prisma.GirlWhereInput = {
+        OR: [
+          // phone in girl record
+          { phone: { contains: normalizedSearch } },
+          ...(digits ? [{ phone: { contains: digits } }] : []),
+
+          // basic text fields (case-insensitivity depends on DB collation)
+          { name: { contains: normalizedSearch } },
+          { bio: { contains: normalizedSearch } },
+          { province: { contains: normalizedSearch } },
+          { location: { contains: normalizedSearch } },
+
+          // user fields
+          {
+            user: {
+              is: {
+                fullName: { contains: normalizedSearch },
+              },
+            },
+          },
+          {
+            user: {
+              is: {
+                phone: { contains: normalizedSearch },
+              },
+            },
+          },
+          ...(digits
+            ? [
+                {
+                  user: {
+                    is: {
+                      phone: { contains: digits },
+                    },
+                  },
+                },
+              ]
+            : []),
+        ],
+      };
+
+      where.AND = where.AND
+        ? Array.isArray(where.AND)
+          ? [...where.AND, searchCondition]
+          : [where.AND, searchCondition]
+        : [searchCondition];
     }
 
     // Price filter

@@ -89,7 +89,7 @@ export default function GirlList({ filters = {}, selectedProvince = null, search
         weightFilter: filters.weight || undefined,
         originFilter: filters.origin || undefined,
         locationFilter: filters.location || undefined,
-        province: selectedProvince || searchQuery || undefined,
+        province: selectedProvince || undefined,
         search: searchQuery || undefined,
         tags: selectedTag ? [selectedTag] : undefined,
   }), [params.page, params.limit, filters.verified, filters.price, filters.age, filters.height, filters.weight, filters.origin, filters.location, selectedProvince, searchQuery, selectedTag]);

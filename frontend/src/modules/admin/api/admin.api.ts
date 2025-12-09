@@ -121,7 +121,7 @@ export const adminApi = {
       return responseData;
     }
     
-    throw new Error('Invalid response format from server');
+    throw new Error('Định dạng phản hồi từ server không hợp lệ');
   },
 
   // Pending Posts
@@ -139,7 +139,7 @@ export const adminApi = {
       return responseData;
     }
     
-    throw new Error('Invalid response format from server');
+    throw new Error('Định dạng phản hồi từ server không hợp lệ');
   },
 
   // Pending Reviews
@@ -157,7 +157,7 @@ export const adminApi = {
       return responseData;
     }
     
-    throw new Error('Invalid response format from server');
+    throw new Error('Định dạng phản hồi từ server không hợp lệ');
   },
 
   // Pending Verifications
@@ -175,7 +175,7 @@ export const adminApi = {
       return responseData;
     }
     
-    throw new Error('Invalid response format from server');
+    throw new Error('Định dạng phản hồi từ server không hợp lệ');
   },
 
   // Reports

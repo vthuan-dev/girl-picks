@@ -78,7 +78,7 @@ export const reviewsApi = {
       return responseData;
     }
     
-    throw new Error('Invalid response format from server');
+    throw new Error('Định dạng phản hồi từ server không hợp lệ');
   },
 
   // Toggle like on a review
@@ -118,7 +118,7 @@ export const reviewsApi = {
       return responseData;
     }
     
-    throw new Error('Invalid response format from server');
+    throw new Error('Định dạng phản hồi từ server không hợp lệ');
   },
 
   // Get comments for a review

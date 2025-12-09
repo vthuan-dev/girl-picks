@@ -40,7 +40,7 @@ export const usersApi = {
       return responseData;
     }
     
-    throw new Error('Invalid response format from server');
+    throw new Error('Định dạng phản hồi từ server không hợp lệ');
   },
 
   // Get user by ID
@@ -56,7 +56,7 @@ export const usersApi = {
       return responseData;
     }
     
-    throw new Error('Invalid response format from server');
+    throw new Error('Định dạng phản hồi từ server không hợp lệ');
   },
 
   // Update user
@@ -78,7 +78,7 @@ export const usersApi = {
       return responseData;
     }
     
-    throw new Error('Invalid response format from server');
+    throw new Error('Định dạng phản hồi từ server không hợp lệ');
   },
 
   // Deactivate user
@@ -94,7 +94,7 @@ export const usersApi = {
       return responseData;
     }
     
-    throw new Error('Invalid response format from server');
+    throw new Error('Định dạng phản hồi từ server không hợp lệ');
   },
 
   // Delete user
@@ -122,7 +122,7 @@ export const usersApi = {
       return responseData;
     }
     
-    throw new Error('Invalid response format from server');
+    throw new Error('Định dạng phản hồi từ server không hợp lệ');
   },
 };
 

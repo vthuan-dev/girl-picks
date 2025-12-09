@@ -57,6 +57,7 @@ export class GirlsController {
   @ApiQuery({ name: 'originFilter', required: false, type: String })
   @ApiQuery({ name: 'locationFilter', required: false, type: String })
   @ApiQuery({ name: 'province', required: false, type: String })
+  @ApiQuery({ name: 'search', required: false, type: String })
   @ApiQuery({ name: 'tags', required: false, type: [String], description: 'Array of tags to filter by' })
   @ApiResponse({ status: 200, description: 'List of girls' })
   findAll(
@@ -74,6 +75,7 @@ export class GirlsController {
     @Query('originFilter') originFilter?: string,
     @Query('locationFilter') locationFilter?: string,
     @Query('province') province?: string,
+    @Query('search') search?: string,
     @Query('tags') tags?: string | string[],
   ) {
     const districtsArray = districts
@@ -109,6 +111,7 @@ export class GirlsController {
       originFilter,
       locationFilter,
       province,
+      search,
       tags: tagsArray,
     });
     
@@ -118,6 +121,36 @@ export class GirlsController {
       priceFilter,
       ageFilter,
     });
+  }
+
+  @Get('search/by-phone')
+  @Public()
+  @ApiOperation({ summary: 'Search girls by phone hoặc tên (public)' })
+  @ApiQuery({ name: 'q', required: true, type: String, description: 'Số điện thoại hoặc từ khóa tên' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'Search results' })
+  searchByPhone(
+    @Query('q') q: string,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page?: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
+  ) {
+    return this.girlsService.searchByPhone(q, page, limit);
+  }
+
+  @Get('search/by-name')
+  @Public()
+  @ApiOperation({ summary: 'Search girls by name (public)' })
+  @ApiQuery({ name: 'q', required: true, type: String, description: 'Từ khóa tên/bio/location' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'Search results' })
+  searchByName(
+    @Query('q') q: string,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page?: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
+  ) {
+    return this.girlsService.searchByName(q, page, limit);
   }
 
   @Post(':id/images')

@@ -8,6 +8,7 @@ import GirlGallery from '@/components/girls/GirlGallery';
 import GirlInfoCard from '@/components/girls/GirlInfoCard';
 import RelatedGirls from '@/components/girls/RelatedGirls';
 import GirlBioSection from '@/components/girls/GirlBioSection';
+import ExpandableText from '@/components/common/ExpandableText';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import ViewTracker from '@/components/common/ViewTracker';
 import { Girl } from '@/types/girl';
@@ -205,9 +206,11 @@ export default async function GirlDetailPage({ params }: PageProps) {
                       {girl.fullName}
                     </h1>
                     {girl.bio && (
-                      <p className="text-text-muted text-sm sm:text-base leading-relaxed">
-                        {girl.bio}
-                      </p>
+                      <ExpandableText 
+                        text={girl.bio} 
+                        maxLength={150}
+                        className="text-text-muted text-sm sm:text-base"
+                      />
                     )}
                     {/* Tags */}
                     {girl.tags && girl.tags.length > 0 && (

@@ -26,13 +26,16 @@ function SearchContent() {
   // Extract tag from query or tag param
   const selectedTag = useMemo(() => {
     if (tagParam) return tagParam;
-    if (query && !query.includes(' ')) return query; // Single word might be a tag
+    // Only treat as tag if it's a single word without digits (avoid phone number being a tag)
+    if (query && !query.includes(' ') && !/\d/.test(query)) return query;
     return null;
   }, [query, tagParam]);
 
-  // Update selected province if query contains location
+  const isPhoneQuery = useMemo(() => /\d{6,}/.test(query || ''), [query]);
+
+  // Update selected province if query contains location and is not phone
   useEffect(() => {
-    if (query && !selectedTag) {
+    if (query && !selectedTag && !isPhoneQuery) {
       // Check if query matches a province
       const provinces = ['Sài Gòn', 'Hà Nội', 'Đà Nẵng', 'Bình Dương', 'Đồng Nai'];
       const matchedProvince = provinces.find(p => 
@@ -41,9 +44,13 @@ function SearchContent() {
       );
       if (matchedProvince) {
         setSelectedProvince(matchedProvince);
+      } else {
+        setSelectedProvince(null);
       }
+    } else if (isPhoneQuery) {
+      setSelectedProvince(null);
     }
-  }, [query, selectedTag]);
+  }, [query, selectedTag, isPhoneQuery]);
 
   return (
     <>
@@ -78,7 +85,7 @@ function SearchContent() {
               Tỉnh thành
             </h2>
             <LocationFilters 
-              selectedLocation={selectedProvince || query || null}
+              selectedLocation={selectedProvince || null}
               onLocationChange={(location) => {
                 if (location) {
                   setSelectedProvince(location);
@@ -96,7 +103,7 @@ function SearchContent() {
           <div className="flex-1 min-w-0">
             <GirlList 
               filters={filters} 
-              selectedProvince={selectedProvince || (query && !selectedTag ? query : null)} 
+              selectedProvince={selectedProvince} 
               searchQuery={query && !selectedTag ? query : undefined}
               selectedTag={selectedTag}
             />

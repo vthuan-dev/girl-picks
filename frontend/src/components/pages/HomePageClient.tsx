@@ -1,12 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import GirlListWithStats from '@/components/girls/GirlListWithStats';
 import LocationFilters from '@/components/sections/LocationFilters';
 import PopularTags from '@/components/sections/PopularTags';
 import LatestPosts from '@/components/sections/LatestPosts';
 
 export default function HomePageClient() {
+  const router = useRouter();
   const [pageInfo, setPageInfo] = useState({ total: 0, page: 1, limit: 20 });
   const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
 
@@ -57,6 +59,9 @@ export default function HomePageClient() {
           onLocationChange={(location) => {
             console.log('[HomePageClient] Location changed:', location);
             setSelectedProvince(location);
+            if (location) {
+              router.push(`/search?q=${encodeURIComponent(location)}`);
+            }
           }}
         />
       </div>
@@ -131,11 +136,8 @@ export default function HomePageClient() {
         </div>
       </div>
 
-      {/* Latest Posts Section */}
-      <LatestPosts />
-
-      {/* Main Content with Sidebar Layout */}
-      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+      {/* Main Content with Sidebar Layout - Gái gọi cho bạn */}
+      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 mb-6 lg:mb-10">
         {/* Main Content - Girls Grid */}
         <div className="flex-1 min-w-0">
           {/* Section Header */}
@@ -156,6 +158,9 @@ export default function HomePageClient() {
           <PopularTags />
         </div>
       </div>
+
+      {/* Latest Posts Section */}
+      <LatestPosts />
     </div>
   );
 }

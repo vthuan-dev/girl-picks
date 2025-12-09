@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Error uploading video:', error);
     return NextResponse.json(
-      { error: 'Failed to upload video', message: error.message },
+      { error: 'Không thể tải video lên', message: error.message },
       { status: 500 }
     );
   }

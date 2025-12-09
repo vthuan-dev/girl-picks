@@ -35,21 +35,52 @@ export class SearchService {
       },
     };
 
-    // Text search on user's full name and girl's bio
+    // Text search on user's full name, phone and girl's bio
     if (query) {
+      const digits = query.replace(/\D/g, '');
       where.OR = [
         {
           user: {
             fullName: {
               contains: query,
-              mode: 'insensitive',
             },
           },
         },
         {
+          user: {
+            phone: {
+              contains: query,
+            },
+          },
+        },
+        ...(digits
+          ? [
+              {
+                user: {
+                  phone: {
+                    contains: digits,
+                  },
+                },
+              },
+            ]
+          : []),
+        {
+          phone: {
+            contains: query,
+          },
+        },
+        ...(digits
+          ? [
+              {
+                phone: {
+                  contains: digits,
+                },
+              },
+            ]
+          : []),
+        {
           bio: {
             contains: query,
-            mode: 'insensitive',
           },
         },
       ];

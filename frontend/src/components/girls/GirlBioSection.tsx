@@ -6,7 +6,7 @@ interface GirlBioSectionProps {
   bio: string | null | undefined;
 }
 
-const MAX_LENGTH = 200; // Số ký tự hiển thị ban đầu
+const MAX_LENGTH = 150; // Số ký tự hiển thị ban đầu
 
 export default function GirlBioSection({ bio }: GirlBioSectionProps) {
   const [isExpanded, setIsExpanded] = useState(false);
