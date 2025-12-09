@@ -5,7 +5,7 @@ import { useQuery } from 'react-query';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Review } from '@/modules/reviews/api/reviews.api';
-import { getGirlDetailUrl } from '@/lib/utils/slug';
+import { getGirlDetailUrl, generateSlug } from '@/lib/utils/slug';
 
 export default function ReviewsPageClient() {
   const [page, setPage] = useState(1);
@@ -122,7 +122,12 @@ export default function ReviewsPageClient() {
 function ReviewCard({ review, formatDate }: { review: Review; formatDate: (date: string) => string }) {
   const girlId = (review as any)?.girlId || review.girl?.id;
   const girlName = review.girl?.name || 'Xem bài gốc';
-  const girlUrl = girlId ? getGirlDetailUrl(girlId, girlName) : '#';
+  const girlSlug = (review as any)?.girl?.slug as string | undefined;
+  const girlUrl = girlId
+    ? girlSlug
+      ? `/girls/${girlId}/${girlSlug}`
+      : getGirlDetailUrl(girlId, girlName || generateSlug(String(girlId)))
+    : '#';
 
   return (
     <div className="bg-background-light rounded-lg border border-secondary/30 hover:border-primary/50 transition-all overflow-hidden">
