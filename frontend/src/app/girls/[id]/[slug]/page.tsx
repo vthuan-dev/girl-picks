@@ -5,6 +5,7 @@ import GirlGallery from '@/components/girls/GirlGallery';
 import GirlInfoCard from '@/components/girls/GirlInfoCard';
 import RelatedGirls from '@/components/girls/RelatedGirls';
 import GirlBioSection from '@/components/girls/GirlBioSection';
+import ReviewsSection from '@/components/girls/ReviewsSection';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import ViewTracker from '@/components/common/ViewTracker';
 import Header from '@/components/layout/Header';
@@ -367,6 +368,13 @@ export default async function GirlDetailWithSlugPage({ params }: PageProps) {
 
             {/* Bio Section */}
             <GirlBioSection bio={girl.bio} />
+
+            {/* Comments & Reviews Section */}
+            <ReviewsSection 
+              girlId={girl.id} 
+              totalReviews={girl.totalReviews || 0}
+              averageRating={girl.rating || 0}
+            />
           </div>
 
           {/* Right Column - Related Girls */}
