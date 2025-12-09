@@ -58,12 +58,14 @@ export class PostsController {
   })
   @ApiQuery({ name: 'status', required: false, enum: PostStatus })
   @ApiQuery({ name: 'girlId', required: false })
+  @ApiQuery({ name: 'categoryId', required: false })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'List of posts' })
   findAll(
     @Query('status') status?: PostStatus,
     @Query('girlId') girlId?: string,
+    @Query('categoryId') categoryId?: string,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page?: number,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
   ) {
@@ -73,6 +75,7 @@ export class PostsController {
     return this.postsService.findAll({
       status,
       girlId,
+      categoryId,
       page,
       limit,
     });

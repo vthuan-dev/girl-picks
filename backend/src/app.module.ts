@@ -26,6 +26,7 @@ import { CrawlerModule } from './modules/crawler/crawler.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { CacheModule } from './modules/cache/cache.module';
 import { TagsModule } from './modules/tags/tags.module';
+import { CategoriesModule } from './modules/categories/categories.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { TagsModule } from './modules/tags/tags.module';
     CrawlerModule,
     UploadModule,
     TagsModule,
+    CategoriesModule,
     // ThrottlerModule.forRoot([
     //   {
     //     ttl: 60000, // 1 minute

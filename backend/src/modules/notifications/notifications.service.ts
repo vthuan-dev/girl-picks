@@ -77,6 +77,18 @@ export class NotificationsService {
     });
   }
 
+  async delete(id: string, userId: string) {
+    const notification = await this.findOne(id);
+
+    if (!notification || notification.userId !== userId) {
+      throw new Error('Unauthorized');
+    }
+
+    return this.prisma.notification.delete({
+      where: { id },
+    });
+  }
+
   // Booking-specific notification helpers
   async notifyBookingCreated(
     bookingId: string,

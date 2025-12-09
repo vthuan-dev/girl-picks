@@ -237,7 +237,7 @@ model Post {
   duration     String?    // Video duration (e.g., "10:30")
   viewCount    Int        @default(0) // Number of views
   rating       Float?     // Rating (0-5)
-  category     String?    // Category (e.g., "sex tự quay")
+  categoryId   String?    // Category ID (relation to Category)
   tags         Json       @default("[]") // Array of tag strings stored as JSON
   poster       String?    // Poster/thumbnail URL
   thumbnail    String?    // Thumbnail URL
@@ -246,6 +246,7 @@ model Post {
   author     User         @relation("PostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
   girl       Girl?        @relation(fields: [girlId], references: [id], onDelete: SetNull)
   approvedBy User?        @relation("ApprovedBy", fields: [approvedById], references: [id])
+  category   Category?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   likes      PostLike[]
   comments   PostComment[]
 
@@ -615,4 +616,20 @@ model Venue {
   updatedAt  DateTime @updatedAt
 
   @@map("venues")
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String   @unique // Category name (e.g., "sex tự quay", "sex nhật bản")
+  slug        String   @unique // URL-friendly slug
+  description String?  // Optional description
+  isActive    Boolean  @default(true)
+  order       Int      @default(0) // Display order
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  posts Post[]
+
+  @@map("categories")
 }

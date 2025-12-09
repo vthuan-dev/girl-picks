@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
+import { Post } from '@/types/post';
 
 interface ImageCardProps {
   image: {
@@ -13,14 +13,20 @@ interface ImageCardProps {
     likes?: number;
     category?: string;
     tags?: string[];
+    post?: Post; // Post data for modal
+    imageIndex?: number; // Index of this image in post.images array
   };
+  onClick?: () => void;
 }
 
-export default function ImageCard({ image }: ImageCardProps) {
+export default function ImageCard({ image, onClick }: ImageCardProps) {
   const imageUrl = image.url || image.thumbnail || 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=600&fit=crop';
 
   return (
-    <Link href={`#`} className="block">
+    <div
+      onClick={onClick}
+      className="block cursor-pointer"
+    >
       <div className="group relative bg-background-light rounded-lg overflow-hidden hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300 cursor-pointer border border-secondary/30 hover:border-primary/50 transform hover:-translate-y-1">
         {/* Image Container */}
         <div className="relative w-full aspect-[3/4] overflow-hidden bg-secondary/20">
@@ -88,7 +94,7 @@ export default function ImageCard({ image }: ImageCardProps) {
           </div>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
 

@@ -13,6 +13,7 @@ export const postsApi = {
     if (params?.limit) searchParams.append('limit', params.limit.toString());
     if (params?.search) searchParams.append('search', params.search);
     if (params?.category) searchParams.append('category', params.category);
+      if (params?.categoryId) searchParams.append('categoryId', params.categoryId);
     
     const response = await apiClient.get<any>(`/posts?${searchParams.toString()}`);
     

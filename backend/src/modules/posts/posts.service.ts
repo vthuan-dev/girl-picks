@@ -78,10 +78,11 @@ export class PostsService {
   async findAll(filters?: {
     status?: PostStatus;
     girlId?: string;
+    categoryId?: string;
     page?: number;
     limit?: number;
   }) {
-    const { status, girlId, page = 1, limit = 20 } = filters || {};
+    const { status, girlId, categoryId, page = 1, limit = 20 } = filters || {};
 
     const where: Prisma.PostWhereInput = {};
 
@@ -93,6 +94,10 @@ export class PostsService {
 
     if (girlId) {
       where.girlId = girlId;
+    }
+
+    if (categoryId) {
+      where.categoryId = categoryId;
     }
 
     const [posts, total] = await Promise.all([
@@ -122,6 +127,13 @@ export class PostsService {
             select: {
               id: true,
               fullName: true,
+            },
+          },
+          category: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
             },
           },
         },

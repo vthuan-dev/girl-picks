@@ -24,7 +24,12 @@ export interface Post {
   duration?: string | null;
   viewCount?: number;
   rating?: number | null;
-  category?: string | null;
+  categoryId?: string | null;
+  category?: {
+    id: string;
+    name: string;
+    slug: string;
+  } | null;
   tags?: string[] | any; // Can be JSON string or array
   poster?: string | null;
   thumbnail?: string | null;
@@ -59,7 +64,8 @@ export interface PostListParams {
   page?: number;
   limit?: number;
   search?: string;
-  category?: string; // For filtering by category/tags
+  category?: string; // For filtering by category/tags (legacy)
+  categoryId?: string; // For filtering by category ID
 }
 
 export interface CreatePostDto {
@@ -81,7 +87,8 @@ export interface UpdatePostDto {
   videoUrl?: string;
   thumbnail?: string;
   duration?: string;
-  category?: string;
+  category?: string; // Legacy - deprecated, use categoryId
+  categoryId?: string;
   tags?: string[];
 }
 

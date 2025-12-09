@@ -6,9 +6,8 @@ import Pagination from '@/components/common/Pagination';
 import StructuredData from '@/components/seo/StructuredData';
 import PopularTags from '@/components/sections/PopularTags';
 import { postsApi } from '@/modules/posts/api/posts.api';
+import { categoriesApi, Category } from '@/modules/categories/api/categories.api';
 import { Post } from '@/types/post';
-
-const categories = ['Tất cả', 'sex tự quay', 'sex nhật bản', 'gaidam', 'sex việt nam', 'sex hàn quốc'];
 
 interface MoviePost {
   id: string;
@@ -23,12 +22,32 @@ interface MoviePost {
 }
 
 export default function PhimSexPageClient() {
-  const [selectedCategory, setSelectedCategory] = useState('Tất cả');
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [posts, setPosts] = useState<MoviePost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [showAllCategories, setShowAllCategories] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const itemsPerPage = 12;
+  const itemsPerPage = 24;
+  const categoriesToShow = 15; // Số categories hiển thị ban đầu
+
+  // Fetch categories
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await categoriesApi.getAll();
+        setCategories(data);
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+        setCategories([]);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     fetchPosts();
@@ -41,7 +60,7 @@ export default function PhimSexPageClient() {
         status: 'APPROVED', // Only show approved posts
         page: currentPage,
         limit: itemsPerPage,
-        category: selectedCategory !== 'Tất cả' ? selectedCategory : undefined,
+        categoryId: selectedCategory || undefined,
       });
 
       // Map posts to movie format
@@ -62,9 +81,8 @@ export default function PhimSexPageClient() {
 
         const thumbnail = images[0] || post.girl?.user?.avatarUrl || 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=400&h=300&fit=crop';
         
-        // Extract category from title or use default
-        const categoryMatch = post.title.match(/(sex tự quay|sex nhật bản|gaidam|sex việt nam|sex hàn quốc)/i);
-        const category = categoryMatch ? categoryMatch[0].toLowerCase() : categories[Math.floor(Math.random() * (categories.length - 1)) + 1];
+        // Get category name from post.category relation or use default
+        const categoryName = (post.category as any)?.name || 'Khác';
 
         // Mock duration
         const duration = `${Math.floor(Math.random() * 30) + 10}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}`;
@@ -82,7 +100,7 @@ export default function PhimSexPageClient() {
           views: post._count?.likes || Math.floor(Math.random() * 50000) + 10000,
           rating: (4 + Math.random()).toFixed(1),
           detailUrl,
-          category,
+          category: categoryName,
           poster: images[1] || thumbnail,
         };
       });
@@ -164,38 +182,83 @@ export default function PhimSexPageClient() {
             </h2>
           </div>
           <div className="flex flex-wrap gap-2 sm:gap-2.5">
-            {categories.map((category) => (
+            {/* "Tất cả" button */}
               <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
+              onClick={() => setSelectedCategory(null)}
                 className={`
                   group relative px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold
                   transition-all duration-300 cursor-pointer overflow-hidden
                   ${
-                    selectedCategory === category
+                  selectedCategory === null
                       ? 'bg-gradient-to-r from-primary to-primary-hover text-white shadow-xl shadow-primary/40 transform scale-105 border-2 border-primary/80'
                       : 'bg-background-light border border-secondary/50 text-text hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 hover:border-primary/60 hover:shadow-lg hover:shadow-primary/10 hover:transform hover:scale-105'
                   }
                 `}
               >
-                {/* Shine effect on selected */}
-                {selectedCategory === category && (
+              {selectedCategory === null && (
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                 )}
-                
-                {/* Icon for "Tất cả" */}
-                {category === 'Tất cả' && (
                   <span className="inline-block mr-1.5">🎬</span>
-                )}
+              <span className="relative">Tất cả</span>
+              {selectedCategory === null && (
+                <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-8 h-0.5 bg-white rounded-full"></div>
+              )}
+            </button>
                 
-                <span className="relative">{category}</span>
+            {/* Category buttons from API */}
+            {categoriesLoading ? (
+              <div className="text-text-muted text-sm">Đang tải danh mục...</div>
+            ) : (
+              <>
+                {(showAllCategories ? categories : categories.slice(0, categoriesToShow)).map((category) => (
+                  <button
+                    key={category.id}
+                    onClick={() => setSelectedCategory(category.id)}
+                    className={`
+                      group relative px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold
+                      transition-all duration-300 cursor-pointer overflow-hidden
+                      ${
+                        selectedCategory === category.id
+                          ? 'bg-gradient-to-r from-primary to-primary-hover text-white shadow-xl shadow-primary/40 transform scale-105 border-2 border-primary/80'
+                          : 'bg-background-light border border-secondary/50 text-text hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 hover:border-primary/60 hover:shadow-lg hover:shadow-primary/10 hover:transform hover:scale-105'
+                      }
+                    `}
+                  >
+                    {selectedCategory === category.id && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                    )}
+                    <span className="relative">{category.name}</span>
+                    {selectedCategory === category.id && (
+                      <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-8 h-0.5 bg-white rounded-full"></div>
+                    )}
+                  </button>
+                ))}
                 
-                {/* Active indicator */}
-                {selectedCategory === category && (
-                  <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-8 h-0.5 bg-white rounded-full"></div>
+                {/* Show More/Less button */}
+                {categories.length > categoriesToShow && (
+                  <button
+                    onClick={() => setShowAllCategories(!showAllCategories)}
+                    className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold bg-background-light border border-secondary/50 text-primary hover:bg-primary/10 hover:border-primary/60 transition-all duration-300 cursor-pointer"
+                  >
+                    {showAllCategories ? (
+                      <span className="flex items-center gap-1.5">
+                        Thu gọn
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                        </svg>
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1.5">
+                        Xem thêm ({categories.length - categoriesToShow})
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </span>
+                    )}
+                  </button>
                 )}
-              </button>
-            ))}
+              </>
+            )}
           </div>
         </div>
 
@@ -205,7 +268,7 @@ export default function PhimSexPageClient() {
           <div className="flex-1 min-w-0">
             {loading ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 lg:gap-4">
-                {Array.from({ length: 12 }).map((_, i) => (
+                {Array.from({ length: 24 }).map((_, i) => (
                   <div key={i} className="bg-background-light border border-secondary/30 rounded-lg overflow-hidden animate-pulse">
                     <div className="w-full aspect-video bg-secondary/30"></div>
                     <div className="p-3 sm:p-4 space-y-2">

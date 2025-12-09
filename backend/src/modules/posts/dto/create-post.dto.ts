@@ -36,10 +36,10 @@ export class CreatePostDto {
   @IsString()
   duration?: string;
 
-  @ApiPropertyOptional({ description: 'Category' })
+  @ApiPropertyOptional({ description: 'Category ID' })
   @IsOptional()
   @IsString()
-  category?: string;
+  categoryId?: string;
 
   @ApiPropertyOptional({ description: 'Tags', type: [String] })
   @IsOptional()
