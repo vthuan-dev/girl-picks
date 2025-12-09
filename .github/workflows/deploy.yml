@@ -77,6 +77,15 @@ jobs:
             set +a
             cd "$APP_DIR/backend"
             CORS_ORIGIN=http://gaigo1.net,http://www.gaigo1.net pm2 start "npm run start:prod" --name girl-pick-backend --time
+            
+            # Wait a moment and check if backend started
+            sleep 3
+            if ! pm2 list | grep -q "girl-pick-backend.*online"; then
+              echo "⚠ Backend failed to start, checking logs..."
+              pm2 logs girl-pick-backend --lines 20 --nostream
+              exit 1
+            fi
+            echo "✓ Backend started successfully"
 
             echo "==> Frontend install and build"
             cd "$APP_DIR/frontend"
@@ -106,7 +115,17 @@ jobs:
 
             echo "==> Restart frontend with PM2"
             pm2 delete girl-pick-frontend || true
-            PORT=3000 HOST=0.0.0.0 pm2 start "npm run start" --name girl-pick-frontend --time --cwd "$APP_DIR/frontend" --env production
+            cd "$APP_DIR/frontend"
+            PORT=3000 HOST=0.0.0.0 pm2 start "npm run start" --name girl-pick-frontend --time --env production
+            
+            # Wait a moment and check if frontend started
+            sleep 3
+            if ! pm2 list | grep -q "girl-pick-frontend.*online"; then
+              echo "⚠ Frontend failed to start, checking logs..."
+              pm2 logs girl-pick-frontend --lines 20 --nostream
+              exit 1
+            fi
+            echo "✓ Frontend started successfully"
 
             pm2 save
 
@@ -117,10 +136,23 @@ jobs:
               # Remove default nginx site if it exists
               rm -f /etc/nginx/sites-enabled/default
               # Test nginx configuration
-              nginx -t
+              if ! nginx -t; then
+                echo "✗ Nginx configuration test failed!"
+                exit 1
+              fi
               # Reload nginx
-              systemctl reload nginx || systemctl restart nginx
-              echo "Nginx configured successfully"
+              if ! systemctl reload nginx 2>/dev/null; then
+                echo "Reload failed, trying restart..."
+                systemctl restart nginx
+              fi
+              # Verify nginx is running
+              if systemctl is-active --quiet nginx; then
+                echo "✓ Nginx configured and running successfully"
+              else
+                echo "✗ Nginx failed to start!"
+                systemctl status nginx --no-pager
+                exit 1
+              fi
             else
               echo "Warning: Nginx config file not found at $APP_DIR/nginx/gaigo1.net.conf"
             fi
