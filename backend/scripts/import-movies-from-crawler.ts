@@ -87,6 +87,53 @@ function cleanDescription(description?: string): string | null {
 }
 
 /**
+ * Find or create category and return categoryId
+ */
+async function findOrCreateCategoryId(categoryName: string): Promise<string | null> {
+  if (!categoryName || !categoryName.trim()) return null;
+
+  try {
+    // Try to find existing category
+    let category = await prisma.category.findUnique({
+      where: { name: categoryName.trim() },
+    });
+
+    if (!category) {
+      // Generate slug from name
+      const slug = categoryName
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+        .replace(/[^a-z0-9]+/g, '-') // Replace non-alphanumeric with dash
+        .replace(/^-+|-+$/g, ''); // Remove leading/trailing dashes
+
+      // Ensure slug is unique
+      let uniqueSlug = slug;
+      let counter = 1;
+      while (await prisma.category.findUnique({ where: { slug: uniqueSlug } })) {
+        uniqueSlug = `${slug}-${counter}`;
+        counter++;
+      }
+
+      // Create new category
+      category = await prisma.category.create({
+        data: {
+          name: categoryName.trim(),
+          slug: uniqueSlug,
+          isActive: true,
+          order: 0,
+        },
+      });
+    }
+
+    return category.id;
+  } catch (error) {
+    console.error(`Error finding/creating category "${categoryName}":`, error);
+    return null;
+  }
+}
+
+/**
  * Parse duration string to standard format
  */
 function parseDuration(duration?: string): string | null {
@@ -228,7 +275,9 @@ async function importMoviesFromCrawler() {
           rating: cleanRating,
           
           // Category & Tags
-          category: movieData.category?.trim() || null,
+          categoryId: movieData.category?.trim() 
+            ? await findOrCreateCategoryId(movieData.category.trim())
+            : null,
           tags: tags,
           
           // Status - Auto approve imported movies

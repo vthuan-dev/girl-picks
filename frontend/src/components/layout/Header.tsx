@@ -16,8 +16,10 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [hasUsedKeyboard, setHasUsedKeyboard] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLElement>(null);
+  const skipLinkRef = useRef<HTMLAnchorElement>(null);
 
   const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
@@ -83,6 +85,44 @@ export default function Header() {
     return () => document.removeEventListener('keydown', handleEscape);
   }, []);
 
+  // Prevent auto-focus on skip link when page loads
+  useEffect(() => {
+    if (skipLinkRef.current && document.activeElement === skipLinkRef.current) {
+      skipLinkRef.current.blur();
+    }
+  }, []);
+
+  // Track keyboard usage to show skip link only when needed
+  useEffect(() => {
+    let keyboardUsed = false;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Detect Tab key (keyboard navigation)
+      if (e.key === 'Tab' && !keyboardUsed) {
+        keyboardUsed = true;
+        setHasUsedKeyboard(true);
+      }
+    };
+
+    // Detect mouse usage - reset keyboard flag
+    const handleMouseDown = () => {
+      keyboardUsed = false;
+      setHasUsedKeyboard(false);
+      if (skipLinkRef.current) {
+        skipLinkRef.current.classList.add('sr-only');
+        skipLinkRef.current.blur();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown, true);
+    document.addEventListener('mousedown', handleMouseDown, true);
+    
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown, true);
+      document.removeEventListener('mousedown', handleMouseDown, true);
+    };
+  }, []);
+
   const navItems = useMemo(() => [
     { href: '/', label: 'Trang chủ' },
     { href: '/girls', label: 'Gái gọi' },
@@ -107,10 +147,27 @@ export default function Header() {
 
   return (
     <>
-      {/* Skip to main content link for accessibility */}
+      {/* Skip to main content link for accessibility - only visible when focused via keyboard */}
       <a
+        ref={skipLinkRef}
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-primary focus:text-white focus:rounded-lg focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
+        className={`sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-primary focus:text-white focus:rounded-lg focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background`}
+        onFocus={(e) => {
+          // Only show if user has used keyboard navigation (Tab key)
+          if (hasUsedKeyboard && e.currentTarget) {
+            e.currentTarget.classList.remove('sr-only');
+          } else {
+            // If focused without keyboard, blur it immediately
+            e.currentTarget.blur();
+            e.currentTarget.classList.add('sr-only');
+          }
+        }}
+        onBlur={(e) => {
+          // Hide when blur
+          if (e.currentTarget) {
+            e.currentTarget.classList.add('sr-only');
+          }
+        }}
       >
         Bỏ qua đến nội dung chính
       </a>

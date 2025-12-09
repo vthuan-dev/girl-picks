@@ -208,7 +208,13 @@ async function seedPostTags() {
       id: true,
       title: true,
       tags: true,
-      category: true,
+      category: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+      },
     },
   });
 
@@ -230,8 +236,9 @@ async function seedPostTags() {
     const tags: string[] = [];
 
     // Add category-based tags
-    if (post.category) {
-      const categoryLower = post.category.toLowerCase();
+    const categoryName = (post.category as any)?.name || null;
+    if (categoryName) {
+      const categoryLower = categoryName.toLowerCase();
       if (categoryLower.includes('sex') || categoryLower.includes('phim')) {
         tags.push('gái gọi', 'gaigu', 'phim sex');
       }
