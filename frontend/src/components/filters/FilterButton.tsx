@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 interface FilterOption {
   label: string;
@@ -27,27 +28,87 @@ export default function FilterButton({
   onClear,
 }: FilterButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [dropdownStyle, setDropdownStyle] = useState<{ top: number; left?: number; width?: number } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node;
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(target) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(target)
+      ) {
         setIsOpen(false);
       }
     };
 
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
     };
   }, [isOpen]);
 
+  const recalcPosition = () => {
+    if (!buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    if (isMobile) {
+      setDropdownStyle({
+        top: rect.bottom + 8 + window.scrollY,
+      });
+    } else {
+      setDropdownStyle({
+        top: rect.bottom + 8 + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      });
+    }
+  };
+
+  useEffect(() => {
+    const updateIsMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    updateIsMobile();
+    window.addEventListener('resize', updateIsMobile);
+    return () => window.removeEventListener('resize', updateIsMobile);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      recalcPosition();
+      window.addEventListener('resize', recalcPosition);
+      window.addEventListener('scroll', recalcPosition, true);
+    }
+    return () => {
+      window.removeEventListener('resize', recalcPosition);
+      window.removeEventListener('scroll', recalcPosition, true);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, isMobile]);
+
   const handleSelect = (value: string) => {
+    console.log('[FilterButton] select', label, value);
     onSelect(value);
     setIsOpen(false);
+  };
+
+  const handleToggle = () => {
+    console.log('[FilterButton] toggle', label, !isOpen);
+    if (isOpen) {
+      setIsOpen(false);
+    } else {
+      recalcPosition();
+      setIsOpen(true);
+    }
   };
 
   const handleClear = (e: React.MouseEvent) => {
@@ -60,7 +121,9 @@ export default function FilterButton({
   return (
     <div className="relative shrink-0" ref={dropdownRef}>
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        ref={buttonRef}
+        onClick={handleToggle}
+        type="button"
         className={`group relative px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold cursor-pointer transform transition-all duration-300 ${
           isActive
             ? 'bg-background-light border border-secondary/50 text-primary'
@@ -95,25 +158,46 @@ export default function FilterButton({
       </button>
 
       {/* Dropdown Menu */}
-      {isOpen && (
-        <div className="absolute top-full left-0 mt-2 w-56 bg-background-light border border-secondary/50 rounded-lg shadow-xl z-50 overflow-hidden">
-          <div className="py-1">
-            {options.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => handleSelect(option.value)}
-                className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
-                  selectedValue === option.value
-                    ? 'bg-primary/20 text-primary font-semibold'
-                    : 'text-text hover:bg-primary/10 hover:text-primary'
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      {isOpen &&
+        createPortal(
+          <div className="fixed inset-0 z-[9999]" onClick={() => setIsOpen(false)}>
+            <div className="fixed inset-0 bg-black/20" />
+            <div
+              className="fixed bg-background-light border border-secondary/50 rounded-lg shadow-xl overflow-hidden min-w-[180px]"
+              style={
+                isMobile
+                  ? {
+                      top: buttonRef.current ? buttonRef.current.getBoundingClientRect().bottom + 8 : 100,
+                      left: 16,
+                      right: 16,
+                    }
+                  : {
+                      top: buttonRef.current ? buttonRef.current.getBoundingClientRect().bottom + 8 : 100,
+                      left: buttonRef.current ? buttonRef.current.getBoundingClientRect().left : 16,
+                      minWidth: buttonRef.current ? Math.max(buttonRef.current.getBoundingClientRect().width, 180) : 180,
+                    }
+              }
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="py-1 max-h-[60vh] overflow-auto">
+                {options.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => handleSelect(option.value)}
+                    className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
+                      selectedValue === option.value
+                        ? 'bg-primary/20 text-primary font-semibold'
+                        : 'text-text hover:bg-primary/10 hover:text-primary'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

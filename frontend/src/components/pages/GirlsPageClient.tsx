@@ -6,8 +6,8 @@ import { useSearchParams } from 'next/navigation';
 import GirlList from '@/modules/girls/components/GirlList';
 import LocationFilters from '@/components/sections/LocationFilters';
 import PopularTags from '@/components/sections/PopularTags';
-import FilterButton from '@/components/filters/FilterButton';
 import Header from '@/components/layout/Header';
+import FilterButton from '@/components/filters/FilterButton';
 import { girlsApi } from '@/modules/girls/api/girls.api';
 
 export default function GirlsPageClient() {
@@ -129,7 +129,7 @@ export default function GirlsPageClient() {
           )}
         </div>
         {/* Horizontal scroll on mobile to keep filters in one line */}
-        <div className="flex gap-2 sm:gap-2.5 overflow-x-auto overflow-y-visible pb-1 -mx-2 px-2 sm:overflow-visible sm:flex-wrap sm:pb-0 sm:mx-0 sm:px-0">
+        <div className="flex flex-nowrap gap-2 sm:gap-2.5 overflow-x-auto overflow-y-visible pb-2 -mx-2 px-2 snap-x snap-mandatory">
           {/* Mới xác thực */}
           <button
             onClick={() => setFilters({ ...filters, verified: !filters.verified })}

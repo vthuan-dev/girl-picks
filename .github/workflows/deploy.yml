@@ -135,8 +135,12 @@ jobs:
               if grep -q "listen 443 ssl" /etc/nginx/sites-enabled/gaigo1.net 2>/dev/null; then
                 echo "⚠ HTTPS config detected, preserving existing SSL configuration"
                 echo "   Only updating HTTP blocks if needed, HTTPS config will be preserved"
-                # Backup current config
-                cp /etc/nginx/sites-enabled/gaigo1.net /etc/nginx/sites-enabled/gaigo1.net.backup.$(date +%Y%m%d_%H%M%S)
+                # Backup current config to a safe location (not sites-enabled to avoid duplicate servers)
+                BACKUP_DIR=/etc/nginx/backup
+                mkdir -p "$BACKUP_DIR"
+                cp /etc/nginx/sites-enabled/gaigo1.net "$BACKUP_DIR/gaigo1.net.backup.$(date +%Y%m%d_%H%M%S)"
+                # Clean up any previous backups accidentally left in sites-enabled to prevent duplicate default server errors
+                find /etc/nginx/sites-enabled -maxdepth 1 -name "gaigo1.net.backup.*" -delete
                 # Only copy HTTP blocks from repo, preserve HTTPS blocks
                 # This is a safety measure - if certbot has configured HTTPS, we don't want to overwrite it
                 echo "   Skipping Nginx config copy to preserve HTTPS setup"

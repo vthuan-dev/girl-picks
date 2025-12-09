@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import GirlsPageClient from '@/components/pages/GirlsPageClient';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gaigo1.net';
@@ -54,7 +55,13 @@ export const metadata: Metadata = {
   },
 };
 
+export const dynamic = 'force-dynamic';
+
 export default function GirlsPage() {
-  return <GirlsPageClient />;
+  return (
+    <Suspense fallback={null}>
+      <GirlsPageClient />
+    </Suspense>
+  );
 }
 
