@@ -205,13 +205,23 @@ export const adminApi = {
   },
 
   // Search
-  search: async (query: string): Promise<any[]> => {
+  search: async (query: string): Promise<{
+    users?: any[];
+    girls?: any[];
+    posts?: any[];
+    reviews?: any[];
+  }> => {
     try {
-      const response = await apiClient.get<any[]>(`/admin/search?q=${encodeURIComponent(query)}`);
-      return response.data || [];
+      const response = await apiClient.get<{
+        users?: any[];
+        girls?: any[];
+        posts?: any[];
+        reviews?: any[];
+      }>(`/admin/search?q=${encodeURIComponent(query)}`);
+      return response.data || {};
     } catch (error) {
       console.error('Search error:', error);
-      return [];
+      return {};
     }
   },
 
