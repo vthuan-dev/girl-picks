@@ -164,7 +164,7 @@ function AdminHeader() {
   const handleNotificationClick = async (notification: Notification) => {
     if (!notification.isRead) {
       try {
-        await adminApi.markAsRead(notification.id);
+        await adminApi.markNotificationAsRead(notification.id);
         setNotifications(prev =>
           prev.map(n => n.id === notification.id ? { ...n, isRead: true } : n)
         );
@@ -183,7 +183,7 @@ function AdminHeader() {
   // Mark all as read
   const handleMarkAllAsRead = async () => {
     try {
-      await adminApi.markAllAsRead();
+      await adminApi.markAllNotificationsAsRead();
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
       setUnreadCount(0);
       toast.success('Đã đánh dấu tất cả là đã đọc');
