@@ -23,65 +23,48 @@ export const analyticsApi = {
   // Get analytics data for a specific time range
   getAnalytics: async (timeRange: '7days' | '30days' | '90days' | '1year'): Promise<AnalyticsData> => {
     try {
-      // Get dashboard stats (which includes overview data)
-      const statsResponse = await apiClient.get<any>('/admin/stats');
-      const responseData = statsResponse.data;
+      // Get analytics from dedicated endpoint
+      const response = await apiClient.get<any>(`/admin/analytics?timeRange=${timeRange}`);
+      const responseData = response.data;
       
-      // Unwrap response
-      const stats: DashboardStats = responseData.success && responseData.data
-        ? responseData.data
-        : responseData;
-
-      // Calculate date range
-      const now = new Date();
-      const startDate = new Date();
-      
-      switch (timeRange) {
-        case '7days':
-          startDate.setDate(now.getDate() - 7);
-          break;
-        case '30days':
-          startDate.setDate(now.getDate() - 30);
-          break;
-        case '90days':
-          startDate.setDate(now.getDate() - 90);
-          break;
-        case '1year':
-          startDate.setFullYear(now.getFullYear() - 1);
-          break;
+      if (responseData.success && responseData.data) {
+        return responseData.data;
       }
-
-      // For now, we'll use the dashboard stats and calculate basic metrics
-      // In a real implementation, you'd have a dedicated analytics endpoint
-      const metrics: AnalyticsMetrics = {
-        totalVisits: stats.overview?.totalBookings || 0, // Using bookings as proxy for visits
-        newUsers: stats.overview?.totalUsers || 0,
-        bookings: stats.overview?.totalBookings || 0,
-        revenue: stats.overview?.totalRevenue || 0,
-        // Changes would be calculated by comparing with previous period
-        // For now, we'll use placeholder values
-        visitsChange: 12.5,
-        usersChange: 8.2,
-        bookingsChange: 23.1,
-        revenueChange: 15.3,
-      };
-
-      return {
-        metrics,
-        // Traffic and revenue data would come from a dedicated analytics endpoint
-        // For now, we'll return empty arrays
-        trafficData: [],
-        revenueData: [],
-        topPages: [
-          { page: '/', views: 5432, change: 12 },
-          { page: '/girls', views: 4321, change: 8 },
-          { page: '/search', views: 3210, change: 15 },
-          { page: '/gai-goi', views: 2109, change: 5 },
-        ],
-      };
+      
+      if (responseData.metrics) {
+        return responseData;
+      }
+      
+      throw new Error('Invalid response format');
     } catch (error: any) {
       console.error('Error fetching analytics:', error);
-      throw error;
+      
+      // Fallback: Get dashboard stats if analytics endpoint fails
+      try {
+        const statsResponse = await apiClient.get<any>('/admin/stats');
+        const statsData = statsResponse.data;
+        const stats: DashboardStats = statsData.success && statsData.data
+          ? statsData.data
+          : statsData;
+
+        return {
+          metrics: {
+            totalVisits: stats.overview?.totalBookings || 0,
+            newUsers: stats.overview?.totalUsers || 0,
+            bookings: stats.overview?.totalBookings || 0,
+            revenue: stats.overview?.totalRevenue || 0,
+            visitsChange: 0,
+            usersChange: 0,
+            bookingsChange: 0,
+            revenueChange: 0,
+          },
+          trafficData: [],
+          revenueData: [],
+          topPages: [],
+        };
+      } catch (fallbackError) {
+        throw error;
+      }
     }
   },
 };

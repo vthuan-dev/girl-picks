@@ -28,6 +28,8 @@
     "import-movies:force": "prisma generate && ts-node scripts/import-movies-from-crawler.ts",
     "fix-prisma-lock": "powershell -ExecutionPolicy Bypass -File scripts/fix-prisma-lock.ps1",
     "generate-slugs": "prisma generate && ts-node scripts/generate-slugs.ts",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate deploy",
     "apply-slug-migration": "powershell -ExecutionPolicy Bypass -File scripts/apply-slug-migration.ps1",
     "setup-slugs": "powershell -ExecutionPolicy Bypass -File scripts/setup-slugs.ps1",
     "seed-tags": "ts-node src/scripts/seed-tags.ts"

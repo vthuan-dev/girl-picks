@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import Header from './Header';
 import Footer from './Footer';
+import PageViewTracker from '@/components/analytics/PageViewTracker';
 
 export default function ClientLayout({
   children,
@@ -39,6 +40,7 @@ export default function ClientLayout({
 
   return (
     <div className="flex flex-col min-h-screen">
+      <PageViewTracker />
       <Header />
       <main id="main-content" className="flex-1 bg-background" tabIndex={-1}>
         {children}

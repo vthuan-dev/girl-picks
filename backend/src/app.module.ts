@@ -27,6 +27,7 @@ import { UploadModule } from './modules/upload/upload.module';
 import { CacheModule } from './modules/cache/cache.module';
 import { TagsModule } from './modules/tags/tags.module';
 import { CategoriesModule } from './modules/categories/categories.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { CategoriesModule } from './modules/categories/categories.module';
     UploadModule,
     TagsModule,
     CategoriesModule,
+    AnalyticsModule,
     // ThrottlerModule.forRoot([
     //   {
     //     ttl: 60000, // 1 minute
