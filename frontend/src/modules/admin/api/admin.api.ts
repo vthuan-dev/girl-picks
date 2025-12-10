@@ -203,5 +203,55 @@ export const adminApi = {
     );
     return response.data;
   },
+
+  // Search
+  search: async (query: string): Promise<any[]> => {
+    try {
+      const response = await apiClient.get<any[]>(`/admin/search?q=${encodeURIComponent(query)}`);
+      return response.data || [];
+    } catch (error) {
+      console.error('Search error:', error);
+      return [];
+    }
+  },
+
+  // Notifications
+  getNotifications: async (unreadOnly: boolean = false, limit: number = 20): Promise<any[]> => {
+    try {
+      const response = await apiClient.get<any[]>(
+        `/admin/notifications?unreadOnly=${unreadOnly}&limit=${limit}`
+      );
+      return response.data || [];
+    } catch (error) {
+      console.error('Get notifications error:', error);
+      return [];
+    }
+  },
+
+  getUnreadCount: async (): Promise<number> => {
+    try {
+      const response = await apiClient.get<{ count: number }>('/admin/notifications/unread-count');
+      return response.data?.count || 0;
+    } catch (error) {
+      console.error('Get unread count error:', error);
+      return 0;
+    }
+  },
+
+  markNotificationAsRead: async (id: string): Promise<void> => {
+    try {
+      await apiClient.post(`/admin/notifications/${id}/read`);
+    } catch (error) {
+      console.error('Mark notification as read error:', error);
+    }
+  },
+
+  markAllNotificationsAsRead: async (): Promise<void> => {
+    try {
+      await apiClient.post('/admin/notifications/read-all');
+    } catch (error) {
+      console.error('Mark all notifications as read error:', error);
+    }
+  },
 };
 
