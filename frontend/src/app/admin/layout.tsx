@@ -1,9 +1,15 @@
 'use client';
 
 import { UserRole } from '@/types/auth';
+import dynamic from 'next/dynamic';
 import AdminSidebar from '@/components/layout/AdminSidebar';
-import AdminHeader from '@/components/layout/AdminHeader';
 import AuthGuard from '@/components/auth/AuthGuard';
+
+// Dynamic import AdminHeader to avoid SSR issues
+const AdminHeader = dynamic(
+  () => import('@/components/layout/AdminHeader'),
+  { ssr: false }
+);
 
 export default function AdminLayout({
   children,

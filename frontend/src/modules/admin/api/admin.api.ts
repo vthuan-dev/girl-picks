@@ -203,5 +203,79 @@ export const adminApi = {
     );
     return response.data;
   },
+
+  // Search (Global admin search)
+  search: async (query: string, type?: 'users' | 'girls' | 'posts' | 'reviews'): Promise<any> => {
+    const params = new URLSearchParams();
+    params.append('q', query);
+    if (type) params.append('type', type);
+    
+    const response = await apiClient.get<any>(`/admin/search?${params.toString()}`);
+    const responseData = response.data;
+    
+    if (responseData.success && responseData.data) {
+      return responseData.data;
+    }
+    
+    if (responseData.results) {
+      return responseData;
+    }
+    
+    throw new Error('Định dạng phản hồi từ server không hợp lệ');
+  },
+
+  // Notifications
+  getNotifications: async (unreadOnly = false, limit = 20): Promise<any[]> => {
+    const params = new URLSearchParams();
+    if (unreadOnly) params.append('unreadOnly', 'true');
+    params.append('limit', limit.toString());
+    
+    const response = await apiClient.get<any>(`/admin/notifications?${params.toString()}`);
+    const responseData = response.data;
+    
+    if (responseData.success && responseData.data) {
+      return Array.isArray(responseData.data) ? responseData.data : [];
+    }
+    
+    if (Array.isArray(responseData)) {
+      return responseData;
+    }
+    
+    if (Array.isArray(responseData.data)) {
+      return responseData.data;
+    }
+    
+    return [];
+  },
+
+  // Get unread notifications count
+  getUnreadCount: async (): Promise<number> => {
+    try {
+      const response = await apiClient.get<any>('/admin/notifications/unread-count');
+      const responseData = response.data;
+      
+      if (responseData.success && responseData.data !== undefined) {
+        return responseData.data;
+      }
+      
+      if (typeof responseData.count === 'number') {
+        return responseData.count;
+      }
+      
+      return 0;
+    } catch (error) {
+      return 0;
+    }
+  },
+
+  // Mark notification as read
+  markAsRead: async (notificationId: string): Promise<void> => {
+    await apiClient.patch(`/admin/notifications/${notificationId}/read`);
+  },
+
+  // Mark all notifications as read
+  markAllAsRead: async (): Promise<void> => {
+    await apiClient.patch('/admin/notifications/read-all');
+  },
 };
 
