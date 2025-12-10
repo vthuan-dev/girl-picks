@@ -8,6 +8,7 @@ import { adminApi } from '@/modules/admin/api/admin.api';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import GirlsManagementLayout from '@/components/admin/GirlsManagementLayout';
 
 export default function AdminGirlsPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -28,9 +29,14 @@ export default function AdminGirlsPage() {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [createProfileModalOpen, setCreateProfileModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<{ id: string; email: string; fullName: string } | null>(null);
   const [selectedGirl, setSelectedGirl] = useState<Girl | null>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [isCreatingProfile, setIsCreatingProfile] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Edit form state
@@ -42,6 +48,22 @@ export default function AdminGirlsPage() {
     isFeatured: false,
     isPremium: false,
   });
+
+  // Create form state
+  const [createForm, setCreateForm] = useState({
+    email: '',
+    password: '',
+    fullName: '',
+    phone: '',
+    bio: '',
+    districts: '' as string, // comma separated input
+    images: '' as string, // comma separated URLs (for backward compatibility)
+    age: '',
+  });
+  
+  // Image upload state for profile creation
+  const [profileImages, setProfileImages] = useState<File[]>([]);
+  const [profileImagePreviews, setProfileImagePreviews] = useState<string[]>([]);
 
   useEffect(() => {
     loadGirls();
@@ -94,6 +116,238 @@ export default function AdminGirlsPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleOpenAddNew = () => {
+    setCreateForm({
+      email: '',
+      password: '',
+      fullName: '',
+      phone: '',
+      bio: '',
+      districts: '',
+      images: '',
+      age: '',
+    });
+    setCreateModalOpen(true);
+  };
+
+  const handleCreate = async () => {
+    // Basic validate - chỉ cần email, password, fullName
+    if (!createForm.email.trim() || !createForm.password.trim() || !createForm.fullName.trim()) {
+      toast.error('Vui lòng nhập email, mật khẩu và họ tên');
+      return;
+    }
+    
+    // Validate password format (min 8 chars, uppercase, lowercase, number)
+    const password = createForm.password.trim();
+    if (password.length < 8) {
+      toast.error('Mật khẩu phải có ít nhất 8 ký tự');
+      return;
+    }
+    if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+      toast.error('Mật khẩu phải bao gồm chữ hoa, chữ thường và số');
+      return;
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(createForm.email.trim())) {
+      toast.error('Vui lòng nhập địa chỉ email hợp lệ');
+      return;
+    }
+    setIsCreating(true);
+    try {
+      const result = await girlsApi.createAdmin({
+        email: createForm.email.trim(),
+        password: createForm.password.trim(),
+        fullName: createForm.fullName.trim(),
+        phone: createForm.phone.trim() || undefined,
+      });
+      
+      // Backend returns { success: true, data: { user, needsProfileSetup } }
+      // After unwrapResponse: { user, needsProfileSetup }
+      const user = (result as any)?.user;
+      
+      if (!user || !user.id) {
+        console.error('Invalid response format:', result);
+        throw new Error('Định dạng phản hồi từ server không hợp lệ');
+      }
+      
+      toast.success('Tạo tài khoản gái gọi thành công');
+      setCreateModalOpen(false);
+      
+      // Luôn hỏi admin có muốn tạo profile không
+      setSelectedUser({
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+      });
+      setCreateProfileModalOpen(true);
+      
+      // Reload để cập nhật danh sách
+      await loadGirls();
+      await loadStats();
+    } catch (error: any) {
+      console.error('Create girl error:', error);
+      if (error?.code === 'ERR_NETWORK' || error?.message?.includes('CONNECTION_REFUSED')) {
+        toast.error('Không thể kết nối đến server. Vui lòng kiểm tra backend có đang chạy trên port 8000 không.');
+      } else if (error?.response?.status === 400) {
+        // Validation error - show detailed message
+        const errorData = error?.response?.data;
+        let errorMessage = 'Xác thực thất bại.';
+        
+        // Check for errors array first (from ValidationExceptionFilter)
+        if (errorData?.errors) {
+          const errors = Array.isArray(errorData.errors) 
+            ? errorData.errors 
+            : [errorData.errors];
+          errorMessage = `Xác thực thất bại: ${errors.join(', ')}`;
+        } else if (errorData?.message) {
+          // Fallback to message field
+          errorMessage = Array.isArray(errorData.message)
+            ? `Xác thực thất bại: ${errorData.message.join(', ')}`
+            : `Xác thực thất bại: ${errorData.message}`;
+        } else {
+          errorMessage = 'Xác thực thất bại. Mật khẩu phải có ít nhất 8 ký tự bao gồm chữ hoa, chữ thường và số.';
+        }
+        
+        toast.error(errorMessage);
+      } else {
+        toast.error(error?.response?.data?.message || error?.message || 'Không thể tạo tài khoản');
+      }
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  // Upload image helper function
+  const uploadImage = async (file: File): Promise<string> => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await fetch('/api/upload/post', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+      
+      const data = await response.json();
+      if (data.success && data.url) {
+        // Convert relative URL to absolute URL
+        const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+        return `${baseUrl}${data.url}`;
+      }
+      throw new Error('Invalid response from upload');
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      throw error;
+    }
+  };
+
+  const handleCreateProfile = async () => {
+    if (!selectedUser) return;
+    
+    setIsCreatingProfile(true);
+    try {
+      let imageUrls: string[] = [];
+      
+      // Upload images if files are selected
+      if (profileImages.length > 0) {
+        const loadingToast = toast.loading('Đang tải ảnh lên...');
+        imageUrls = await Promise.all(profileImages.map((file) => uploadImage(file)));
+        toast.dismiss(loadingToast);
+      } else if (createForm.images.trim()) {
+        // Fallback to URL input if no files uploaded
+        imageUrls = createForm.images.split(',').map((d) => d.trim()).filter(Boolean);
+      }
+      
+      await girlsApi.createGirlProfile(selectedUser.id, {
+        bio: createForm.bio.trim() || undefined,
+        age: createForm.age ? parseInt(createForm.age, 10) || undefined : undefined,
+        districts: createForm.districts
+          ? createForm.districts.split(',').map((d) => d.trim()).filter(Boolean)
+          : undefined,
+        images: imageUrls.length > 0 ? imageUrls : undefined,
+        name: createForm.fullName.trim(),
+      });
+      
+      toast.success('Tạo hồ sơ thành công');
+      setCreateProfileModalOpen(false);
+      setSelectedUser(null);
+      // Reset image state
+      setProfileImages([]);
+      setProfileImagePreviews([]);
+      await loadGirls();
+      await loadStats();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Không thể tạo hồ sơ');
+    } finally {
+      setIsCreatingProfile(false);
+    }
+  };
+
+  const handleCreateProfileFromUser = (userId: string) => {
+    // Reset form và mở modal tạo profile
+    setCreateForm({
+      email: '',
+      password: '',
+      fullName: '',
+      phone: '',
+      bio: '',
+      districts: '',
+      images: '',
+      age: '',
+    });
+    // Reset image state
+    setProfileImages([]);
+    setProfileImagePreviews([]);
+    // Load user info nếu cần
+    setSelectedUser({ id: userId, email: '', fullName: '' });
+    setCreateProfileModalOpen(true);
+  };
+  
+  // Handle image file selection
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    
+    // Validate file types
+    const validFiles = files.filter(file => file.type.startsWith('image/'));
+    if (validFiles.length !== files.length) {
+      toast.error('Chỉ chấp nhận file ảnh');
+    }
+    
+    // Validate file sizes (max 5MB each)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    const sizeValidFiles = validFiles.filter(file => file.size <= maxSize);
+    if (sizeValidFiles.length !== validFiles.length) {
+      toast.error('Một số file vượt quá 5MB');
+    }
+    
+    // Add to state
+    const newFiles = [...profileImages, ...sizeValidFiles];
+    setProfileImages(newFiles);
+    
+    // Create previews
+    const newPreviews = sizeValidFiles.map(file => URL.createObjectURL(file));
+    setProfileImagePreviews([...profileImagePreviews, ...newPreviews]);
+    
+    // Reset input
+    e.target.value = '';
+  };
+  
+  // Remove image
+  const handleRemoveImage = (index: number) => {
+    // Revoke preview URL to prevent memory leak
+    URL.revokeObjectURL(profileImagePreviews[index]);
+    
+    setProfileImages(profileImages.filter((_, i) => i !== index));
+    setProfileImagePreviews(profileImagePreviews.filter((_, i) => i !== index));
   };
 
   const loadStats = async () => {
@@ -206,6 +460,29 @@ export default function AdminGirlsPage() {
     }
   };
 
+  const handleApproveVerification = async (id: string) => {
+    try {
+      await girlsApi.approveVerification(id);
+      toast.success('Duyệt xác thực thành công');
+      loadGirls();
+      loadStats();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Không thể duyệt xác thực');
+    }
+  };
+
+  const handleRejectVerification = async (id: string) => {
+    const reason = prompt('Nhập lý do từ chối (tùy chọn):');
+    try {
+      await girlsApi.rejectVerification(id, reason || 'Không đạt yêu cầu');
+      toast.success('Từ chối xác thực thành công');
+      loadGirls();
+      loadStats();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Không thể từ chối xác thực');
+    }
+  };
+
   const statuses = ['Tất cả', 'Hoạt động', 'Tạm khóa'];
   const verifications = ['Tất cả', 'Đã xác thực', 'Chưa xác thực'];
 
@@ -217,7 +494,7 @@ export default function AdminGirlsPage() {
           <h1 className="text-2xl sm:text-3xl font-bold text-text mb-2">Quản lý Gái gọi</h1>
           <p className="text-text-muted">Quản lý tất cả gái gọi trong hệ thống</p>
         </div>
-        <Button variant="primary" size="md">
+        <Button variant="primary" size="md" onClick={handleOpenAddNew}>
           <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
@@ -330,178 +607,16 @@ export default function AdminGirlsPage() {
         </div>
       </div>
 
-      {/* Girls Table */}
-      <div className="bg-background-light rounded-xl border border-secondary/30 overflow-hidden">
-        {isLoading ? (
-          <div className="p-8 text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            <p className="mt-4 text-text-muted">Đang tải...</p>
-          </div>
-        ) : girls.length === 0 ? (
-          <div className="p-8 text-center">
-            <p className="text-text-muted">Không có gái gọi nào</p>
-          </div>
-        ) : (
-          <>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-background border-b border-secondary/30">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">
-                      Gái gọi
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">
-                      Xác thực
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">
-                      Đánh giá
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">
-                      Trạng thái
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-text-muted uppercase tracking-wider">
-                      Thao tác
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-secondary/30">
-                  {girls.map((girl) => (
-                    <tr key={girl.id} className="hover:bg-background transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-pink-500/20 flex items-center justify-center flex-shrink-0">
-                            {girl.images && Array.isArray(girl.images) && girl.images.length > 0 ? (
-                              <img
-                                src={girl.images[0]}
-                                alt={girl.name || 'Girl'}
-                                className="w-10 h-10 rounded-full object-cover"
-                              />
-                            ) : (
-                              <span className="text-pink-500 font-bold">
-                                {girl.name?.charAt(0) || 'G'}
-                              </span>
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-medium text-text truncate">{girl.name || 'N/A'}</p>
-                            {girl.user && (
-                              <>
-                                <p className="text-sm text-text-muted truncate">{girl.user.email}</p>
-                                {girl.user.phone && (
-                                  <p className="text-xs text-text-muted">{girl.user.phone}</p>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {girl.verificationStatus === 'VERIFIED' ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-green-500/20 text-green-500 rounded text-xs font-medium">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                            Đã xác thực
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-yellow-500/20 text-yellow-500 rounded text-xs font-medium">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            Chưa xác thực
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <svg className="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
-                          <span className="text-sm font-medium text-text">
-                            {girl.ratingAverage?.toFixed(1) || '0.0'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${
-                            girl.isActive
-                              ? 'bg-green-500/20 text-green-500'
-                              : 'bg-gray-500/20 text-gray-400'
-                          }`}
-                        >
-                          {girl.isActive ? 'Hoạt động' : 'Tạm khóa'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <IconButton variant="default" title="Xem chi tiết" onClick={() => handleView(girl.id)}>
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                          </IconButton>
-                          <IconButton variant="default" title="Chỉnh sửa" onClick={() => handleEdit(girl.id)}>
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                          </IconButton>
-                          <IconButton
-                            variant="default"
-                            title={girl.isActive ? 'Tạm khóa' : 'Kích hoạt'}
-                            onClick={() => handleToggleStatus(girl.id, !girl.isActive)}
-                          >
-                            {girl.isActive ? (
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                              </svg>
-                            ) : (
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                            )}
-                          </IconButton>
-                          <IconButton
-                            variant="danger"
-                            title="Xóa"
-                            onClick={() => handleDeleteClick(girl.id)}
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </IconButton>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="px-6 py-4 border-t border-secondary/30 flex items-center justify-between">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="px-4 py-2 rounded-lg bg-background border border-secondary/50 text-text disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/10"
-                >
-                  Trước
-                </button>
-                <span className="text-text-muted">
-                  Trang {page} / {totalPages}
-                </span>
-                <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                  className="px-4 py-2 rounded-lg bg-background border border-secondary/50 text-text disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/10"
-                >
-                  Sau
-                </button>
-              </div>
-            )}
-          </>
-        )}
-      </div>
+      {/* Girls Management Layout - 2 Columns */}
+      <GirlsManagementLayout
+        onCreateProfile={handleCreateProfileFromUser}
+        onViewGirl={handleView}
+        onEditGirl={handleEdit}
+        onDeleteGirl={handleDeleteClick}
+        onToggleStatus={handleToggleStatus}
+        onApproveVerification={handleApproveVerification}
+        onRejectVerification={handleRejectVerification}
+      />
 
       {/* View Modal */}
       {viewModalOpen && (
@@ -881,6 +996,336 @@ export default function AdminGirlsPage() {
           </div>
         </div>
       )}
+
+      {/* Create Modal */}
+      {createModalOpen && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setCreateModalOpen(false);
+            }
+          }}
+        >
+          <div className="bg-background-light rounded-2xl border border-secondary/30 shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="p-6 border-b border-secondary/30 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center">
+                  <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-text">Thêm gái gọi</h2>
+                  <p className="text-sm text-text-muted">Tạo tài khoản gái gọi mới</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setCreateModalOpen(false)}
+                className="p-2 hover:bg-background rounded-lg transition-colors"
+              >
+                <svg className="w-6 h-6 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-5">
+              <div>
+                <label className="block text-sm font-semibold text-text mb-2">Email</label>
+                <input
+                  type="email"
+                  value={createForm.email}
+                  onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                  placeholder="email@example.com"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-text mb-2">Mật khẩu</label>
+                <input
+                  type="password"
+                  value={createForm.password}
+                  onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                  placeholder="••••••••"
+                />
+                <p className="mt-1.5 text-xs text-text-muted">
+                  Phải có ít nhất 8 ký tự bao gồm chữ hoa, chữ thường và số
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-text mb-2">Họ tên</label>
+                <input
+                  type="text"
+                  value={createForm.fullName}
+                  onChange={(e) => setCreateForm({ ...createForm, fullName: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                  placeholder="Nguyễn Thị A"
+                />
+              </div>
+                <div>
+                  <label className="block text-sm font-semibold text-text mb-2">Số điện thoại (Tùy chọn)</label>
+                  <input
+                    type="text"
+                    value={createForm.phone}
+                    onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                    placeholder="09xxxxxxxx"
+                  />
+                </div>
+              
+              {/* Info Banner */}
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                <p className="text-sm text-blue-600 flex items-start gap-2">
+                  <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>
+                    <strong>Lưu ý:</strong> Sau khi tạo tài khoản, bạn sẽ được hỏi có muốn cập nhật thông tin hồ sơ chi tiết (tuổi, mô tả, khu vực, ảnh...) không. 
+                    Bạn có thể bỏ qua và cập nhật sau.
+                  </span>
+                </p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-6 border-t border-secondary/30 flex justify-end gap-3">
+              <Button
+                variant="secondary"
+                onClick={() => setCreateModalOpen(false)}
+              >
+                Hủy
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleCreate}
+                isLoading={isCreating}
+              >
+                Tạo tài khoản
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Profile Modal */}
+      {createProfileModalOpen && selectedUser && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              // Clean up image previews
+              profileImagePreviews.forEach(preview => URL.revokeObjectURL(preview));
+              setProfileImages([]);
+              setProfileImagePreviews([]);
+              setCreateProfileModalOpen(false);
+              setSelectedUser(null);
+            }
+          }}
+        >
+          <div className="bg-background-light rounded-2xl border border-secondary/30 shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="p-6 border-b border-secondary/30 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-orange-500/20 rounded-xl flex items-center justify-center">
+                  <svg className="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-text">Tạo hồ sơ gái gọi</h2>
+                  <p className="text-sm text-text-muted">Cập nhật thông tin cho {selectedUser.fullName || selectedUser.email}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  // Clean up image previews
+                  profileImagePreviews.forEach(preview => URL.revokeObjectURL(preview));
+                  setProfileImages([]);
+                  setProfileImagePreviews([]);
+                  setCreateProfileModalOpen(false);
+                  setSelectedUser(null);
+                }}
+                className="p-2 hover:bg-background rounded-lg transition-colors"
+              >
+                <svg className="w-6 h-6 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Warning Banner */}
+            <div className="mx-6 mt-4 bg-orange-500/10 border border-orange-500/30 rounded-lg p-3">
+              <p className="text-sm text-orange-600 flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                Tài khoản đã được tạo. Vui lòng cập nhật thông tin để hoàn tất hồ sơ.
+              </p>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-5">
+              <div>
+                <label className="block text-sm font-semibold text-text mb-2">Tên hiển thị</label>
+                <input
+                  type="text"
+                  value={createForm.fullName}
+                  onChange={(e) => setCreateForm({ ...createForm, fullName: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                  placeholder="Tên gái gọi"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-text mb-2">Mô tả</label>
+                <textarea
+                  value={createForm.bio}
+                  onChange={(e) => setCreateForm({ ...createForm, bio: e.target.value })}
+                  rows={4}
+                  className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                  placeholder="Giới thiệu ngắn..."
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-text mb-2">Tuổi</label>
+                  <input
+                    type="number"
+                    value={createForm.age}
+                    onChange={(e) => setCreateForm({ ...createForm, age: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                    placeholder="25"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-text mb-2">Khu vực (phân cách bằng dấu phẩy)</label>
+                  <input
+                    type="text"
+                    value={createForm.districts}
+                    onChange={(e) => setCreateForm({ ...createForm, districts: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                    placeholder="Quận 1, Quận 3, Thủ Đức"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-text mb-2">Ảnh</label>
+                
+                {/* File Input */}
+                <div className="mb-3">
+                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-secondary/50 rounded-xl cursor-pointer bg-background hover:bg-background-light hover:border-primary/50 transition-colors">
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <svg className="w-10 h-10 mb-3 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                      <p className="mb-2 text-sm text-text-muted">
+                        <span className="font-semibold">Nhấn để chọn ảnh</span> hoặc kéo thả
+                      </p>
+                      <p className="text-xs text-text-muted">PNG, JPG, GIF (Tối đa 5MB mỗi ảnh)</p>
+                    </div>
+                    <input
+                      type="file"
+                      className="hidden"
+                      multiple
+                      accept="image/*"
+                      onChange={handleImageSelect}
+                    />
+                  </label>
+                </div>
+                
+                {/* Image Previews */}
+                {profileImagePreviews.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-3">
+                    {profileImagePreviews.map((preview, index) => (
+                      <div key={index} className="relative group cursor-pointer">
+                        <img
+                          src={preview}
+                          alt={`Preview ${index + 1}`}
+                          className="w-full h-32 object-cover rounded-lg border border-secondary/30 transition-transform group-hover:scale-105"
+                        />
+                        {/* Dark overlay on hover (desktop only) */}
+                        <div className="absolute inset-0 bg-black/40 rounded-lg opacity-0 md:group-hover:opacity-100 transition-opacity"></div>
+                        {/* Delete button - always visible on mobile, hover on desktop */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveImage(index);
+                          }}
+                          className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white rounded-full shadow-lg opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all transform scale-100 md:scale-90 md:group-hover:scale-100 z-10 touch-manipulation"
+                          title="Xóa ảnh"
+                          aria-label="Xóa ảnh"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                        {/* Filename overlay */}
+                        <div className="absolute bottom-1 left-1 px-2 py-0.5 bg-black/70 text-white text-xs rounded truncate max-w-[calc(100%-4rem)]">
+                          {profileImages[index]?.name || `Ảnh ${index + 1}`}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Fallback URL input (optional) */}
+                <details className="mt-3">
+                  <summary className="text-sm text-text-muted cursor-pointer hover:text-text transition-colors">
+                    Hoặc nhập URL ảnh (tùy chọn)
+                  </summary>
+                  <textarea
+                    value={createForm.images}
+                    onChange={(e) => setCreateForm({ ...createForm, images: e.target.value })}
+                    rows={2}
+                    className="mt-2 w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                    placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
+                  />
+                </details>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-6 border-t border-secondary/30 flex justify-end gap-3">
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  // Clean up image previews
+                  profileImagePreviews.forEach(preview => URL.revokeObjectURL(preview));
+                  setProfileImages([]);
+                  setProfileImagePreviews([]);
+                  setCreateProfileModalOpen(false);
+                  setSelectedUser(null);
+                  loadGirls();
+                  loadStats();
+                }}
+              >
+                Bỏ qua
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleCreateProfile}
+                isLoading={isCreatingProfile}
+              >
+                Tạo hồ sơ
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Add button for mobile */}
+      <div className="sm:hidden fixed bottom-20 right-5 z-40">
+        <Button variant="primary" size="md" onClick={handleOpenAddNew}>
+          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          Thêm gái gọi
+        </Button>
+      </div>
     </div>
   );
 }

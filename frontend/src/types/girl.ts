@@ -1,10 +1,22 @@
 import { User } from './auth';
 
 export interface Girl extends User {
+  // Some API responses return `name`; keep both for compatibility
+  name?: string | null;
   slug?: string | null; // URL-friendly slug for SEO
   bio?: string;
+  age?: number | null;
+  birthYear?: number | null;
+  height?: string | number | null;
+  weight?: string | number | null;
+  measurements?: string | null;
+  origin?: string | null;
+  address?: string | null;
+  workingHours?: string | null;
+  services?: string[];
   verified: boolean;
-  rating: number;
+  rating?: number;
+  ratingAverage?: number;
   totalReviews: number;
   totalBookings: number;
   isAvailable: boolean;
@@ -21,6 +33,14 @@ export interface Girl extends User {
   tags?: string[];
   price?: string | null; // e.g., "200K"
   viewCount?: number; // Number of views
+  // Identity verification fields
+  idCardFrontUrl?: string | null;
+  idCardBackUrl?: string | null;
+  selfieUrl?: string | null;
+  needsReverify?: boolean;
+  verificationStatus?: 'PENDING' | 'VERIFIED' | 'REJECTED';
+  verificationRequestedAt?: string | null;
+  verificationVerifiedAt?: string | null;
 }
 
 export interface GirlListParams {

@@ -19,6 +19,10 @@ export interface Girl {
   images: string[];
   createdAt: string;
   updatedAt: string;
+  idCardFrontUrl?: string | null;
+  idCardBackUrl?: string | null;
+  selfieUrl?: string | null;
+  needsReverify?: boolean;
   user: {
     id: string;
     fullName: string;
@@ -124,19 +128,64 @@ export const girlsApi = {
     return unwrapResponse(response.data) as Girl;
   },
 
-  // Admin: Create girl
+  // Admin: Create girl user (only creates user, not girl profile)
   createAdmin: async (data: {
     email: string;
     password: string;
     fullName: string;
     phone?: string;
+  }): Promise<{ user: any; needsProfileSetup: boolean }> => {
+    try {
+      const response = await apiClient.post<any>(`/admin/girls`, data);
+      // Backend returns { success: true, data: { user, needsProfileSetup } }
+      const unwrapped = unwrapResponse(response.data);
+      // Ensure we return the correct format
+      if (unwrapped && unwrapped.user) {
+        return unwrapped;
+      }
+      // Fallback: if response.data is already the object
+      if (response.data && response.data.user) {
+        return response.data;
+      }
+      throw new Error('Invalid response format');
+    } catch (error: any) {
+      console.error('Create admin error:', error);
+      if (error?.code === 'ERR_NETWORK' || error?.message?.includes('CONNECTION_REFUSED') || error?.code === 'ECONNREFUSED') {
+        throw new Error('Không thể kết nối đến server. Vui lòng kiểm tra backend có đang chạy trên port 8000 không.');
+      }
+      if (error?.response) {
+        // Server responded but with error
+        throw error;
+      }
+      throw error;
+    }
+  },
+
+  // Admin: Create girl profile from user
+  createGirlProfile: async (userId: string, data: {
     bio?: string;
     districts?: string[];
     images?: string[];
     age?: number;
+    name?: string;
   }): Promise<Girl> => {
-    const response = await apiClient.post<any>(`/admin/girls`, data);
+    const response = await apiClient.post<any>(`/admin/girls/${userId}/profile`, data);
     return unwrapResponse(response.data) as Girl;
+  },
+
+  // Admin: Get girls without profile
+  getGirlsWithoutProfile: async (params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<PaginatedResponse<any>> => {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.append('page', params.page.toString());
+    if (params?.limit) searchParams.append('limit', params.limit.toString());
+    
+    const response = await apiClient.get<any>(
+      `/admin/girls/without-profile?${searchParams.toString()}`
+    );
+    return getPaginatedData<any>(response.data);
   },
 
   // Admin: Update girl

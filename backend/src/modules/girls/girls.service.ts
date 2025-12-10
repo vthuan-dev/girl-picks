@@ -996,13 +996,27 @@ export class GirlsService {
   async update(userId: string, updateGirlDto: UpdateGirlDto) {
     const girl = await this.findByUserId(userId);
 
-    const { districts, ...rest } = updateGirlDto as any;
+    const { districts, idCardBackUrl, idCardFrontUrl, selfieUrl, ...rest } =
+      updateGirlDto as any;
+
+    if (!idCardFrontUrl || !idCardBackUrl || !selfieUrl) {
+      throw new BadRequestException(
+        'Vui lòng cung cấp đầy đủ ảnh CCCD mặt trước, mặt sau và ảnh mặt mộc',
+      );
+    }
 
     const updatedGirl = await this.prisma.girl.update({
       where: { id: girl.id },
       data: {
         ...rest,
         districts: districts !== undefined ? districts : undefined,
+        idCardFrontUrl,
+        idCardBackUrl,
+        selfieUrl,
+        verificationStatus: VerificationStatus.PENDING,
+        needsReverify: true,
+        verificationRequestedAt: new Date(),
+        verificationVerifiedAt: null,
       },
       include: {
         user: {
@@ -1100,6 +1114,7 @@ export class GirlsService {
       where: { id },
       data: {
         verificationStatus: VerificationStatus.VERIFIED,
+        needsReverify: false,
         verificationVerifiedAt: new Date(),
       },
     });
@@ -1124,6 +1139,8 @@ export class GirlsService {
       data: {
         verificationStatus: VerificationStatus.REJECTED,
         verificationDocuments: [],
+        needsReverify: false,
+        verificationVerifiedAt: null,
       },
     });
 

@@ -81,7 +81,7 @@ function FilterDropdown({
         `}
       >
         {icon}
-        <span className="hidden sm:inline">{label}:</span>
+        <span className="font-medium">{label}:</span>
         <span className={hasValue ? 'text-primary font-semibold' : 'text-text-muted'}>
           {selectedOption?.label || 'Tất cả'}
         </span>

@@ -69,15 +69,19 @@ export const girlsApi = {
     return response.data;
   },
 
-  // Update girl profile
-  updateProfile: async (data: UpdateGirlProfileDto): Promise<ApiResponse<Girl>> => {
-    const response = await apiClient.patch<ApiResponse<Girl>>('/girls/profile', data);
+  // Update girl profile (self-update with CCCD required)
+  updateProfile: async (data: UpdateGirlProfileDto & {
+    idCardFrontUrl: string;
+    idCardBackUrl: string;
+    selfieUrl: string;
+  }): Promise<ApiResponse<Girl>> => {
+    const response = await apiClient.patch<ApiResponse<Girl>>('/girls/me/profile', data);
     return response.data;
   },
 
   // Get my girl profile
   getMyProfile: async (): Promise<ApiResponse<Girl>> => {
-    const response = await apiClient.get<ApiResponse<Girl>>('/girls/profile');
+    const response = await apiClient.get<ApiResponse<Girl>>('/girls/me/profile');
     return response.data;
   },
 

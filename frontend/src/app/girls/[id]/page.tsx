@@ -7,6 +7,7 @@ import GirlInfoCard from '@/components/girls/GirlInfoCard';
 import RelatedGirls from '@/components/girls/RelatedGirls';
 import GirlBioSection from '@/components/girls/GirlBioSection';
 import ExpandableText from '@/components/common/ExpandableText';
+import ReviewsSection from '@/components/girls/ReviewsSection';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import ViewTracker from '@/components/common/ViewTracker';
 import { Girl } from '@/types/girl';
@@ -37,7 +38,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       };
     }
 
-    const girlName = girl.fullName || (girl as any).name || '';
+    const displayName = (girl as any).name || girl.fullName || girl.username || girl.slug || '';
+    const girlName = displayName || '';
     const girlPhone = (girl as any).phone || '';
     const girlProvince = (girl as any).province || girl.district?.name || '';
     const girlLocation = (girl as any).location || '';
@@ -137,6 +139,12 @@ export default async function GirlDetailPage({ params }: PageProps) {
   try {
     const response = await getGirlById(id);
     girl = response.data as Girl;
+    const normalizedName = (girl as any).name || girl.fullName || girl.username || girl.slug || girl.bio || '';
+    girl = {
+      ...girl,
+      name: normalizedName || (girl as any).name,
+      fullName: girl.fullName || normalizedName,
+    };
     
     // Check if girl exists
     if (!girl || !girl.id) {
@@ -160,9 +168,12 @@ export default async function GirlDetailPage({ params }: PageProps) {
     notFound();
   }
 
+  const displayName = (girl as any).name || girl.fullName || girl.username || girl.slug || 'Gái gọi';
+  const ratingValue = (girl.rating ?? (girl as any).ratingAverage ?? 0);
+  const totalReviews = girl.totalReviews ?? 0;
   const imageUrl = girl.images?.[0] || girl.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=1200&h=800&fit=crop';
-  const title = `${girl.fullName || (girl as any).name} - Gái gọi ${girl.district?.name || ''}`;
-  const description = girl.bio || `Thông tin chi tiết về ${girl.fullName || (girl as any).name}`;
+  const title = `${displayName} - Gái gọi ${girl.district?.name || ''}`;
+  const description = girl.bio || `Thông tin chi tiết về ${displayName}`;
   // Use slug in URL if available
   const url = girl.slug 
     ? `${siteUrl}/girls/${girl.id}/${girl.slug}`
@@ -172,14 +183,14 @@ export default async function GirlDetailPage({ params }: PageProps) {
   const breadcrumbs = [
     { label: 'Trang chủ', href: '/' },
     { label: 'Gái gọi', href: '/girls' },
-    { label: girl.fullName, href: url },
+    { label: displayName, href: url },
   ];
 
   // Structured data for SEO
   const personStructuredData = {
     '@context': 'https://schema.org',
     '@type': 'Person',
-    name: girl.fullName,
+    name: displayName,
     description: description,
     image: girl.images || [imageUrl],
     ...(girl.district && {
@@ -195,8 +206,8 @@ export default async function GirlDetailPage({ params }: PageProps) {
     }),
     aggregateRating: {
       '@type': 'AggregateRating',
-      ratingValue: girl.rating,
-      reviewCount: girl.totalReviews,
+      ratingValue,
+      reviewCount: totalReviews,
       bestRating: 5,
       worstRating: 1,
     },
@@ -239,28 +250,8 @@ export default async function GirlDetailPage({ params }: PageProps) {
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                   <div className="flex-1">
                     <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-text mb-2">
-                      {girl.fullName}
+                      {displayName}
                     </h1>
-                    {girl.bio && (
-                      <ExpandableText 
-                        text={girl.bio} 
-                        maxLength={150}
-                        className="text-text-muted text-sm sm:text-base"
-                      />
-                    )}
-                    {/* Tags */}
-                    {girl.tags && girl.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-4">
-                        {girl.tags.map((tag, index) => (
-                          <span
-                            key={index}
-                            className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium border border-primary/20"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
                   </div>
                   
                   {/* Rating & Status */}
@@ -271,7 +262,7 @@ export default async function GirlDetailPage({ params }: PageProps) {
                           <svg
                             key={i}
                             className={`w-5 h-5 ${
-                              i < Math.floor(girl.rating)
+                              i < Math.floor(ratingValue)
                                 ? 'text-yellow-400 fill-current'
                                 : 'text-secondary/30'
                             }`}
@@ -282,8 +273,8 @@ export default async function GirlDetailPage({ params }: PageProps) {
                           </svg>
                         ))}
                       </div>
-                      <span className="text-text font-bold text-lg">{(girl.rating ?? 0).toFixed(1)}</span>
-                      <span className="text-text-muted text-sm">({girl.totalReviews ?? 0})</span>
+                      <span className="text-text font-bold text-lg">{ratingValue.toFixed(1)}</span>
+                      <span className="text-text-muted text-sm">({totalReviews})</span>
                     </div>
                     
                     {/* Status Badges */}
@@ -327,17 +318,11 @@ export default async function GirlDetailPage({ params }: PageProps) {
             )}
 
             {/* Comments & Reviews Section */}
-            <div className="bg-background-light rounded-2xl p-4 sm:p-6 border border-secondary/30 shadow-lg">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-text">Đánh giá & Bình luận</h2>
-                <button className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors text-sm font-medium cursor-pointer">
-                  Viết đánh giá
-                </button>
-              </div>
-              <div className="text-center py-8 text-text-muted">
-                <p>Chưa có đánh giá nào. Hãy là người đầu tiên đánh giá!</p>
-              </div>
-            </div>
+            <ReviewsSection
+              girlId={girl.id}
+              totalReviews={girl.totalReviews ?? 0}
+              averageRating={(girl.rating ?? (girl as any).ratingAverage ?? 0)}
+            />
           </div>
 
           {/* Right Column - Related Girls */}

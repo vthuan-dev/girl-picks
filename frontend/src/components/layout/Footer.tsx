@@ -10,110 +10,34 @@ export default function Footer() {
   return (
     <footer className="bg-background-light border-t border-secondary/30 mt-auto">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-5 sm:py-10">
-        {/* Top Section: 3 Columns Links */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-10 lg:gap-12 mb-6 sm:mb-10">
-          {/* Liên kết nhanh */}
-          <div>
+        {/* Links grid 2 rows x 3 columns */}
+        <div className="mb-6 sm:mb-10">
             <h3 className="text-text font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Liên kết nhanh</h3>
-            <ul className="space-y-1.5 sm:space-y-2.5">
-              <li>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-2 gap-x-4 sm:gap-y-3 sm:gap-x-6">
                 <Link href="/" className="text-text-muted hover:text-primary transition-colors text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 group cursor-pointer">
                   <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-text-muted rounded-full group-hover:bg-primary transition-colors flex-shrink-0"></span>
                   <span>Trang chủ</span>
                 </Link>
-              </li>
-              <li>
                 <Link href="/girls" className="text-text-muted hover:text-primary transition-colors text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 group cursor-pointer">
                   <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-text-muted rounded-full group-hover:bg-primary transition-colors flex-shrink-0"></span>
                   <span>Gái gọi</span>
                 </Link>
-              </li>
-              <li>
                 <Link href="/chat-sex" className="text-text-muted hover:text-primary transition-colors text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 group cursor-pointer">
                   <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-text-muted rounded-full group-hover:bg-primary transition-colors flex-shrink-0"></span>
                   <span>Chat sex</span>
                 </Link>
-              </li>
-              <li>
                 <Link href="/phim-sex" className="text-text-muted hover:text-primary transition-colors text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 group cursor-pointer">
                   <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-text-muted rounded-full group-hover:bg-primary transition-colors flex-shrink-0"></span>
                   <span>Phim sex</span>
                 </Link>
-              </li>
-              <li>
                 <Link href="/anh-sex" className="text-text-muted hover:text-primary transition-colors text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 group cursor-pointer">
                   <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-text-muted rounded-full group-hover:bg-primary transition-colors flex-shrink-0"></span>
                   <span>Ảnh sex</span>
                 </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Thông tin */}
-          <div>
-            <h3 className="text-text font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Thông tin</h3>
-            <ul className="space-y-1.5 sm:space-y-2.5">
-              <li>
                 <Link href="/quy-dinh" className="text-text-muted hover:text-primary transition-colors text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 group cursor-pointer">
                   <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-text-muted rounded-full group-hover:bg-primary transition-colors flex-shrink-0"></span>
                   <span>Quy định</span>
                 </Link>
-              </li>
-              <li>
-                <Link href="/xac-thuc" className="text-text-muted hover:text-primary transition-colors text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 group cursor-pointer">
-                  <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-text-muted rounded-full group-hover:bg-primary transition-colors flex-shrink-0"></span>
-                  <span>Xác thực</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/thong-bao" className="text-text-muted hover:text-primary transition-colors text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 group cursor-pointer">
-                  <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-text-muted rounded-full group-hover:bg-primary transition-colors flex-shrink-0"></span>
-                  <span>Thông báo</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/tim-mat" className="text-text-muted hover:text-primary transition-colors text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 group cursor-pointer">
-                  <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-text-muted rounded-full group-hover:bg-primary transition-colors flex-shrink-0"></span>
-                  <span>Tìm mặt</span>
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Hỗ trợ */}
-          <div>
-            <h3 className="text-text font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Hỗ trợ</h3>
-            <ul className="space-y-1.5 sm:space-y-2.5">
-              <li>
-                <Link href="/help" className="text-text-muted hover:text-primary transition-colors text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 group cursor-pointer">
-                  <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-text-muted rounded-full group-hover:bg-primary transition-colors flex-shrink-0"></span>
-                  <span>Trung tâm trợ giúp</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/terms" className="text-text-muted hover:text-primary transition-colors text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 group cursor-pointer">
-                  <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-text-muted rounded-full group-hover:bg-primary transition-colors flex-shrink-0"></span>
-                  <span>Điều khoản</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/privacy" className="text-text-muted hover:text-primary transition-colors text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 group cursor-pointer">
-                  <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-text-muted rounded-full group-hover:bg-primary transition-colors flex-shrink-0"></span>
-                  <span>Chính sách bảo mật</span>
-                </Link>
-              </li>
-              <li>
-                <a
-                  href="https://gaigo1.net"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-text-muted hover:text-primary transition-colors text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 group cursor-pointer"
-                >
-                  <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-text-muted rounded-full group-hover:bg-primary transition-colors flex-shrink-0"></span>
-                  <span>Mạng xã hội</span>
-                </a>
-              </li>
-            </ul>
           </div>
         </div>
 

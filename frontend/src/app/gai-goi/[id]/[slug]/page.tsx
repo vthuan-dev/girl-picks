@@ -8,6 +8,7 @@ import ReviewsSection from '@/components/girls/ReviewsSection';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import ViewTracker from '@/components/common/ViewTracker';
 import { Girl } from '@/types/girl';
+import { getGirlById } from '@/lib/api/server-client';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gaigo1.net';
 
@@ -19,142 +20,17 @@ interface PageProps {
   params: Promise<{ id: string; slug: string }>;
 }
 
-// Mock data - Replace with API call later
-function getMockGirl(id: string): Girl | null {
-  const mockGirls: Record<string, Girl> = {
-    'mock-0': {
-      id: 'mock-0',
-      email: 'nguyenthi-a@example.com',
-      username: 'nguyenthi-a',
-      fullName: 'Nguyễn Thị A',
-      role: 'GIRL' as any,
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=1200&h=800&fit=crop',
-      phone: '0901234567',
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      bio: 'Gái gọi chuyên nghiệp, phục vụ tận tình, đảm bảo chất lượng dịch vụ tốt nhất.',
-      verified: true,
-      rating: 4.7,
-      totalReviews: 45,
-      totalBookings: 189,
-      isAvailable: true,
-      districtId: '1',
-      district: {
-        id: '1',
-        name: 'Thuận An',
-        code: 'THUAN_AN',
-      },
-      images: [
-        'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=1200&h=800&fit=crop',
-        'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=1200&h=800&fit=crop',
-        'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=1200&h=800&fit=crop',
-      ],
-      tags: ['Gái xinh', 'Chuyên nghiệp', 'Thuận An'],
-    },
-    '31880': {
-      id: '31880',
-      email: 'anhtuyet@example.com',
-      username: 'anhtuyet',
-      fullName: 'Ánh Tuyết - Cô bé hiền dịu nhẹ nhàng đằm đang rất là chiều khách',
-      role: 'GIRL' as any,
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=1200&h=800&fit=crop',
-      phone: '0865112828',
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      bio: 'Xinh, ngoan, dâm, chịu chơi. Dịch vụ hôn bé tuỳ người. Em rất chiều khách và luôn đảm bảo chất lượng dịch vụ tốt nhất.',
-      verified: true,
-      rating: 4.8,
-      totalReviews: 34,
-      totalBookings: 156,
-      isAvailable: true,
-      districtId: '1',
-      district: {
-        id: '1',
-        name: 'Thuận An',
-        code: 'THUAN_AN',
-      },
-      images: [
-        'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=1200&h=800&fit=crop',
-        'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=1200&h=800&fit=crop',
-        'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=1200&h=800&fit=crop',
-        'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=1200&h=800&fit=crop',
-      ],
-      tags: ['Gái xinh', 'vừa to', 'gái gọi Thuận An', 'Chiều khách', 'Dịch vụ tốt'],
-    },
-    '31881': {
-      id: '31881',
-      email: 'phuongbaby@example.com',
-      username: 'phuongbaby',
-      fullName: 'PHƯƠNG BABY GÁI DÂM-SKILL SEX',
-      role: 'GIRL' as any,
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1200&h=800&fit=crop',
-      phone: '0901234567',
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      bio: 'Gái dâm, skill sex tốt, chiều khách mọi yêu cầu.',
-      verified: true,
-      rating: 4.5,
-      totalReviews: 28,
-      totalBookings: 203,
-      isAvailable: true,
-      districtId: '1',
-      district: {
-        id: '1',
-        name: 'Thuận An',
-        code: 'THUAN_AN',
-      },
-      images: [
-        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1200&h=800&fit=crop',
-        'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=1200&h=800&fit=crop',
-      ],
-      tags: ['Skill tốt', 'Dâm', 'Thuận An'],
-    },
-  };
-
-  // If ID exists in mock data, return it
-  if (mockGirls[id]) {
-    return mockGirls[id];
-  }
-
-  // Fallback: Generate mock data for any ID (for testing)
-  return {
-    id,
-    email: `${id}@example.com`,
-    username: id,
-    fullName: `Gái gọi ${id}`,
-    role: 'GIRL' as any,
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=1200&h=800&fit=crop',
-    phone: '0901234567',
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    bio: 'Thông tin chi tiết về gái gọi. Dịch vụ chuyên nghiệp, đảm bảo chất lượng.',
-    verified: false,
-    rating: 4.5,
-    totalReviews: 0,
-    totalBookings: 0,
-    isAvailable: true,
-    districtId: '1',
-    district: {
-      id: '1',
-      name: 'Thuận An',
-      code: 'THUAN_AN',
-    },
-    images: [
-      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=1200&h=800&fit=crop',
-      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=1200&h=800&fit=crop',
-    ],
-    tags: ['Gái gọi', 'Chuyên nghiệp'],
-  };
-}
-
 // Generate metadata for SEO
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
-  const girl = getMockGirl(id);
+  let girl: Girl | null = null;
+
+  try {
+    const { data } = await getGirlById(id);
+    girl = data as Girl;
+  } catch (error) {
+    console.error('Failed to load girl for metadata', error);
+  }
 
   if (!girl) {
     return {
@@ -162,9 +38,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
-  const title = `${girl.fullName} - Gái gọi ${girl.district?.name || ''} | Tìm Gái gọi`;
-  const description = girl.bio || `Thông tin chi tiết về ${girl.fullName}. ${girl.district?.name ? `Khu vực: ${girl.district.name}.` : ''} Xem ảnh, đánh giá và đặt lịch ngay.`;
-  const imageUrl = girl.images?.[0] || girl.avatar || `${siteUrl}/images/logo/logo.png`;
+  const displayName = girl.name || girl.fullName || girl.username || 'Gái gọi';
+  const title = `${displayName} - Gái gọi ${girl.district?.name || ''} | Tìm Gái gọi`;
+  const description = girl.bio || `Thông tin chi tiết về ${displayName}. ${girl.district?.name ? `Khu vực: ${girl.district.name}.` : ''} Xem ảnh, đánh giá và đặt lịch ngay.`;
+  const imageUrl = girl.images?.[0] || (girl as any).avatar || `${siteUrl}/images/logo/logo.png`;
   const { slug } = await params;
   const url = `${siteUrl}/gai-goi/${id}/${slug}`;
 
@@ -172,7 +49,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title,
     description,
     keywords: [
-      girl.fullName,
+      displayName,
       'gái gọi',
       girl.district?.name || '',
       'gaigu',
@@ -192,7 +69,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
           url: imageUrl,
           width: 1200,
           height: 630,
-          alt: girl.fullName,
+          alt: displayName,
         },
       ],
     },
@@ -218,15 +95,34 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function GirlDetailPage({ params }: PageProps) {
   const { id } = await params;
-  const girl = getMockGirl(id);
+  let girl: Girl | null = null;
+
+  try {
+    const { data } = await getGirlById(id);
+    if (data) {
+      const g = data as Girl;
+      // Normalize name to ensure heading is populated
+      const normalizedName = g.name || g.fullName || g.username || g.slug || g.bio || undefined;
+      girl = {
+        ...g,
+        name: normalizedName || g.name,
+        fullName: g.fullName || normalizedName,
+      };
+    }
+  } catch (error) {
+    console.error('Failed to load girl', error);
+  }
 
   if (!girl) {
     notFound();
   }
 
-  const imageUrl = girl.images?.[0] || girl.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=1200&h=800&fit=crop';
-  const title = `${girl.fullName} - Gái gọi ${girl.district?.name || ''}`;
-  const description = girl.bio || `Thông tin chi tiết về ${girl.fullName}`;
+  const displayName = girl.name || girl.fullName || girl.username || 'Gái gọi';
+  const imageUrl = girl.images?.[0] || (girl as any).avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=1200&h=800&fit=crop';
+  const ratingValue = (girl.rating ?? girl.ratingAverage ?? 0);
+  const totalReviews = girl.totalReviews ?? 0;
+  const title = `${displayName} - Gái gọi ${girl.district?.name || ''}`;
+  const description = girl.bio || `Thông tin chi tiết về ${displayName}`;
   const { slug } = await params;
   const url = `${siteUrl}/gai-goi/${id}/${slug}`;
 
@@ -234,14 +130,14 @@ export default async function GirlDetailPage({ params }: PageProps) {
   const breadcrumbs = [
     { label: 'Trang chủ', href: '/' },
     { label: 'Gái gọi', href: '/girls' },
-    { label: girl.fullName, href: url },
+    { label: displayName, href: url },
   ];
 
   // Structured data for SEO
   const personStructuredData = {
     '@context': 'https://schema.org',
     '@type': 'Person',
-    name: girl.fullName,
+    name: displayName,
     description: description,
     image: girl.images || [imageUrl],
     ...(girl.district && {
@@ -257,8 +153,8 @@ export default async function GirlDetailPage({ params }: PageProps) {
     }),
     aggregateRating: {
       '@type': 'AggregateRating',
-      ratingValue: girl.rating,
-      reviewCount: girl.totalReviews,
+      ratingValue,
+      reviewCount: totalReviews,
       bestRating: 5,
       worstRating: 1,
     },
@@ -301,7 +197,7 @@ export default async function GirlDetailPage({ params }: PageProps) {
                 {/* Name & Bio */}
                 <div className="mb-4">
                   <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-text mb-3">
-                    {girl.fullName}
+                    {displayName}
                   </h1>
                   {girl.bio && (
                     <p className="text-text-muted text-sm sm:text-base leading-relaxed mb-4">
@@ -330,8 +226,8 @@ export default async function GirlDetailPage({ params }: PageProps) {
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-1">
                       {[...Array(5)].map((_, i) => {
-                        const isHalf = i < girl.rating && i + 1 > girl.rating;
-                        const isFull = i < Math.floor(girl.rating);
+                        const isHalf = i < ratingValue && i + 1 > ratingValue;
+                        const isFull = i < Math.floor(ratingValue);
                         return (
                           <div key={i} className="relative">
                             <svg
@@ -361,8 +257,8 @@ export default async function GirlDetailPage({ params }: PageProps) {
                       })}
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-text font-bold text-lg sm:text-xl">{girl.rating.toFixed(1)}</span>
-                      <span className="text-text-muted text-sm sm:text-base">({girl.totalReviews} đánh giá)</span>
+                      <span className="text-text font-bold text-lg sm:text-xl">{ratingValue.toFixed(1)}</span>
+                      <span className="text-text-muted text-sm sm:text-base">({totalReviews} đánh giá)</span>
                     </div>
                   </div>
                   
@@ -392,7 +288,7 @@ export default async function GirlDetailPage({ params }: PageProps) {
               </div>
 
               {/* Gallery */}
-              <GirlGallery images={girl.images || [imageUrl]} name={girl.fullName} />
+              <GirlGallery images={girl.images || [imageUrl]} name={displayName} />
 
               {/* Info Card */}
               <GirlInfoCard girl={girl} />

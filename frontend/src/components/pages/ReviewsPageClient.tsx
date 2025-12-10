@@ -6,6 +6,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { Review } from '@/modules/reviews/api/reviews.api';
 import { getGirlDetailUrl, generateSlug } from '@/lib/utils/slug';
+import { useAuthStore } from '@/store/auth.store';
+import toast from 'react-hot-toast';
 
 export default function ReviewsPageClient() {
   const [page, setPage] = useState(1);
@@ -120,6 +122,15 @@ export default function ReviewsPageClient() {
 
 
 function ReviewCard({ review, formatDate }: { review: Review; formatDate: (date: string) => string }) {
+  const { isAuthenticated, user } = useAuthStore();
+  const requireAuth = () => {
+    if (!isAuthenticated || !user) {
+      toast.error('Vui lòng đăng nhập để thực hiện thao tác này');
+      return false;
+    }
+    return true;
+  };
+
   const girlId = (review as any)?.girlId || review.girl?.id;
   const girlName = review.girl?.name || 'Xem bài gốc';
   const girlSlug = (review as any)?.girl?.slug as string | undefined;
@@ -210,6 +221,7 @@ function ReviewCard({ review, formatDate }: { review: Review; formatDate: (date:
                 key={index} 
                 className="relative overflow-hidden rounded-xl bg-secondary/20 group cursor-pointer"
                 style={{ aspectRatio: '4 / 5' }}
+                onClick={() => window.open(imageUrl, '_blank')}
               >
                 <Image
                   src={imageUrl}
@@ -226,19 +238,37 @@ function ReviewCard({ review, formatDate }: { review: Review; formatDate: (date:
 
       {/* Footer */}
       <div className="px-4 py-3 border-t border-secondary/20 flex items-center gap-4">
-        <button className="flex items-center gap-1.5 text-text-muted hover:text-primary transition-colors cursor-pointer">
+        <button
+          onClick={() => {
+            if (!requireAuth()) return;
+            toast('Tính năng thích sẽ sớm được cập nhật.');
+          }}
+          className="flex items-center gap-1.5 text-text-muted hover:text-primary transition-colors cursor-pointer"
+        >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
           </svg>
           <span className="text-sm">{review._count?.likes || 0} thích</span>
         </button>
-        <button className="flex items-center gap-1.5 text-text-muted hover:text-primary transition-colors cursor-pointer">
+        <button
+          onClick={() => {
+            if (!requireAuth()) return;
+            toast('Tính năng bình luận sẽ sớm được cập nhật.');
+          }}
+          className="flex items-center gap-1.5 text-text-muted hover:text-primary transition-colors cursor-pointer"
+        >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
           </svg>
           <span className="text-sm">{review._count?.comments || 0} bình luận</span>
         </button>
-        <button className="flex items-center gap-1.5 text-text-muted hover:text-primary transition-colors cursor-pointer ml-auto">
+        <button
+          onClick={() => {
+            if (!requireAuth()) return;
+            toast('Tính năng chia sẻ sẽ sớm được cập nhật.');
+          }}
+          className="flex items-center gap-1.5 text-text-muted hover:text-primary transition-colors cursor-pointer ml-auto"
+        >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
           </svg>

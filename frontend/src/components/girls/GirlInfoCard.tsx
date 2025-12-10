@@ -1,33 +1,43 @@
 'use client';
 
 import { Girl } from '@/types/girl';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 interface GirlInfoCardProps {
   girl: Girl;
   tags?: string[];
 }
 
-// Mock data for additional fields (in real app, these should come from API)
-const getAdditionalInfo = (girl: Girl) => {
-  // In production, these should be part of the Girl type/API
-  return {
-    price: '350K', // Should come from API
-    birthYear: 1995, // Should come from API
-    height: 165, // cm - Should come from API
-    weight: 56, // kg - Should come from API
-    measurements: '90-69-91', // Should come from API
-    origin: 'Miền Bắc', // Should come from API
-    address: girl.district ? `${girl.district.name}, Việt Nam` : 'Chưa cập nhật',
-    workingHours: '24/7 - Gọi còn nghe vẫn còn làm',
-    services: ['Qua đêm', 'Hôn môi', 'Vét máng', 'BJ'], // Should come from API
-  };
-};
-
 export default function GirlInfoCard({ girl, tags }: GirlInfoCardProps) {
   const [copied, setCopied] = useState(false);
   const [showToast, setShowToast] = useState(false);
-  const info = getAdditionalInfo(girl);
+  const info = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const derivedBirthYear =
+      girl.birthYear ||
+      (girl.age ? currentYear - girl.age : undefined);
+
+    return {
+      price: girl.price || 'Chưa cập nhật',
+      birthYear: derivedBirthYear,
+      height: girl.height || 'Chưa cập nhật',
+      weight: girl.weight || 'Chưa cập nhật',
+      measurements: girl.measurements || 'Chưa cập nhật',
+      origin: girl.origin || 'Chưa cập nhật',
+      address:
+        girl.address ||
+        girl.location ||
+        (girl.district ? `${girl.district.name}${girl.province ? `, ${girl.province}` : ''}` : 'Chưa cập nhật'),
+      workingHours: girl.workingHours || 'Chưa cập nhật',
+      services: Array.isArray(girl.services) && girl.services.length > 0 ? girl.services : [],
+    };
+  }, [girl]);
+  // Prefer explicit tags prop; fallback to tags coming from API (girl.tags)
+  const displayTags: string[] = Array.isArray(tags) && tags.length > 0
+    ? tags
+    : Array.isArray(girl.tags)
+      ? girl.tags
+      : [];
 
   const copyPhone = () => {
     if (girl.phone) {
@@ -78,7 +88,7 @@ export default function GirlInfoCard({ girl, tags }: GirlInfoCardProps) {
     },
     {
       label: 'Năm sinh',
-      value: info.birthYear.toString(),
+      value: info.birthYear ? info.birthYear.toString() : 'Chưa cập nhật',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -280,16 +290,16 @@ export default function GirlInfoCard({ girl, tags }: GirlInfoCardProps) {
       </div>
 
       {/* Tags Section - Below Share Button */}
-      {tags && tags.length > 0 && (
+      {displayTags.length > 0 && (
         <div className="mt-4 pt-4 border-t border-secondary/30">
           <div className="flex flex-wrap items-center gap-1 text-sm leading-relaxed">
             <span className="text-pink-500">❤️</span>
-            {tags.map((tag, index) => (
+            {displayTags.map((tag, index) => (
               <span key={index}>
                 <span className="text-primary hover:text-primary-hover cursor-pointer">
                   #{tag}
                 </span>
-                {index < tags.length - 1 && (
+                {index < displayTags.length - 1 && (
                   <span className="text-pink-500 mx-1">❤️</span>
                 )}
               </span>

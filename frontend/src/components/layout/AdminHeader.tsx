@@ -56,14 +56,15 @@ function AdminHeader() {
     try {
       setIsLoadingNotifications(true);
       const [notifs, count] = await Promise.all([
-        adminApi.getNotifications(true, 10),
-        adminApi.getUnreadCount(),
+        adminApi.getNotifications(true, 10).catch(() => []), // Return empty array on error
+        adminApi.getUnreadCount().catch(() => 0), // Return 0 on error
       ]);
       setNotifications(notifs || []);
       setUnreadCount(count || 0);
     } catch (error: any) {
-      console.error('Error loading notifications:', error);
-      // Silent fail for notifications
+      // Silent fail for notifications - endpoints may not exist yet
+      setNotifications([]);
+      setUnreadCount(0);
     } finally {
       setIsLoadingNotifications(false);
     }
@@ -73,9 +74,10 @@ function AdminHeader() {
   useEffect(() => {
     // Only load if component is mounted
     if (typeof window !== 'undefined') {
-      loadNotifications();
-      const interval = setInterval(loadNotifications, 30000); // Refresh every 30 seconds
-      return () => clearInterval(interval);
+      // Disable notifications polling for now - endpoints don't exist
+      // loadNotifications();
+      // const interval = setInterval(loadNotifications, 30000); // Refresh every 30 seconds
+      // return () => clearInterval(interval);
     }
   }, [loadNotifications]);
 

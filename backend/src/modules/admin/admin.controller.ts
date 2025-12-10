@@ -104,10 +104,40 @@ export class AdminController {
 
   @Post('girls')
   @Roles(UserRole.ADMIN, UserRole.STAFF_UPLOAD)
-  @ApiOperation({ summary: 'Create girl profile (Admin/Staff only)' })
-  @ApiResponse({ status: 201, description: 'Girl created' })
+  @ApiOperation({ summary: 'Create girl user account (Admin/Staff only) - Only creates user, not girl profile' })
+  @ApiResponse({ status: 201, description: 'Girl user created' })
   createGirl(@Body() createGirlDto: CreateGirlDto) {
     return this.adminService.createGirl(createGirlDto);
+  }
+
+  @Post('girls/:userId/profile')
+  @Roles(UserRole.ADMIN, UserRole.STAFF_UPLOAD)
+  @ApiOperation({ summary: 'Create girl profile from existing user (Admin/Staff only)' })
+  @ApiResponse({ status: 201, description: 'Girl profile created' })
+  createGirlProfile(
+    @Param('userId') userId: string,
+    @Body() profileDto: {
+      bio?: string;
+      districts?: string[];
+      images?: string[];
+      age?: number;
+      name?: string;
+    },
+  ) {
+    return this.adminService.createGirlProfileFromUser(userId, profileDto);
+  }
+
+  @Get('girls/without-profile')
+  @Roles(UserRole.ADMIN, UserRole.STAFF_UPLOAD)
+  @ApiOperation({ summary: 'Get GIRL users without girl profile (Admin/Staff only)' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'List of users without profiles' })
+  getGirlsWithoutProfile(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page?: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
+  ) {
+    return this.adminService.getGirlsWithoutProfile(page, limit);
   }
 
   @Patch('girls/:id')

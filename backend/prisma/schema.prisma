@@ -172,6 +172,11 @@ model Girl {
   verificationDocuments   Json               @default("[]") // Array of document URLs stored as JSON
   verificationRequestedAt DateTime?
   verificationVerifiedAt  DateTime?
+  // Reverification & identity
+  idCardFrontUrl String?
+  idCardBackUrl  String?
+  selfieUrl      String?
+  needsReverify  Boolean @default(false)
 
   // Statistics
   viewCount     Int @default(0)

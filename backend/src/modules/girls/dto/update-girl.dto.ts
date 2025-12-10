@@ -1,5 +1,12 @@
-import { IsString, IsArray, IsOptional, IsInt, IsBoolean } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsString,
+  IsArray,
+  IsOptional,
+  IsInt,
+  IsBoolean,
+  IsNotEmpty,
+} from 'class-validator';
+import { ApiPropertyOptional, ApiProperty } from '@nestjs/swagger';
 
 export class UpdateGirlDto {
   @ApiPropertyOptional({ description: 'Bio/Description' })
@@ -99,4 +106,29 @@ export class UpdateGirlDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  // Identity verification (required for self-update flow)
+  @ApiProperty({
+    description: 'CCCD/ID card front image URL',
+    required: true,
+  })
+  @IsString()
+  @IsNotEmpty()
+  idCardFrontUrl: string;
+
+  @ApiProperty({
+    description: 'CCCD/ID card back image URL',
+    required: true,
+  })
+  @IsString()
+  @IsNotEmpty()
+  idCardBackUrl: string;
+
+  @ApiProperty({
+    description: 'Selfie (face) image URL',
+    required: true,
+  })
+  @IsString()
+  @IsNotEmpty()
+  selfieUrl: string;
 }

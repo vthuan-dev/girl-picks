@@ -2,6 +2,7 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
@@ -374,6 +375,7 @@ export class AdminService {
 
     const hashedPassword = await hashPassword(dto.password);
 
+    // Chỉ tạo user, không tạo girl record ngay
     const user = await this.prisma.user.create({
       data: {
         email: dto.email,
@@ -392,6 +394,43 @@ export class AdminService {
       },
     });
 
+    return {
+      user,
+      needsProfileSetup: true, // Flag để frontend biết cần setup profile
+    };
+  }
+
+  // Tạo girl record từ user đã có
+  async createGirlProfileFromUser(userId: string, dto: {
+    bio?: string;
+    districts?: string[];
+    images?: string[];
+    age?: number;
+    name?: string;
+  }) {
+    // Kiểm tra user có tồn tại và là GIRL
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.role !== UserRole.GIRL) {
+      throw new BadRequestException('User is not a GIRL');
+    }
+
+    // Kiểm tra đã có girl record chưa
+    const existingGirl = await this.prisma.girl.findUnique({
+      where: { userId },
+    });
+
+    if (existingGirl) {
+      throw new ConflictException('Girl profile already exists for this user');
+    }
+
+    // Tạo girl record
     const girl = await this.prisma.girl.create({
       data: {
         userId: user.id,
@@ -399,13 +438,63 @@ export class AdminService {
         districts: dto.districts || [],
         images: dto.images || [],
         age: dto.age,
-        name: dto.fullName,
+        name: dto.name || user.fullName,
+        verificationStatus: VerificationStatus.PENDING,
+        needsReverify: false,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            phone: true,
+            avatarUrl: true,
+          },
+        },
       },
     });
 
+    return girl;
+  }
+
+  // Lấy users có role GIRL nhưng chưa có girl record
+  async getGirlsWithoutProfile(page = 1, limit = 20) {
+    const [users, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where: {
+          role: UserRole.GIRL,
+          girl: null, // Chưa có girl record
+        },
+        select: {
+          id: true,
+          email: true,
+          fullName: true,
+          phone: true,
+          avatarUrl: true,
+          createdAt: true,
+          isActive: true,
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.user.count({
+        where: {
+          role: UserRole.GIRL,
+          girl: null,
+        },
+      }),
+    ]);
+
     return {
-      user,
-      girl,
+      data: users,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 

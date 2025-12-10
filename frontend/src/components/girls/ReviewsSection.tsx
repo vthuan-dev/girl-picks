@@ -55,6 +55,15 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
   const [loadingLikes, setLoadingLikes] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  const requireAuth = () => {
+    if (!isAuthenticated || !user) {
+      toast.error('Vui lòng đăng nhập để thực hiện thao tác này');
+      router.push('/auth/login');
+      return false;
+    }
+    return true;
+  };
+
   // Load reviews from API
   useEffect(() => {
     loadReviews();
@@ -122,10 +131,7 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isAuthenticated || !user) {
-      router.push('/auth/login');
-      return;
-    }
+    if (!requireAuth()) return;
     if (rating === 0) {
       toast.error('Vui lòng chọn số sao đánh giá');
       return;
@@ -209,10 +215,7 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
   };
 
   const handleToggleLike = async (reviewId: string) => {
-    if (!isAuthenticated || !user) {
-      router.push('/auth/login');
-      return;
-    }
+    if (!requireAuth()) return;
 
     try {
       setLoadingLikes((prev) => new Set(prev).add(reviewId));
@@ -323,12 +326,12 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
             </div>
           </div>
         </div>
-        {/* Only show button if there are reviews */}
-        {!loading && reviews.length > 0 && (
-          <>
-            {isAuthenticated && user ? (
+        {!loading && (
               <button
-                onClick={() => setShowReviewForm(!showReviewForm)}
+            onClick={() => {
+              if (!requireAuth()) return;
+              setShowReviewForm(!showReviewForm);
+            }}
                 className="px-6 py-3 bg-gradient-to-r from-primary to-primary-hover text-white rounded-xl hover:shadow-xl hover:shadow-primary/30 active:scale-95 transition-all font-semibold cursor-pointer flex items-center justify-center gap-2.5 flex-shrink-0 text-base"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -336,18 +339,6 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
                 </svg>
                 Viết đánh giá
               </button>
-            ) : (
-              <Link
-                href="/auth/login"
-                className="px-6 py-3 bg-gradient-to-r from-primary to-primary-hover text-white rounded-xl hover:shadow-xl hover:shadow-primary/30 active:scale-95 transition-all font-semibold cursor-pointer flex items-center justify-center gap-2.5 flex-shrink-0 text-base"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                </svg>
-                Đăng nhập để đánh giá
-              </Link>
-            )}
-          </>
         )}
       </div>
 
@@ -704,7 +695,13 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
                   )}
                   <span>Thích ({review.likes})</span>
                 </button>
-                <button className="flex items-center gap-2 text-text-muted hover:text-primary transition-colors text-sm cursor-pointer">
+                <button
+                  onClick={() => {
+                    if (!requireAuth()) return;
+                    toast('Tính năng phản hồi sẽ sớm được cập nhật.');
+                  }}
+                  className="flex items-center gap-2 text-text-muted hover:text-primary transition-colors text-sm cursor-pointer"
+                >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                   </svg>
