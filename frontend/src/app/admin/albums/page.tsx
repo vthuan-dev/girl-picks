@@ -399,7 +399,7 @@ export default function AdminAlbumsPage() {
           </div>
         )}
       </div>
-      <Modal open={manageOpen} onClose={() => setManageOpen(false)} title={manageAlbum?.title || 'Quản lý album'}>
+      <Modal isOpen={manageOpen} onClose={() => setManageOpen(false)} title={manageAlbum?.title || 'Quản lý album'}>
         {manageLoading && <p className="text-text-muted text-sm">Đang tải...</p>}
         {!manageLoading && manageAlbum && (
           <div className="space-y-4">
