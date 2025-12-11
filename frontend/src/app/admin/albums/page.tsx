@@ -7,6 +7,8 @@ import { albumsApi } from '@/modules/albums/api/albums.api';
 import { useRouter } from 'next/navigation';
 import { albumCategoriesApi, AlbumCategory } from '@/modules/albums/api/albumCategories.api';
 import { tagsApi } from '@/modules/tags/api/tags.api';
+import Modal from '@/components/common/Modal';
+import Button from '@/components/common/Button';
 
 type CreateAlbumForm = {
   title: string;
@@ -32,6 +34,10 @@ export default function AdminAlbumsPage() {
   const [loadingMeta, setLoadingMeta] = useState(false);
   const [addingImagesFor, setAddingImagesFor] = useState<string | null>(null);
   const [addFiles, setAddFiles] = useState<File[]>([]);
+  const [manageAlbum, setManageAlbum] = useState<any | null>(null);
+  const [manageOpen, setManageOpen] = useState(false);
+  const [manageLoading, setManageLoading] = useState(false);
+  const [deletingImage, setDeletingImage] = useState<string | null>(null);
 
   const fetchAlbums = async () => {
     setLoading(true);
@@ -125,6 +131,37 @@ export default function AdminAlbumsPage() {
       fetchAlbums();
     } catch (error: any) {
       toast.error(error?.response?.data?.message || 'Xóa album thất bại');
+    }
+  };
+
+  const openManageAlbum = async (id: string) => {
+    setManageLoading(true);
+    try {
+      const detail = await albumsApi.getById(id);
+      setManageAlbum(detail);
+      setManageOpen(true);
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Không tải được album');
+      setManageAlbum(null);
+      setManageOpen(false);
+    } finally {
+      setManageLoading(false);
+    }
+  };
+
+  const deleteImage = async (imageId: string, albumId: string) => {
+    if (!confirm('Xóa ảnh này?')) return;
+    try {
+      setDeletingImage(imageId);
+      await albumsApi.deleteImage(imageId);
+      const detail = await albumsApi.getById(albumId);
+      setManageAlbum(detail);
+      fetchAlbums();
+      toast.success('Đã xóa ảnh');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Xóa ảnh thất bại');
+    } finally {
+      setDeletingImage(null);
     }
   };
 
@@ -304,7 +341,7 @@ export default function AdminAlbumsPage() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
             {albumList.map((album) => (
-              <div key={album.id} className="bg-background border border-secondary/40 rounded-xl overflow-hidden hover:border-primary/50 transition-all">
+              <div key={album.id} className="group bg-background border border-secondary/40 rounded-xl overflow-hidden hover:border-primary/50 transition-all relative">
                 <div className="relative w-full aspect-[4/5] bg-background-light">
                   {album.coverUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -315,36 +352,44 @@ export default function AdminAlbumsPage() {
                   <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-lg">
                     {(album._count?.images || 0)} ảnh
                   </div>
+                  <div className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center px-3">
+                    <div className="flex flex-col w-full gap-2 text-xs text-white">
+                      <button
+                        onClick={() => router.push(`/anh-sex/${album.id}`)}
+                        className="w-full px-3 py-2 bg-primary rounded-lg hover:bg-primary/90 text-center"
+                      >
+                        Xem chi tiết
+                      </button>
+                      <label className="w-full px-3 py-2 bg-background/80 border border-secondary/50 rounded-lg cursor-pointer hover:border-primary hover:text-primary text-center">
+                        Thêm ảnh
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={(e) => handlePickAddImages(album.id, e)}
+                          className="hidden"
+                        />
+                      </label>
+                      <button
+                        onClick={() => openManageAlbum(album.id)}
+                        className="w-full px-3 py-2 bg-background/80 border border-secondary/50 rounded-lg hover:border-primary hover:text-primary text-center"
+                      >
+                        Quản lý / Xóa ảnh
+                      </button>
+                      <button
+                        onClick={() => handleDeleteAlbum(album.id)}
+                        className="w-full px-3 py-2 bg-red-600 rounded-lg hover:bg-red-500 text-center"
+                      >
+                        Xóa album
+                      </button>
+                    </div>
+                  </div>
                 </div>
                 <div className="p-3 space-y-1">
                   <p className="text-sm font-semibold text-text line-clamp-2">{album.title}</p>
                   <p className="text-xs text-text-muted">
                     {album.category || 'Chưa phân loại'}
                   </p>
-                  <div className="flex items-center gap-2 pt-2">
-                    <button
-                      onClick={() => router.push(`/anh-sex/${album.id}`)}
-                      className="text-xs text-primary hover:underline"
-                    >
-                      Xem album
-                    </button>
-                    <label className="text-xs text-primary hover:underline cursor-pointer">
-                      Thêm ảnh
-                      <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={(e) => handlePickAddImages(album.id, e)}
-                        className="hidden"
-                      />
-                    </label>
-                    <button
-                      onClick={() => handleDeleteAlbum(album.id)}
-                      className="text-xs text-red-500 hover:underline"
-                    >
-                      Xóa
-                    </button>
-                  </div>
                   {addingImagesFor === album.id && (
                     <p className="text-xs text-text-muted">Đang thêm ảnh...</p>
                   )}
@@ -354,6 +399,29 @@ export default function AdminAlbumsPage() {
           </div>
         )}
       </div>
+      <Modal open={manageOpen} onClose={() => setManageOpen(false)} title={manageAlbum?.title || 'Quản lý album'}>
+        {manageLoading && <p className="text-text-muted text-sm">Đang tải...</p>}
+        {!manageLoading && manageAlbum && (
+          <div className="space-y-4">
+            <p className="text-sm text-text-muted">Danh mục: {manageAlbum.category || 'Chưa phân loại'}</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {manageAlbum.images?.map((img: any) => (
+                <div key={img.id} className="relative rounded-lg overflow-hidden border border-secondary/30">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={img.url} alt={manageAlbum.title} className="w-full h-full object-cover" />
+                  <button
+                    onClick={() => deleteImage(img.id, manageAlbum.id)}
+                    className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded"
+                    disabled={deletingImage === img.id}
+                  >
+                    {deletingImage === img.id ? '...' : 'Xóa'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

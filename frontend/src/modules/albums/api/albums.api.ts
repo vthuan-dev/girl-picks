@@ -37,13 +37,17 @@ export const albumsApi = {
     if (params?.page) search.append('page', String(params.page));
     if (params?.limit) search.append('limit', String(params.limit));
     if (params?.category) search.append('category', params.category);
-    const resp = await apiClient.get<PaginatedAlbums>(`/albums${search.toString() ? `?${search.toString()}` : ''}`);
-    return resp.data;
+    const resp = await apiClient.get<any>(`/albums${search.toString() ? `?${search.toString()}` : ''}`);
+    const body = resp.data;
+    if (body?.success && body?.data) return body.data as PaginatedAlbums;
+    return body as PaginatedAlbums;
   },
 
   getById: async (id: string): Promise<Album> => {
-    const resp = await apiClient.get<Album>(`/albums/${id}`);
-    return resp.data;
+    const resp = await apiClient.get<any>(`/albums/${id}`);
+    const body = resp.data;
+    if (body?.success && body?.data) return body.data as Album;
+    return body as Album;
   },
 
   create: async (data: {
