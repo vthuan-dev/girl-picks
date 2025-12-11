@@ -65,7 +65,7 @@ export default function GirlCard({ girl, index = 0 }: GirlCardInternalProps) {
           <div className="absolute top-2 right-2 bg-background/95 backdrop-blur-md px-2 py-1 rounded-lg flex items-center gap-1.5 shadow-xl z-10">
             <div className="flex items-center gap-0.5">
               {[...Array(5)].map((_, i) => {
-                const rating = girl.rating || 0;
+                const rating = girl.rating ?? girl.ratingAverage ?? 0;
                 const filled = i < Math.floor(rating);
                 const halfFilled = i === Math.floor(rating) && rating % 1 >= 0.5;
                 return (
@@ -86,8 +86,12 @@ export default function GirlCard({ girl, index = 0 }: GirlCardInternalProps) {
                 );
               })}
             </div>
-            <span className="text-text font-bold text-sm">{girl.rating.toFixed(1)}</span>
-            <span className="text-text-muted text-xs hidden sm:inline">({girl.totalReviews})</span>
+            <span className="text-text font-bold text-sm">
+              {(girl.rating ?? girl.ratingAverage ?? 0).toFixed(1)}
+            </span>
+            <span className="text-text-muted text-xs hidden sm:inline">
+              ({girl.totalReviews ?? 0})
+            </span>
           </div>
         </div>
         
@@ -122,7 +126,7 @@ export default function GirlCard({ girl, index = 0 }: GirlCardInternalProps) {
           <div className="flex items-center gap-2 mb-2">
             <div className="flex items-center gap-0.5">
               {[...Array(5)].map((_, i) => {
-                const rating = girl.rating || 0;
+                const rating = girl.rating ?? girl.ratingAverage ?? 0;
                 const filled = i < Math.floor(rating);
                 const halfFilled = i === Math.floor(rating) && rating % 1 >= 0.5;
                 return (
@@ -144,10 +148,10 @@ export default function GirlCard({ girl, index = 0 }: GirlCardInternalProps) {
               })}
             </div>
             <span className="text-text font-semibold text-xs">
-              {(girl.rating || 0).toFixed(1)}
+              {(girl.rating ?? girl.ratingAverage ?? 0).toFixed(1)}
             </span>
             <span className="text-text-muted text-xs">
-              ({girl.totalReviews || 0})
+              ({girl.totalReviews ?? 0})
             </span>
           </div>
           

@@ -102,11 +102,11 @@ export default async function GirlDetailPage({ params }: PageProps) {
     if (data) {
       const g = data as Girl;
       // Normalize name to ensure heading is populated
-      const normalizedName = g.name || g.fullName || g.username || g.slug || g.bio || undefined;
+      const normalizedName = g.name || g.fullName || g.username || g.slug || g.bio || '';
       girl = {
         ...g,
-        name: normalizedName || g.name,
-        fullName: g.fullName || normalizedName,
+        name: normalizedName || g.name || g.fullName || '',
+        fullName: g.fullName || normalizedName || g.name || '',
       };
     }
   } catch (error) {

@@ -138,14 +138,14 @@ export const girlsApi = {
     try {
       const response = await apiClient.post<any>(`/admin/girls`, data);
       // Backend returns { success: true, data: { user, needsProfileSetup } }
-      const unwrapped = unwrapResponse(response.data);
+      const unwrapped: any = unwrapResponse(response.data);
       // Ensure we return the correct format
       if (unwrapped && unwrapped.user) {
-        return unwrapped;
+        return unwrapped as { user: any; needsProfileSetup: boolean };
       }
       // Fallback: if response.data is already the object
       if (response.data && response.data.user) {
-        return response.data;
+        return response.data as { user: any; needsProfileSetup: boolean };
       }
       throw new Error('Invalid response format');
     } catch (error: any) {

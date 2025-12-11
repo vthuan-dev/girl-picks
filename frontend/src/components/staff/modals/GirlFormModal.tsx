@@ -137,16 +137,24 @@ export default function GirlFormModal({ isOpen, onClose, onSuccess, girl }: Girl
         });
         toast.success('Cập nhật gái gọi thành công');
       } else {
-        await girlsApi.createAdmin({
+        const result = await girlsApi.createAdmin({
           email: data.email,
           password: data.password || 'Default123!',
           fullName: data.fullName,
           phone: data.phone,
-          bio: data.bio,
-          age: data.age,
-          districts: data.districts,
-          images: data.images,
         });
+
+        const userId = (result as any)?.user?.id || (result as any)?.userId;
+        if (userId) {
+          await girlsApi.createGirlProfile(userId, {
+            name: data.fullName,
+            bio: data.bio,
+            districts: data.districts,
+            images: data.images,
+            age: data.age,
+          });
+        }
+
         toast.success('Tạo gái gọi thành công');
       }
       onSuccess();
