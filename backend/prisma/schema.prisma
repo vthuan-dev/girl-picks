@@ -82,6 +82,7 @@ enum NotificationType {
   REVIEW_REJECTED
   COMMENT_REPLY
   NEW_MESSAGE
+  GIRL_PENDING_APPROVAL
   VERIFICATION_APPROVED
   VERIFICATION_REJECTED
   BOOKING_CREATED
@@ -131,6 +132,7 @@ model User {
   approvedPosts    Post[]          @relation("ApprovedBy")
   approvedReviews  Review[]        @relation("ApprovedBy")
   reviewedReports  Report[]        @relation("ReviewedBy")
+  albums           Album[]         @relation("AlbumAuthor")
 
   @@map("users")
 }
@@ -243,6 +245,7 @@ model Post {
   viewCount    Int     @default(0) // Number of views
   rating       Float? // Rating (0-5)
   categoryId   String? // Category ID (relation to Category)
+  legacyCategory String? @map("category") // Giữ cột cũ nếu còn tồn tại trong DB để tránh drop dữ liệu
   tags         Json    @default("[]") // Array of tag strings stored as JSON
   poster       String? // Poster/thumbnail URL
   thumbnail    String? // Thumbnail URL
@@ -607,6 +610,56 @@ model PaymentHistory {
   payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
 
   @@map("payment_history")
+}
+
+model Album {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  coverUrl    String?
+  category    String?
+  albumCategoryId String?
+  tags        Json?
+  isPublic    Boolean  @default(true)
+  viewCount   Int      @default(0)
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy   User     @relation("AlbumAuthor", fields: [createdById], references: [id])
+  categoryRef AlbumCategory? @relation(fields: [albumCategoryId], references: [id], onDelete: SetNull)
+  images      AlbumImage[]
+
+  @@map("albums")
+}
+
+model AlbumImage {
+  id        String   @id @default(uuid())
+  albumId   String
+  url       String
+  thumbUrl  String?
+  caption   String?
+  sortOrder Int      @default(0) @map("order")
+  createdAt DateTime @default(now())
+
+  album     Album    @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  @@map("album_images")
+}
+
+model AlbumCategory {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  slug      String?  @unique
+  description String?
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  albums    Album[]
+
+  @@map("album_categories")
 }
 
 model Venue {

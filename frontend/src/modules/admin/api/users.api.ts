@@ -124,5 +124,35 @@ export const usersApi = {
     
     throw new Error('Định dạng phản hồi từ server không hợp lệ');
   },
+
+  approveGirl: async (id: string): Promise<User> => {
+    const response = await apiClient.post<any>(`/admin/users/${id}/approve-girl`);
+    const responseData = response.data;
+
+    if (responseData.success && responseData.data) {
+      return responseData.data;
+    }
+
+    if (responseData.id) {
+      return responseData;
+    }
+
+    throw new Error('Định dạng phản hồi từ server không hợp lệ');
+  },
+
+  rejectGirl: async (id: string): Promise<User> => {
+    const response = await apiClient.post<any>(`/admin/users/${id}/reject-girl`);
+    const responseData = response.data;
+
+    if (responseData.success && responseData.data) {
+      return responseData.data;
+    }
+
+    if (responseData.id) {
+      return responseData;
+    }
+
+    throw new Error('Định dạng phản hồi từ server không hợp lệ');
+  },
 };
 

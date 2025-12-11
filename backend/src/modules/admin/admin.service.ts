@@ -838,6 +838,62 @@ export class AdminService {
     return user;
   }
 
+  async approveGirlUser(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.role !== UserRole.GIRL) {
+      throw new BadRequestException('Only GIRL accounts can be approved with this endpoint');
+    }
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { isActive: true },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        role: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
+  async rejectGirlUser(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.role !== UserRole.GIRL) {
+      throw new BadRequestException('Only GIRL accounts can be rejected with this endpoint');
+    }
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { isActive: false },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        role: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
   async getSettings() {
     const settings = await this.prisma.setting.findMany();
     

@@ -46,6 +46,7 @@ export function getNotificationTitle(type: string): string {
     NEW_MESSAGE: 'Tin nhắn mới',
     VERIFICATION_APPROVED: 'Xác thực đã được duyệt',
     VERIFICATION_REJECTED: 'Xác thực bị từ chối',
+    GIRL_PENDING_APPROVAL: 'Tài khoản GIRL chờ duyệt',
     BOOKING_CREATED: 'Booking mới',
     BOOKING_CONFIRMED: 'Booking đã được xác nhận',
     BOOKING_REJECTED: 'Booking bị từ chối',

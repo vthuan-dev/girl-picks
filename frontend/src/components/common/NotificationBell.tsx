@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { notificationsApi, Notification } from '@/modules/notifications/api/notifications.api';
 import { formatRelativeTime, getNotificationTitle } from '@/utils/time-format';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
@@ -11,6 +12,7 @@ export default function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   // Fetch notifications
   const fetchNotifications = async () => {
@@ -161,6 +163,10 @@ export default function NotificationBell() {
                   onClick={(e) => {
                     if (!notification.isRead) {
                       handleMarkAsRead(notification.id, e);
+                    }
+                    if (notification.type === 'GIRL_PENDING_APPROVAL') {
+                      router.push('/admin/users?role=GIRL&isActive=false');
+                      setIsOpen(false);
                     }
                   }}
                   className={`

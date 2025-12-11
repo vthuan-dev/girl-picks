@@ -386,7 +386,7 @@ export default function Header() {
                 </Link>
                 <Link
                   href="/auth/register"
-                  className="px-3 sm:px-3.5 md:px-4 py-1.5 sm:py-2 md:py-2.5 bg-gradient-to-r from-primary to-primary-hover text-white rounded-lg hover:shadow-lg hover:shadow-primary/30 active:scale-95 transition-all font-medium text-xs sm:text-sm shadow-md shadow-primary/20 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background whitespace-nowrap"
+                className="inline-flex items-center justify-center h-10 sm:h-11 md:h-12 px-3 sm:px-3.5 md:px-4 bg-gradient-to-r from-primary to-primary-hover text-white rounded-lg hover:shadow-lg hover:shadow-primary/30 active:scale-95 transition-all font-medium text-xs sm:text-sm shadow-md shadow-primary/20 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background whitespace-nowrap"
                 >
                   Đăng ký
                 </Link>

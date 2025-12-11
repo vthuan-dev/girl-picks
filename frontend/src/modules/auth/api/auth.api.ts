@@ -3,6 +3,7 @@ import { ApiResponse } from '@/lib/api/types';
 import { User } from '@/types/auth';
 import {
   AuthResponse,
+  PendingApprovalResponse,
   LoginDto,
   RegisterDto,
   RefreshTokenDto,
@@ -31,18 +32,25 @@ export const authApi = {
   },
 
   // Register
-  register: async (data: Omit<RegisterDto, 'username'>): Promise<AuthResponse> => {
+  register: async (
+    data: Omit<RegisterDto, 'username'>,
+  ): Promise<AuthResponse | PendingApprovalResponse> => {
     const response = await apiClient.post<any>('/auth/register', data);
     const responseData = response.data;
     
-    // Handle both wrapped and unwrapped responses
+    // Wrapped
     if (responseData.success && responseData.data) {
       return responseData.data;
     }
     
-    // If already unwrapped, return directly
+    // Pending approval path (no tokens)
+    if (responseData.user && responseData.pendingApproval) {
+      return responseData as PendingApprovalResponse;
+    }
+
+    // Active user path (has tokens)
     if (responseData.user && responseData.accessToken) {
-      return responseData;
+      return responseData as AuthResponse;
     }
     
     throw new Error('Định dạng phản hồi từ server không hợp lệ');

@@ -11,15 +11,23 @@ import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { UserRole } from '@/types/auth';
 
-const registerSchema = z.object({
-  email: z.string().email('Email không hợp lệ'),
-  password: z.string().min(8, 'Mật khẩu phải có ít nhất 8 ký tự').regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Mật khẩu phải có chữ hoa, chữ thường và số'),
-  confirmPassword: z.string(),
-  username: z.string().min(3, 'Tên đăng nhập phải có ít nhất 3 ký tự'),
-  fullName: z.string().min(2, 'Họ tên phải có ít nhất 2 ký tự'),
-  phone: z.string().optional(),
-  role: z.nativeEnum(UserRole).optional(),
-}).refine((data) => data.password === data.confirmPassword, {
+const registerSchema = z
+  .object({
+    email: z.string().email('Email không hợp lệ'),
+    password: z
+      .string()
+      .min(8, 'Mật khẩu phải có ít nhất 8 ký tự')
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+        'Mật khẩu phải có chữ hoa, chữ thường và số',
+      ),
+    confirmPassword: z.string(),
+    username: z.string().min(3, 'Tên đăng nhập phải có ít nhất 3 ký tự'),
+    fullName: z.string().min(2, 'Họ tên phải có ít nhất 2 ký tự'),
+    phone: z.string().optional(),
+    role: z.nativeEnum(UserRole).default(UserRole.CUSTOMER),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
   message: 'Mật khẩu xác nhận không khớp',
   path: ['confirmPassword'],
 });
@@ -41,6 +49,8 @@ export default function RegisterForm() {
     resolver: zodResolver(registerSchema),
   });
 
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+
   const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true);
     try {
@@ -50,8 +60,21 @@ export default function RegisterForm() {
         ...registerData,
         role: registerData.role || UserRole.CUSTOMER,
       });
-      setAuth(response);
-        toast.success('Đăng ký thành công!');
+
+      const isPending =
+        (response as any).pendingApproval || !(response as any).accessToken;
+
+      if (isPending) {
+        toast.success(
+          (response as any).message ||
+            'Đăng ký thành công. Vui lòng chờ admin duyệt tài khoản GIRL.',
+        );
+        router.replace('/auth/login');
+        return;
+      }
+
+      setAuth(response as any);
+      toast.success('Đăng ký thành công!');
       router.replace('/');
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message || 'Đăng ký thất bại';
@@ -157,6 +180,38 @@ export default function RegisterForm() {
         )}
       </div>
 
+      {/* Role Selection (Dropdown to save space) */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <label className="block text-sm font-semibold text-text">Bạn là ai ?</label>
+          <span className="text-xs text-text-muted">Chọn đúng vai trò để được duyệt nhanh</span>
+        </div>
+        <div className="relative group">
+          {/* Glow border */}
+          <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary/20 via-primary/10 to-primary/20 opacity-0 group-hover:opacity-100 transition-opacity blur-sm" />
+          <select
+            {...register('role')}
+            defaultValue={UserRole.CUSTOMER}
+            className="relative w-full px-4 pr-11 py-3 bg-background/90 border border-secondary/60 rounded-xl text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 appearance-none cursor-pointer shadow-sm hover:border-primary/60"
+          >
+            <option value={UserRole.CUSTOMER}>Đồng dâm</option>
+            <option value={UserRole.GIRL}>Gái – Cần admin duyệt trước khi kích hoạt</option>
+          </select>
+          {/* Caret */}
+          <svg
+            className="w-5 h-5 text-text-muted absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+        <p className="text-xs text-text-muted">
+          Nếu chọn Gái, tài khoản sẽ ở trạng thái chờ duyệt và kích hoạt bởi admin.
+        </p>
+      </div>
+
       {/* Phone */}
       <div className="space-y-2">
         <label htmlFor="phone" className="block text-sm font-semibold text-text">
@@ -255,16 +310,18 @@ export default function RegisterForm() {
       {/* Terms Checkbox */}
       <div className="flex items-start gap-3 pt-2">
         <label className="flex items-center gap-3 cursor-pointer group">
-          <div className="relative">
+          <div className="relative w-5 h-5">
             <input 
               type="checkbox" 
               id="terms"
-              className="sr-only peer"
+              className="absolute inset-0 w-5 h-5 opacity-0 cursor-pointer peer"
+              checked={acceptedTerms}
+              onChange={(e) => setAcceptedTerms(e.target.checked)}
               required
             />
-            <div className="w-5 h-5 rounded border-2 border-secondary/50 bg-background peer-checked:bg-primary peer-checked:border-primary transition-all duration-200 flex items-center justify-center group-hover:border-primary/50">
-              <svg className="w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            <div className="w-5 h-5 rounded border-2 border-secondary/50 bg-background peer-checked:bg-primary peer-checked:border-primary transition-all duration-200 flex items-center justify-center group-hover:border-primary/50 pointer-events-none">
+              <svg className="w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" viewBox="0 0 20 20">
+                <path d="M5 10l3 3 7-7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
           </div>
@@ -284,7 +341,7 @@ export default function RegisterForm() {
       {/* Submit Button */}
       <button
         type="submit"
-        disabled={isLoading}
+        disabled={isLoading || !acceptedTerms}
         className="w-full py-3 px-6 bg-gradient-to-r from-primary to-primary-hover text-white rounded-lg hover:shadow-xl hover:shadow-primary/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none transition-all duration-300 font-semibold flex items-center justify-center gap-2 transform hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
       >
           {isLoading ? (

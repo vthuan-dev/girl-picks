@@ -41,8 +41,17 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto) {
-    const { email, password, fullName, phone, role, bio, districts } =
-      registerDto;
+    const {
+      email,
+      password,
+      fullName,
+      phone,
+      role: requestedRole,
+      bio,
+      districts,
+    } = registerDto;
+
+    const role = requestedRole || UserRole.CUSTOMER;
 
     // Prevent registering as ADMIN or STAFF_UPLOAD - these must be created by existing admins
     if (role === UserRole.ADMIN || role === UserRole.STAFF_UPLOAD) {
@@ -63,6 +72,8 @@ export class AuthService {
     // Hash password
     const hashedPassword = await hashPassword(password);
 
+    const isGirlPending = role === UserRole.GIRL;
+
     // Create user
     const user = await this.prisma.user.create({
       data: {
@@ -71,6 +82,7 @@ export class AuthService {
         fullName,
         phone,
         role,
+        isActive: !isGirlPending, // GIRL must wait for admin approval
       },
     });
 
@@ -85,9 +97,49 @@ export class AuthService {
           images: [],
         },
       });
+
+      // Notify all admins about pending approval
+      const admins = await this.prisma.user.findMany({
+        where: { role: UserRole.ADMIN, isActive: true },
+        select: { id: true },
+      });
+      const notificationPayload = {
+        type: 'GIRL_PENDING_APPROVAL' as any,
+        message: `Tài khoản GIRL mới chờ duyệt: ${fullName}`,
+        data: { userId: user.id, email, fullName },
+      };
+      for (const admin of admins) {
+        await this.prisma.notification.create({
+          data: {
+            userId: admin.id,
+            type: notificationPayload.type,
+            message: notificationPayload.message,
+            data: notificationPayload.data,
+          },
+        });
+      }
     }
 
-    // Generate tokens
+    // If GIRL pending, do not issue tokens; require admin approval first
+    if (isGirlPending) {
+      return {
+        user: {
+          id: user.id,
+          email: user.email,
+          fullName: user.fullName,
+          phone: user.phone,
+          role: user.role,
+          avatarUrl: user.avatarUrl,
+          isActive: user.isActive,
+          createdAt: user.createdAt.toISOString(),
+          updatedAt: user.updatedAt.toISOString(),
+        },
+        pendingApproval: true,
+        message: 'Tài khoản GIRL đã tạo. Vui lòng chờ admin duyệt để kích hoạt.',
+      };
+    }
+
+    // Generate tokens for active users
     const payload: TokenPayload = {
       sub: user.id,
       email: user.email,
@@ -136,7 +188,9 @@ export class AuthService {
     }
 
     if (!user.isActive) {
-      throw new UnauthorizedException('Account is deactivated');
+      throw new UnauthorizedException(
+        'Account is not active. Please wait for admin approval.',
+      );
     }
 
     // Verify password
@@ -244,10 +298,7 @@ export class AuthService {
     });
 
     if (!user) {
-      // Don't reveal if user exists for security
-      return {
-        message: 'If the email exists, a password reset link has been sent',
-      };
+      throw new BadRequestException('Email không tồn tại trong hệ thống');
     }
 
     // Generate reset token

@@ -205,15 +205,15 @@ export default function LoginForm() {
 
       {/* Remember & Forgot */}
       <div className="flex items-center justify-between pt-2">
-        <label className="flex items-center gap-3 cursor-pointer group">
-          <div className="relative">
+        <label className="flex items-center gap-2 cursor-pointer group">
+          <div className="relative w-5 h-5 flex-shrink-0">
             <input 
               type="checkbox" 
-              className="sr-only peer"
+              className="absolute inset-0 w-5 h-5 opacity-0 cursor-pointer peer"
             />
-            <div className="w-5 h-5 rounded border-2 border-secondary/50 bg-background peer-checked:bg-primary peer-checked:border-primary transition-all duration-200 flex items-center justify-center group-hover:border-primary/50">
-              <svg className="w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            <div className="w-5 h-5 rounded border-2 border-secondary/50 bg-background peer-checked:bg-primary peer-checked:border-primary transition-all duration-200 flex items-center justify-center group-hover:border-primary/50 pointer-events-none">
+              <svg className="w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" viewBox="0 0 20 20">
+                <path d="M5 10l3 3 7-7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
           </div>

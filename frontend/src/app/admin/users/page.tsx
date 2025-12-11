@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Button from '@/components/admin/Button';
 import IconButton from '@/components/admin/IconButton';
 import { usersApi, User } from '@/modules/admin/api/users.api';
@@ -19,6 +20,8 @@ export default function AdminUsersPage() {
   const [isActiveFilter, setIsActiveFilter] = useState<boolean | undefined>(undefined);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const searchParams = useSearchParams();
+  const router = useRouter();
   
   // Form state
   const [formData, setFormData] = useState({
@@ -30,7 +33,21 @@ export default function AdminUsersPage() {
     avatarUrl: '',
   });
 
-  const roles = ['Tất cả', 'CUSTOMER', 'GIRL', 'ADMIN', 'STAFF_UPLOAD'];
+  // Only show CUSTOMER + GIRL in listing/filter by default
+  const roles = ['Tất cả', 'CUSTOMER', 'GIRL'];
+
+  useEffect(() => {
+    // Apply filters from query params (role & isActive) for deep-link
+    const roleParam = searchParams.get('role');
+    const isActiveParam = searchParams.get('isActive');
+    if (roleParam && roles.includes(roleParam)) {
+      setSelectedRole(roleParam);
+    }
+    if (isActiveParam === 'true') setIsActiveFilter(true);
+    if (isActiveParam === 'false') setIsActiveFilter(false);
+    // Reset to page 1 when query changes
+    setPage(1);
+  }, [searchParams]);
 
   useEffect(() => {
     loadUsers();
@@ -111,6 +128,26 @@ export default function AdminUsersPage() {
     }
   };
 
+  const handleApproveGirl = async (id: string) => {
+    try {
+      await usersApi.approveGirl(id);
+      toast.success('Đã duyệt và kích hoạt tài khoản GIRL');
+      loadUsers();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Không thể duyệt tài khoản');
+    }
+  };
+
+  const handleRejectGirl = async (id: string) => {
+    try {
+      await usersApi.rejectGirl(id);
+      toast.success('Đã đánh dấu từ chối tài khoản GIRL');
+      loadUsers();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Không thể từ chối tài khoản');
+    }
+  };
+
   const handleDelete = async (id: string) => {
     if (!confirm('Bạn có chắc chắn muốn xóa người dùng này?')) return;
     try {
@@ -123,7 +160,14 @@ export default function AdminUsersPage() {
   };
 
   // Search is now handled by backend, so we just use users directly
-  const filteredUsers = users;
+  const filteredUsers = users.filter((user) => {
+    // Exclude ADMIN/STAFF_UPLOAD from default view
+    const isVisibleRole =
+      selectedRole === 'Tất cả'
+        ? user.role === 'GIRL' || user.role === 'CUSTOMER'
+        : user.role === selectedRole;
+    return isVisibleRole;
+  });
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -161,63 +205,75 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-background-light rounded-xl border border-secondary/30 p-5">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative">
-            <svg
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-text-muted pointer-events-none"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              type="text"
-              placeholder="Tìm kiếm theo tên, email..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text placeholder:text-text-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 cursor-text"
-            />
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            {roles.map((role) => (
+      <div className="bg-background-light rounded-2xl border border-secondary/30 p-5 shadow-lg shadow-black/10">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col lg:flex-row gap-3 lg:items-center">
+            <div className="flex-1 relative">
+              <svg
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-text-muted pointer-events-none"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Tìm kiếm theo tên, email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-11 pr-4 py-3 bg-background border border-secondary/50 rounded-xl text-text placeholder:text-text-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all duration-200 cursor-text shadow-sm"
+              />
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {roles.map((role) => (
+                <button
+                  key={role}
+                  onClick={() => {
+                    setSelectedRole(role);
+                    setPage(1);
+                  }}
+                  className={`
+                    px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer border
+                    ${
+                      selectedRole === role
+                        ? 'bg-primary text-white border-primary shadow-md shadow-primary/25'
+                        : 'bg-background border-secondary/50 text-text hover:bg-primary/10 hover:border-primary/50'
+                    }
+                  `}
+                >
+                  {role}
+                </button>
+              ))}
               <button
-                key={role}
                 onClick={() => {
-                  setSelectedRole(role);
+                  setIsActiveFilter(isActiveFilter === undefined ? true : isActiveFilter === true ? false : undefined);
                   setPage(1);
                 }}
                 className={`
-                  px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer
+                  px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer border
                   ${
-                    selectedRole === role
-                      ? 'bg-primary text-white shadow-md'
-                      : 'bg-background border border-secondary/50 text-text hover:bg-primary/10 hover:border-primary/50'
+                    isActiveFilter === true
+                      ? 'bg-green-500 text-white border-green-500 shadow-md shadow-green-500/25'
+                      : isActiveFilter === false
+                      ? 'bg-red-500 text-white border-red-500 shadow-md shadow-red-500/25'
+                      : 'bg-background border-secondary/50 text-text hover:bg-primary/10 hover:border-primary/50'
                   }
                 `}
               >
-                {role}
+                {isActiveFilter === undefined ? 'Tất cả trạng thái' : isActiveFilter ? 'Hoạt động' : 'Tạm khóa'}
               </button>
-            ))}
-            <button
-              onClick={() => {
-                setIsActiveFilter(isActiveFilter === undefined ? true : isActiveFilter === true ? false : undefined);
-                setPage(1);
-              }}
-              className={`
-                px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer
-                ${
-                  isActiveFilter === true
-                    ? 'bg-green-500 text-white shadow-md'
-                    : isActiveFilter === false
-                    ? 'bg-red-500 text-white shadow-md'
-                    : 'bg-background border border-secondary/50 text-text hover:bg-primary/10 hover:border-primary/50'
-                }
-              `}
-            >
-              {isActiveFilter === undefined ? 'Tất cả trạng thái' : isActiveFilter ? 'Hoạt động' : 'Tạm khóa'}
-            </button>
+              <button
+                onClick={() => {
+                  setSelectedRole('GIRL');
+                  setIsActiveFilter(false);
+                  setPage(1);
+                }}
+                className="px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer border bg-primary/10 text-primary border-primary/40 hover:bg-primary/20 hover:border-primary/60"
+              >
+                Chờ duyệt (GIRL)
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -248,17 +304,25 @@ export default function AdminUsersPage() {
             <tbody className="divide-y divide-secondary/30">
               {isLoading ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-text-muted">
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                      <span>Đang tải...</span>
+                  <td colSpan={5} className="px-6 py-10 text-center text-text-muted">
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-sm">Đang tải danh sách...</span>
                     </div>
                   </td>
                 </tr>
               ) : filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-text-muted">
-                    Không có người dùng nào
+                  <td colSpan={5} className="px-6 py-12 text-center text-text-muted">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2a2 2 0 012-2h2a2 2 0 012 2v2m-6 0h6m-6 0a2 2 0 01-2-2v-6a2 2 0 012-2h6a2 2 0 012 2v6a2 2 0 01-2 2m-6 0h6M9 7h6" />
+                        </svg>
+                      </div>
+                      <p className="font-semibold text-text">Chưa có người dùng</p>
+                      <p className="text-xs text-text-muted">Hãy thêm người dùng mới hoặc thay đổi bộ lọc</p>
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -294,7 +358,11 @@ export default function AdminUsersPage() {
                             : 'bg-gray-500/20 text-gray-400'
                         }`}
                       >
-                        {user.isActive ? 'Hoạt động' : 'Tạm khóa'}
+                        {user.isActive
+                          ? 'Hoạt động'
+                          : user.role === 'GIRL'
+                            ? 'Chờ duyệt'
+                            : 'Tạm khóa'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted">
@@ -312,9 +380,30 @@ export default function AdminUsersPage() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                           </svg>
                         </IconButton>
-                        {user.isActive ? (
-                          <IconButton 
-                            variant="default" 
+                        {user.role === 'GIRL' && !user.isActive ? (
+                          <>
+                            <IconButton
+                              variant="default"
+                              title="Duyệt & kích hoạt"
+                              onClick={() => handleApproveGirl(user.id)}
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </IconButton>
+                            <IconButton
+                              variant="danger"
+                              title="Từ chối"
+                              onClick={() => handleRejectGirl(user.id)}
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                              </svg>
+                            </IconButton>
+                          </>
+                        ) : user.isActive ? (
+                          <IconButton
+                            variant="default"
                             title="Vô hiệu hóa"
                             onClick={() => handleDeactivate(user.id)}
                           >
@@ -323,8 +412,8 @@ export default function AdminUsersPage() {
                             </svg>
                           </IconButton>
                         ) : (
-                          <IconButton 
-                            variant="default" 
+                          <IconButton
+                            variant="default"
                             title="Kích hoạt"
                             onClick={() => handleActivate(user.id)}
                           >

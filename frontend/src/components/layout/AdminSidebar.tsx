@@ -15,6 +15,25 @@ const menuItems = [
     ),
   },
   {
+    title: 'Albums',
+    href: '/admin/albums',
+    icon: (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a2 2 0 012-2h6a2 2 0 012 2v2h4a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2V5z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 7h4m-4 4h4M8 9h2M8 13h2" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Danh mục Album',
+    href: '/admin/album-categories',
+    icon: (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+      </svg>
+    ),
+  },
+  {
     title: 'Users',
     href: '/admin/users',
     icon: (

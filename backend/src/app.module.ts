@@ -28,6 +28,8 @@ import { CacheModule } from './modules/cache/cache.module';
 import { TagsModule } from './modules/tags/tags.module';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { AlbumsModule } from './modules/albums/albums.module';
+import { AlbumCategoriesModule } from './modules/album-categories/album-categories.module';
 
 @Module({
   imports: [
@@ -56,6 +58,8 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
     TagsModule,
     CategoriesModule,
     AnalyticsModule,
+    AlbumsModule,
+    AlbumCategoriesModule,
     // ThrottlerModule.forRoot([
     //   {
     //     ttl: 60000, // 1 minute

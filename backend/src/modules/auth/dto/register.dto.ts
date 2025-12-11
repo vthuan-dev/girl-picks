@@ -40,9 +40,11 @@ export class RegisterDto {
     description: 'User role',
     enum: UserRole,
     default: UserRole.CUSTOMER,
+    required: false,
   })
+  @IsOptional()
   @IsEnum(UserRole)
-  role: UserRole;
+  role?: UserRole;
 
   @ApiPropertyOptional({ description: 'Bio (for Girls)' })
   @IsOptional()

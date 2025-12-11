@@ -318,6 +318,20 @@ export class AdminController {
     return this.adminService.toggleUserStatus(id, false);
   }
 
+  @Post('users/:id/approve-girl')
+  @ApiOperation({ summary: 'Approve GIRL account (activate) (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Girl user approved and activated' })
+  approveGirl(@Param('id') id: string) {
+    return this.adminService.approveGirlUser(id);
+  }
+
+  @Post('users/:id/reject-girl')
+  @ApiOperation({ summary: 'Reject GIRL account (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Girl user rejected/deactivated' })
+  rejectGirl(@Param('id') id: string) {
+    return this.adminService.rejectGirlUser(id);
+  }
+
   @Delete('users/:id')
   @ApiOperation({ summary: 'Delete user (Admin only)' })
   @ApiResponse({ status: 200, description: 'User deleted' })
