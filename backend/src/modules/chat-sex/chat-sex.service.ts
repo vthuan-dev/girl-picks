@@ -9,23 +9,37 @@ import { UpdateChatSexGirlDto } from './dto/update-chat-sex-girl.dto';
 import { generateSlug, generateUniqueSlug } from '../../common/utils/slug.util';
 import { Prisma } from '@prisma/client';
 
+// Type assertion for Prisma client with ChatSexGirl
+type PrismaWithChatSexGirl = PrismaService & {
+  chatSexGirl: any;
+};
+
 @Injectable()
 export class ChatSexService {
-  constructor(private prisma: PrismaService) {}
+  private prisma: PrismaWithChatSexGirl;
+  
+  constructor(prisma: PrismaService) {
+    this.prisma = prisma as PrismaWithChatSexGirl;
+  }
 
   async create(dto: CreateChatSexGirlDto, managedById: string) {
     // Generate slug từ name
-    const slug = dto.name
-      ? await generateUniqueSlug(
-          this.prisma.chatSexGirl,
-          generateSlug(dto.name),
-        )
-      : null;
+    let slug: string | null = null;
+    if (dto.name) {
+      const baseSlug = generateSlug(dto.name);
+      // Check existing slugs
+      const existing = await this.prisma.chatSexGirl.findMany({
+        where: { slug: { startsWith: baseSlug } },
+        select: { slug: true },
+      });
+      const existingSlugs = existing.map((g) => g.slug).filter(Boolean) as string[];
+      slug = generateUniqueSlug(baseSlug, existingSlugs);
+    }
 
     // Lấy ảnh đầu tiên làm cover nếu chưa có
     const coverImage = dto.coverImage || dto.images?.[0] || null;
 
-    const data: Prisma.ChatSexGirlCreateInput = {
+    const data: any = {
       name: dto.name,
       slug,
       title: dto.title,
@@ -87,7 +101,7 @@ export class ChatSexService {
       isVerified,
     } = options || {};
 
-    const where: Prisma.ChatSexGirlWhereInput = {
+    const where: any = {
       ...(search && {
         OR: [
           { name: { contains: search } },
@@ -184,14 +198,20 @@ export class ChatSexService {
     // Generate slug mới nếu name thay đổi
     let slug = existing.slug;
     if (dto.name && dto.name !== existing.name) {
-      slug = await generateUniqueSlug(
-        this.prisma.chatSexGirl,
-        generateSlug(dto.name),
-        id,
-      );
+      const baseSlug = generateSlug(dto.name);
+      // Check existing slugs (excluding current record)
+      const existingRecords = await this.prisma.chatSexGirl.findMany({
+        where: { 
+          slug: { startsWith: baseSlug },
+          id: { not: id },
+        },
+        select: { slug: true },
+      });
+      const existingSlugs = existingRecords.map((g) => g.slug).filter(Boolean) as string[];
+      slug = generateUniqueSlug(baseSlug, existingSlugs);
     }
 
-    const data: Prisma.ChatSexGirlUpdateInput = {
+    const data: any = {
       ...(dto.name && { name: dto.name }),
       ...(slug && { slug }),
       ...(dto.title !== undefined && { title: dto.title }),
@@ -269,8 +289,8 @@ export class ChatSexService {
     dtos: CreateChatSexGirlDto[],
     managedById: string,
   ) {
-    const results = [];
-    const errors = [];
+    const results: any[] = [];
+    const errors: Array<{ data: CreateChatSexGirlDto; error: string }> = [];
 
     for (const dto of dtos) {
       try {
