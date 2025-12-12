@@ -204,13 +204,11 @@ export default function ChatSexDetailClient({ id }: ChatSexDetailClientProps) {
                     >
                       {videos.map((video: any, idx: number) => {
                         const src = typeof video === 'string' ? video : video.src;
-                        const quality = typeof video === 'string' ? '' : video.quality || '';
                         return (
                           <source
                             key={idx}
                             src={src}
                             type="video/mp4"
-                            label={quality}
                           />
                         );
                       })}
@@ -542,7 +540,8 @@ export default function ChatSexDetailClient({ id }: ChatSexDetailClientProps) {
               {girl.telegram && (
                 <button
                   onClick={() => {
-                    window.open(`https://t.me/${girl.telegram.replace('@', '')}`, '_blank');
+                    const telegramId = girl.telegram?.replace('@', '') || '';
+                    window.open(`https://t.me/${telegramId}`, '_blank');
                   }}
                   className="w-full px-6 py-3 bg-blue-400/10 text-blue-400 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-blue-400/20 transition-all border border-blue-400/30 mt-3"
                 >
