@@ -133,6 +133,7 @@ model User {
   approvedReviews  Review[]        @relation("ApprovedBy")
   reviewedReports  Report[]        @relation("ReviewedBy")
   albums           Album[]         @relation("AlbumAuthor")
+  managedChatSexGirls ChatSexGirl[] @relation("ChatSexGirlManager")
 
   @@map("users")
 }
@@ -708,4 +709,60 @@ model PageView {
   @@index([createdAt])
   @@index([userId])
   @@map("page_views")
+}
+
+model ChatSexGirl {
+  id          String   @id @default(uuid())
+  managedById String?  // Admin/Staff who created this (not a user account)
+  
+  // Basic Info
+  name        String
+  slug        String?  @unique // URL-friendly slug for SEO
+  title       String?  // Title from crawler
+  age         Int?
+  bio         String?  // Description
+  phone       String?  // Phone number
+  zalo        String?  // Zalo ID
+  telegram    String?  // Telegram ID
+  
+  // Location
+  location    String?
+  province    String?
+  address     String?
+  
+  // Pricing & Services
+  price       String?  // e.g., "15", "500k"
+  services    Json     @default("[]") // Array of service strings
+  workingHours String? // e.g., "24/7"
+  
+  // Media
+  images      Json     @default("[]") // Array of image URLs
+  coverImage  String?  // First image as cover
+  
+  // Status & Flags
+  isVerified  Boolean  @default(false)
+  isFeatured  Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  isAvailable Boolean  @default(true)
+  
+  // Statistics
+  viewCount   Int      @default(0)
+  rating      Float?   // Rating if available
+  
+  // Metadata
+  tags        Json     @default("[]") // Array of tag strings
+  sourceUrl   String?  // Original URL from crawler
+  crawledAt   DateTime? // When data was crawled
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  managedBy   User?    @relation("ChatSexGirlManager", fields: [managedById], references: [id], onDelete: SetNull)
+  
+  @@index([isActive, isFeatured])
+  @@index([province, isActive])
+  @@index([isActive, viewCount])
+  @@map("chat_sex_girls")
 }

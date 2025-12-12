@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import ChatGirlCard from '@/components/chat/ChatGirlCard';
 import Pagination from '@/components/common/Pagination';
-import { postsApi } from '@/modules/posts/api/posts.api';
-import { Post } from '@/types/post';
+import { chatSexApi, ChatSexGirl } from '@/modules/chat-sex/api/chat-sex.api';
 
 const hashtags = [
   'Tất cả',
@@ -28,7 +27,7 @@ const hashtags = [
   'Chơi some',
 ];
 
-interface ChatPost {
+interface ChatGirl {
   id: string;
   title: string;
   thumbnail: string;
@@ -42,70 +41,73 @@ interface ChatPost {
 
 export default function ChatSexPageClient() {
   const [selectedHashtag, setSelectedHashtag] = useState('Tất cả');
-  const [posts, setPosts] = useState<ChatPost[]>([]);
+  const [girls, setGirls] = useState<ChatGirl[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [total, setTotal] = useState(0);
   const itemsPerPage = 12;
 
   useEffect(() => {
-    fetchPosts();
+    fetchChatSexGirls();
   }, [currentPage, selectedHashtag]);
 
-  const fetchPosts = async () => {
+  const fetchChatSexGirls = async () => {
     setLoading(true);
     try {
-      const data = await postsApi.getAll({
-        status: 'APPROVED', // Only show approved posts
+      const data = await chatSexApi.getAll({
         page: currentPage,
         limit: itemsPerPage,
+        isActive: true, // Only show active girls
+        ...(selectedHashtag !== 'Tất cả' && {
+          search: selectedHashtag, // Use hashtag as search term
+        }),
       });
 
-      // Map posts to chat girl format
-      const mappedPosts = (data.data || []).map((post: Post) => {
-        // Handle images - can be JSON string or array
+      // Map chat sex girls to chat girl format
+      const mappedGirls: ChatGirl[] = (data.data || []).map((girl: ChatSexGirl) => {
+        // Handle images - can be array or JSON string
         let images: string[] = [];
-        if (post.images) {
-          if (typeof post.images === 'string') {
+        if (girl.images) {
+          if (Array.isArray(girl.images)) {
+            images = girl.images;
+          } else if (typeof girl.images === 'string') {
             try {
-              images = JSON.parse(post.images);
+              images = JSON.parse(girl.images);
             } catch {
-              images = [post.images];
+              images = [girl.images];
             }
-          } else if (Array.isArray(post.images)) {
-            images = post.images;
           }
         }
 
-        const thumbnail = images[0] || post.girl?.user?.avatarUrl || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=300&fit=crop';
+        const thumbnail = girl.coverImage || images[0] || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=300&fit=crop';
         
-        // Extract year from title or use default
-        const yearMatch = post.title.match(/\b(19|20)\d{2}\b/);
-        const year = yearMatch ? parseInt(yearMatch[0]) : 2003 + (Math.floor(Math.random() * 3));
+        // Extract year from title or use current year
+        const yearMatch = girl.title?.match(/\b(19|20)\d{2}\b/);
+        const year = yearMatch ? parseInt(yearMatch[0]) : new Date().getFullYear();
 
         // Generate URL with slug if available
-        const detailUrl = post.slug 
-          ? `/posts/${post.id}/${post.slug}`
-          : `/posts/${post.id}`;
+        const detailUrl = girl.slug 
+          ? `/chat-sex/${girl.id}/${girl.slug}`
+          : `/chat-sex/${girl.id}`;
 
         return {
-          id: post.id,
-          title: post.title,
+          id: girl.id,
+          title: girl.name || girl.title || 'Gái Chat',
           thumbnail,
           year,
-          rating: 4.5 + Math.random() * 0.5, // Mock rating for now
-          reviews: post._count?.comments || Math.floor(Math.random() * 50) + 5,
-          views: post._count?.likes || Math.floor(Math.random() * 100000) + 20000,
-          views2: post._count?.likes || Math.floor(Math.random() * 1000000) + 20000,
+          rating: girl.rating || 4.5,
+          reviews: 0, // Chat sex girls don't have reviews yet
+          views: girl.viewCount || 0,
+          views2: girl.viewCount || 0,
           detailUrl,
         };
       });
 
-      setPosts(mappedPosts);
-      setTotal((data as any).meta?.total || data.data?.length || 0);
+      setGirls(mappedGirls);
+      setTotal(data.total || data.data?.length || 0);
     } catch (error) {
-      console.error('Failed to fetch chat posts:', error);
-      setPosts([]);
+      console.error('Failed to fetch chat sex girls:', error);
+      setGirls([]);
       setTotal(0);
     } finally {
       setLoading(false);
@@ -231,8 +233,8 @@ export default function ChatSexPageClient() {
       ) : (
         <>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3 lg:gap-4">
-            {posts.map((post: any) => (
-              <ChatGirlCard key={post.id} girl={post} />
+            {girls.map((girl: ChatGirl) => (
+              <ChatGirlCard key={girl.id} girl={girl} />
             ))}
           </div>
 

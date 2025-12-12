@@ -30,6 +30,7 @@ import { CategoriesModule } from './modules/categories/categories.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AlbumsModule } from './modules/albums/albums.module';
 import { AlbumCategoriesModule } from './modules/album-categories/album-categories.module';
+import { ChatSexModule } from './modules/chat-sex/chat-sex.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { AlbumCategoriesModule } from './modules/album-categories/album-categori
     AnalyticsModule,
     AlbumsModule,
     AlbumCategoriesModule,
+    ChatSexModule,
     // ThrottlerModule.forRoot([
     //   {
     //     ttl: 60000, // 1 minute
