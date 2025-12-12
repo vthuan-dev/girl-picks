@@ -743,7 +743,7 @@ model ChatSexGirl {
   
   // Media
   images      Json     @default("[]") // Array of image URLs
-  videos      Json     @default("[]") // Array of video URLs (multiple qualities)
+  videos      Json?    @default("[]") // Array of video URLs (multiple qualities)
   coverImage  String?  // First image as cover
   
   // Status & Flags

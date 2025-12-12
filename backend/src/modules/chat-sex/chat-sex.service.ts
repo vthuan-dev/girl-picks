@@ -91,86 +91,90 @@ export class ChatSexService {
     isFeatured?: boolean;
     isVerified?: boolean;
   }) {
-    const {
-      page = 1,
-      limit = 20,
-      search,
-      province,
-      isActive,
-      isFeatured,
-      isVerified,
-    } = options || {};
+    try {
+      const {
+        page = 1,
+        limit = 20,
+        search,
+        province,
+        isActive,
+        isFeatured,
+        isVerified,
+      } = options || {};
 
-    const where: any = {
-      ...(search && {
-        OR: [
-          { name: { contains: search } },
-          { phone: { contains: search } },
-          { zalo: { contains: search } },
-          { telegram: { contains: search } },
-          { bio: { contains: search } },
-        ],
-      }),
-      ...(province && { province }),
-      ...(isActive !== undefined && { isActive }),
-      ...(isFeatured !== undefined && { isFeatured }),
-      ...(isVerified !== undefined && { isVerified }),
-    };
+      const where: any = {
+        ...(search && {
+          OR: [
+            { name: { contains: search } },
+            { phone: { contains: search } },
+            { zalo: { contains: search } },
+            { telegram: { contains: search } },
+            { bio: { contains: search } },
+          ],
+        }),
+        ...(province && { province }),
+        ...(isActive !== undefined && { isActive }),
+        ...(isFeatured !== undefined && { isFeatured }),
+        ...(isVerified !== undefined && { isVerified }),
+      };
 
-    const [data, total] = await Promise.all([
-      this.prisma.chatSexGirl.findMany({
-        where,
-        include: {
-          managedBy: {
-            select: {
-              id: true,
-              email: true,
-              fullName: true,
+      const [data, total] = await Promise.all([
+        this.prisma.chatSexGirl.findMany({
+          where,
+          include: {
+            managedBy: {
+              select: {
+                id: true,
+                email: true,
+                fullName: true,
+              },
             },
           },
-        },
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: [
-          { isFeatured: 'desc' },
-          { viewCount: 'desc' },
-          { createdAt: 'desc' },
-        ],
-      }),
-      this.prisma.chatSexGirl.count({ where }),
-    ]);
+          skip: (page - 1) * limit,
+          take: limit,
+          orderBy: [
+            { isFeatured: 'desc' },
+            { viewCount: 'desc' },
+            { createdAt: 'desc' },
+          ],
+        }),
+        this.prisma.chatSexGirl.count({ where }),
+      ]);
 
-    // Parse JSON fields
-    const parsedData = data.map((item: any) => {
-      try {
-        return {
-          ...item,
-          images: typeof item.images === 'string' ? JSON.parse(item.images) : (item.images || []),
-          services: typeof item.services === 'string' ? JSON.parse(item.services) : (item.services || []),
-          tags: typeof item.tags === 'string' ? JSON.parse(item.tags) : (item.tags || []),
-          videos: typeof item.videos === 'string' ? JSON.parse(item.videos) : (item.videos || []),
-        };
-      } catch (error) {
-        console.error('Error parsing JSON fields for item:', item.id, error);
-        return {
-          ...item,
-          images: [],
-          services: [],
-          tags: [],
-          videos: [],
-        };
-      }
-    });
+      // Parse JSON fields
+      const parsedData = data.map((item: any) => {
+        try {
+          return {
+            ...item,
+            images: typeof item.images === 'string' ? JSON.parse(item.images) : (item.images || []),
+            services: typeof item.services === 'string' ? JSON.parse(item.services) : (item.services || []),
+            tags: typeof item.tags === 'string' ? JSON.parse(item.tags) : (item.tags || []),
+            videos: typeof item.videos === 'string' ? JSON.parse(item.videos) : (item.videos || []),
+          };
+        } catch (error) {
+          console.error('Error parsing JSON fields for item:', item.id, error);
+          return {
+            ...item,
+            images: [],
+            services: [],
+            tags: [],
+            videos: [],
+          };
+        }
+      });
 
-    return {
-      data: parsedData,
-      meta: {
+      return {
+        data: parsedData,
         total,
         page,
         limit,
         totalPages: Math.ceil(total / limit),
-      },
-    };
+      };
+    } catch (error) {
+      console.error('Error in ChatSexService.findAll:', error);
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      throw error;
+    }
   }
 
   async findOne(id: string) {

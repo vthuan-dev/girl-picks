@@ -70,7 +70,7 @@ export class ChatSexController {
   @ApiQuery({ name: 'isFeatured', required: false, type: Boolean })
   @ApiQuery({ name: 'isVerified', required: false, type: Boolean })
   @ApiResponse({ status: 200, description: 'List of chat sex girls' })
-  findAll(
+  async findAll(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page?: number,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
     @Query('search') search?: string,
@@ -79,30 +79,35 @@ export class ChatSexController {
     @Query('isFeatured') isFeatured?: string,
     @Query('isVerified') isVerified?: string,
   ) {
-    return this.chatSexService.findAll({
-      page,
-      limit,
-      search,
-      province,
-      isActive:
-        isActive === 'true'
-          ? true
-          : isActive === 'false'
-            ? false
-            : undefined,
-      isFeatured:
-        isFeatured === 'true'
-          ? true
-          : isFeatured === 'false'
-            ? false
-            : undefined,
-      isVerified:
-        isVerified === 'true'
-          ? true
-          : isVerified === 'false'
-            ? false
-            : undefined,
-    });
+    try {
+      return await this.chatSexService.findAll({
+        page,
+        limit,
+        search,
+        province,
+        isActive:
+          isActive === 'true'
+            ? true
+            : isActive === 'false'
+              ? false
+              : undefined,
+        isFeatured:
+          isFeatured === 'true'
+            ? true
+            : isFeatured === 'false'
+              ? false
+              : undefined,
+        isVerified:
+          isVerified === 'true'
+            ? true
+            : isVerified === 'false'
+              ? false
+              : undefined,
+      });
+    } catch (error) {
+      console.error('Error in chat-sex findAll:', error);
+      throw error;
+    }
   }
 
   @Get(':id')
