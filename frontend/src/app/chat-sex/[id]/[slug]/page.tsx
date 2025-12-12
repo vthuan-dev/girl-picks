@@ -51,16 +51,43 @@ export async function generateMetadata({
 
 export default async function ChatSexDetailPage({ params }: PageProps) {
   const { id, slug } = await params;
+  const url = `${siteUrl}/chat-sex/${id}${slug ? `/${slug}` : ''}`;
+  
+  // Fetch girl data for structured data
+  let structuredData = {
+    headline: 'Gái Chat Sex',
+    description: 'Chat sex với gái xinh, trò chuyện online',
+    url,
+  };
+
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/chat-sex/${id}`,
+      { next: { revalidate: 3600 } },
+    );
+    if (response.ok) {
+      const girl = await response.json();
+      structuredData = {
+        headline: girl.name || 'Gái Chat Sex',
+        description: girl.bio || `Chat sex với ${girl.name || 'gái xinh'}`,
+        url,
+        ...(girl.coverImage && { image: girl.coverImage }),
+        ...(girl.rating && { aggregateRating: {
+          '@type': 'AggregateRating',
+          ratingValue: girl.rating,
+          bestRating: 5,
+        }}),
+      };
+    }
+  } catch (error) {
+    console.error('Failed to fetch girl for structured data:', error);
+  }
   
   return (
     <>
       <StructuredData
         type="Article"
-        data={{
-          headline: 'Gái Chat Sex',
-          description: 'Chat sex với gái xinh, trò chuyện online',
-          url: `${siteUrl}/chat-sex/${id}${slug ? `/${slug}` : ''}`,
-        }}
+        data={structuredData}
       />
       <ChatSexDetailClient id={id} />
     </>

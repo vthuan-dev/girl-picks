@@ -1,4 +1,5 @@
-import { adminApi } from './admin.api';
+import apiClient from '@/lib/api/client';
+import { unwrapResponse } from '@/lib/api/response-helper';
 
 export interface ChatSexGirl {
   id: string;
@@ -132,7 +133,8 @@ class ChatSexApi {
   }
 
   async create(dto: CreateChatSexGirlDto): Promise<ChatSexGirl> {
-    return adminApi.post<ChatSexGirl>(this.baseUrl, dto);
+    const response = await apiClient.post<any>(this.baseUrl, dto);
+    return unwrapResponse(response.data) as ChatSexGirl;
   }
 
   async bulkCreate(dtos: CreateChatSexGirlDto[]): Promise<{
@@ -141,18 +143,20 @@ class ChatSexApi {
     results: ChatSexGirl[];
     errors: Array<{ data: CreateChatSexGirlDto; error: string }>;
   }> {
-    return adminApi.post(`${this.baseUrl}/bulk`, dtos);
+    const response = await apiClient.post<any>(`${this.baseUrl}/bulk`, dtos);
+    return unwrapResponse(response.data);
   }
 
   async update(
     id: string,
     dto: UpdateChatSexGirlDto,
   ): Promise<ChatSexGirl> {
-    return adminApi.patch<ChatSexGirl>(`${this.baseUrl}/${id}`, dto);
+    const response = await apiClient.patch<any>(`${this.baseUrl}/${id}`, dto);
+    return unwrapResponse(response.data) as ChatSexGirl;
   }
 
   async delete(id: string): Promise<void> {
-    return adminApi.delete(`${this.baseUrl}/${id}`);
+    await apiClient.delete(`${this.baseUrl}/${id}`);
   }
 
   async incrementView(id: string): Promise<void> {
