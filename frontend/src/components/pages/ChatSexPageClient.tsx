@@ -63,6 +63,10 @@ export default function ChatSexPageClient() {
         }),
       });
 
+      console.log('[ChatSexPageClient] API Response:', data);
+      console.log('[ChatSexPageClient] Data array:', data.data);
+      console.log('[ChatSexPageClient] Total:', data.total);
+
       // Map chat sex girls to chat girl format
       const mappedGirls: ChatGirl[] = (data.data || []).map((girl: ChatSexGirl) => {
         // Handle images - can be array or JSON string

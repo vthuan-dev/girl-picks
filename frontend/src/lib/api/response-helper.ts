@@ -43,12 +43,24 @@ export function getPaginatedData<T>(response: any): { data: T[]; total: number; 
   
   // Check if response has data array and meta object at top level
   if (parsed && typeof parsed === 'object') {
-    // If it has 'data' array and 'meta' object, use directly
+    // Format 1: { data: [...], total, page, limit, totalPages } (new format)
+    if (Array.isArray(parsed.data) && typeof parsed.total === 'number') {
+      console.log('[getPaginatedData] New format - Direct parse');
+      return {
+        data: parsed.data,
+        total: parsed.total,
+        page: parsed.page || 1,
+        limit: parsed.limit || parsed.data.length,
+        totalPages: parsed.totalPages || (parsed.total > 0 ? Math.ceil(parsed.total / (parsed.limit || parsed.data.length)) : 0),
+      };
+    }
+    
+    // Format 2: { data: [...], meta: {...} } (old format)
     if (Array.isArray(parsed.data) && parsed.meta && typeof parsed.meta === 'object') {
       const data = parsed.data;
       const meta = parsed.meta;
       
-      console.log('[getPaginatedData] Direct parse - Meta:', meta);
+      console.log('[getPaginatedData] Old format - Meta:', meta);
       
       const total = meta.total || meta.totalCount || data.length;
       const limit = meta.limit || meta.pageSize || 20;
@@ -71,6 +83,18 @@ export function getPaginatedData<T>(response: any): { data: T[]; total: number; 
       parsed = parsed.data;
       console.log('[getPaginatedData] Unwrapped success wrapper:', parsed);
       
+      // Check new format first
+      if (Array.isArray(parsed.data) && typeof parsed.total === 'number') {
+        return {
+          data: parsed.data,
+          total: parsed.total,
+          page: parsed.page || 1,
+          limit: parsed.limit || parsed.data.length,
+          totalPages: parsed.totalPages || (parsed.total > 0 ? Math.ceil(parsed.total / (parsed.limit || parsed.data.length)) : 0),
+        };
+      }
+      
+      // Check old format
       if (Array.isArray(parsed.data) && parsed.meta) {
         const data = parsed.data;
         const meta = parsed.meta;
