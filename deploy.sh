@@ -37,11 +37,11 @@ docker-compose -f docker-compose.prod.yml up -d
 echo -e "${YELLOW}Step 4: Waiting for services to be healthy...${NC}"
 sleep 10
 
-echo -e "${YELLOW}Step 5: Running database migrations...${NC}"
-docker-compose -f docker-compose.prod.yml exec -T backend npx prisma migrate deploy || echo "Migrations may have already been applied"
-
-echo -e "${YELLOW}Step 6: Generating Prisma Client...${NC}"
+echo -e "${YELLOW}Step 5: Generating Prisma Client...${NC}"
 docker-compose -f docker-compose.prod.yml exec -T backend npx prisma generate
+
+echo -e "${YELLOW}Step 6: Running database migrations...${NC}"
+docker-compose -f docker-compose.prod.yml exec -T backend npx prisma migrate deploy || echo "Migrations may have already been applied"
 
 echo ""
 echo -e "${GREEN}=========================================="

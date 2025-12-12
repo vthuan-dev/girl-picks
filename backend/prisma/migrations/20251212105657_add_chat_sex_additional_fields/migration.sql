@@ -1,0 +1,9 @@
+-- AlterTable
+ALTER TABLE `chat_sex_girls` ADD COLUMN `birthYear` INT NULL,
+ADD COLUMN `height` VARCHAR(191) NULL,
+ADD COLUMN `weight` VARCHAR(191) NULL,
+ADD COLUMN `price15min` VARCHAR(191) NULL,
+ADD COLUMN `paymentInfo` VARCHAR(191) NULL,
+ADD COLUMN `instruction` VARCHAR(191) NULL,
+ADD COLUMN `videos` JSON NULL;
+

@@ -78,9 +78,15 @@ class ChatSexDetailCrawler:
                         title: '',
                         name: '',
                         age: null,
+                        birthYear: null,
+                        height: '',
+                        weight: '',
                         location: '',
                         price: '',
+                        price15min: '',
+                        paymentInfo: '',
                         description: '',
+                        instruction: '',
                         images: [],
                         phone: '',
                         zalo: '',
@@ -233,6 +239,88 @@ class ChatSexDetailCrawler:
                             data.tags.push(tagText);
                         }
                     });
+
+                    // Extract thông tin từ section "Thông tin cơ bản" (attributes)
+                    const attributesSection = container.querySelector('.attributes') || 
+                                            container.querySelector('[class*="attributes"]') ||
+                                            container.querySelector('[class*="thông tin"]');
+                    
+                    if (attributesSection) {
+                        // Tìm tất cả các row trong attributes section
+                        const rows = attributesSection.querySelectorAll('.col-md-4, .col-4, [class*="row"] > div');
+                        
+                        rows.forEach((row, index) => {
+                            const label = row.textContent?.trim() || '';
+                            const nextSibling = row.nextElementSibling;
+                            const value = nextSibling?.textContent?.trim() || '';
+                            
+                            // Giá 15 phút
+                            if (label.includes('Giá 15') || label.includes('giá 15')) {
+                                data.price15min = value;
+                            }
+                            
+                            // Thể loại (tags)
+                            if (label.includes('Thể loại') || label.includes('thể loại')) {
+                                if (nextSibling) {
+                                    const tagSpans = nextSibling.querySelectorAll('span, .a-attr span');
+                                    tagSpans.forEach(span => {
+                                        const tagText = span.textContent?.trim();
+                                        if (tagText && !data.tags.includes(tagText)) {
+                                            data.tags.push(tagText);
+                                        }
+                                    });
+                                }
+                            }
+                            
+                            // Thanh toán
+                            if (label.includes('Thanh toán') || label.includes('thanh toán')) {
+                                data.paymentInfo = value;
+                            }
+                            
+                            // Zalo (nếu chưa có)
+                            if ((label.includes('Zalo') || label.includes('zalo')) && !data.zalo) {
+                                const zaloLink = nextSibling?.querySelector('a');
+                                if (zaloLink) {
+                                    const href = zaloLink.getAttribute('href');
+                                    if (href && href.startsWith('tel:')) {
+                                        data.zalo = href.replace('tel:', '').trim();
+                                    } else {
+                                        data.zalo = value || zaloLink.textContent?.trim() || '';
+                                    }
+                                } else {
+                                    data.zalo = value;
+                                }
+                            }
+                            
+                            // Năm sinh
+                            if (label.includes('Năm sinh') || label.includes('năm sinh')) {
+                                const yearMatch = value.match(/(\d{4})/);
+                                if (yearMatch) {
+                                    data.birthYear = parseInt(yearMatch[1]);
+                                }
+                            }
+                            
+                            // Chiều cao
+                            if (label.includes('Chiều cao') || label.includes('chiều cao')) {
+                                data.height = value;
+                            }
+                            
+                            // Cân nặng
+                            if (label.includes('Cân nặng') || label.includes('cân nặng')) {
+                                data.weight = value;
+                            }
+                            
+                            // Làm việc
+                            if (label.includes('Làm việc') || label.includes('làm việc')) {
+                                data.workingHours = value;
+                            }
+                            
+                            // Hướng dẫn
+                            if (label.includes('Hướng dẫn') || label.includes('hướng dẫn')) {
+                                data.instruction = value;
+                            }
+                        });
+                    }
 
                     return data;
                 }

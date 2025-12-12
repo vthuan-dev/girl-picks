@@ -720,6 +720,9 @@ model ChatSexGirl {
   slug        String?  @unique // URL-friendly slug for SEO
   title       String?  // Title from crawler
   age         Int?
+  birthYear   Int?     // Năm sinh
+  height      String?  // Chiều cao (e.g., "158cm")
+  weight      String?  // Cân nặng (e.g., "47kg")
   bio         String?  // Description
   phone       String?  // Phone number
   zalo        String?  // Zalo ID
@@ -732,11 +735,15 @@ model ChatSexGirl {
   
   // Pricing & Services
   price       String?  // e.g., "15", "500k"
+  price15min  String?  // Giá 15 phút (e.g., "200K")
+  paymentInfo String?  // Thông tin thanh toán (e.g., "Teckcombank 9022")
   services    Json     @default("[]") // Array of service strings
-  workingHours String? // e.g., "24/7"
+  workingHours String? // e.g., "24/7", "9h-2h tối"
+  instruction String?  // Hướng dẫn
   
   // Media
   images      Json     @default("[]") // Array of image URLs
+  videos      Json     @default("[]") // Array of video URLs (multiple qualities)
   coverImage  String?  // First image as cover
   
   // Status & Flags

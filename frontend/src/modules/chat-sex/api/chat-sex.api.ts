@@ -8,6 +8,9 @@ export interface ChatSexGirl {
   slug?: string;
   title?: string;
   age?: number;
+  birthYear?: number;
+  height?: string;
+  weight?: string;
   bio?: string;
   phone?: string;
   zalo?: string;
@@ -16,9 +19,13 @@ export interface ChatSexGirl {
   province?: string;
   address?: string;
   price?: string;
+  price15min?: string;
+  paymentInfo?: string;
   services?: string[];
   workingHours?: string;
+  instruction?: string;
   images?: string[];
+  videos?: string[];
   coverImage?: string;
   tags?: string[];
   isVerified: boolean;

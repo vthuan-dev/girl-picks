@@ -27,6 +27,23 @@ export class CreateChatSexGirlDto {
   @Max(60)
   age?: number;
 
+  @ApiPropertyOptional({ description: 'Năm sinh' })
+  @IsOptional()
+  @IsInt()
+  @Min(1950)
+  @Max(2010)
+  birthYear?: number;
+
+  @ApiPropertyOptional({ description: 'Chiều cao (ví dụ: "158cm")' })
+  @IsOptional()
+  @IsString()
+  height?: string;
+
+  @ApiPropertyOptional({ description: 'Cân nặng (ví dụ: "47kg")' })
+  @IsOptional()
+  @IsString()
+  weight?: string;
+
   @ApiPropertyOptional({ description: 'Mô tả/Bio' })
   @IsOptional()
   @IsString()
@@ -67,22 +84,42 @@ export class CreateChatSexGirlDto {
   @IsString()
   price?: string;
 
+  @ApiPropertyOptional({ description: 'Giá 15 phút (ví dụ: "200K")' })
+  @IsOptional()
+  @IsString()
+  price15min?: string;
+
+  @ApiPropertyOptional({ description: 'Thông tin thanh toán (ví dụ: "Teckcombank 9022")' })
+  @IsOptional()
+  @IsString()
+  paymentInfo?: string;
+
   @ApiPropertyOptional({ description: 'Dịch vụ', type: [String] })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   services?: string[];
 
-  @ApiPropertyOptional({ description: 'Giờ làm việc (ví dụ: "24/7")' })
+  @ApiPropertyOptional({ description: 'Giờ làm việc (ví dụ: "24/7", "9h-2h tối")' })
   @IsOptional()
   @IsString()
   workingHours?: string;
+
+  @ApiPropertyOptional({ description: 'Hướng dẫn' })
+  @IsOptional()
+  @IsString()
+  instruction?: string;
 
   @ApiPropertyOptional({ description: 'URL ảnh', type: [String] })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   images?: string[];
+
+  @ApiPropertyOptional({ description: 'URL video', type: [String] })
+  @IsOptional()
+  @IsArray()
+  videos?: any[];
 
   @ApiPropertyOptional({ description: 'Ảnh cover (ảnh đầu tiên)' })
   @IsOptional()

@@ -86,6 +86,7 @@ def generate_sql_from_json(json_file, output_file, managed_by_id=None):
     
     valid_count = 0
     skipped_count = 0
+    used_slugs = {}  # Track slugs để tránh duplicate
     
     for idx, item in enumerate(data, 1):
         try:
@@ -98,8 +99,23 @@ def generate_sql_from_json(json_file, output_file, managed_by_id=None):
             girl_id = generate_uuid()
             name = item.get('name', '').strip()
             title = item.get('title', '').strip() or None
-            slug = generate_slug(name)
+            
+            # Generate unique slug
+            base_slug = generate_slug(name)
+            if not base_slug:
+                base_slug = f"girl-{girl_id[:8]}"  # Fallback nếu không có name
+            
+            # Đảm bảo slug unique
+            slug = base_slug
+            counter = 1
+            while slug in used_slugs:
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            used_slugs[slug] = True
             age = item.get('age')
+            birth_year = item.get('birthYear')
+            height = item.get('height', '').strip() or None
+            weight = item.get('weight', '').strip() or None
             bio = item.get('description', '').strip() or item.get('bio', '').strip() or None
             phone = item.get('phone', '').strip() or None
             zalo = item.get('zalo', '').strip() or None
@@ -108,7 +124,10 @@ def generate_sql_from_json(json_file, output_file, managed_by_id=None):
             province = None  # Có thể parse từ location nếu cần
             address = location  # Dùng location làm address
             price = item.get('price', '').strip() or None
+            price_15min = item.get('price15min', '').strip() or None
+            payment_info = item.get('paymentInfo', '').strip() or None
             working_hours = item.get('workingHours', '').strip() or None
+            instruction = item.get('instruction', '').strip() or None
             
             # Images
             images = item.get('images', [])
@@ -153,11 +172,17 @@ def generate_sql_from_json(json_file, output_file, managed_by_id=None):
             services_json = json.dumps(services, ensure_ascii=False) if services else "[]"
             tags_json = json.dumps(tags, ensure_ascii=False) if tags else "[]"
             
-            # Tạo INSERT statement
-            sql = f"""INSERT INTO `chat_sex_girls` (
-    `id`, `managedById`, `name`, `slug`, `title`, `age`, `bio`, `phone`, `zalo`, `telegram`,
-    `location`, `province`, `address`, `price`, `services`, `workingHours`,
-    `images`, `coverImage`, `tags`,
+            # Parse videos nếu có
+            videos = item.get('videos', [])
+            if not isinstance(videos, list):
+                videos = []
+            videos_json = json.dumps(videos, ensure_ascii=False) if videos else "[]"
+            
+            # Tạo INSERT statement với IGNORE để skip duplicate
+            sql = f"""INSERT IGNORE INTO `chat_sex_girls` (
+    `id`, `managedById`, `name`, `slug`, `title`, `age`, `birthYear`, `height`, `weight`, `bio`, `phone`, `zalo`, `telegram`,
+    `location`, `province`, `address`, `price`, `price15min`, `paymentInfo`, `services`, `workingHours`, `instruction`,
+    `images`, `videos`, `coverImage`, `tags`,
     `isVerified`, `isFeatured`, `isActive`, `isAvailable`,
     `viewCount`, `rating`, `sourceUrl`, `crawledAt`, `createdAt`, `updatedAt`
 ) VALUES (
@@ -167,6 +192,9 @@ def generate_sql_from_json(json_file, output_file, managed_by_id=None):
     {escape_sql_string(slug) if slug else "NULL"},
     {escape_sql_string(title) if title else "NULL"},
     {age if age is not None else "NULL"},
+    {birth_year if birth_year is not None else "NULL"},
+    {escape_sql_string(height) if height else "NULL"},
+    {escape_sql_string(weight) if weight else "NULL"},
     {escape_sql_string(bio) if bio else "NULL"},
     {escape_sql_string(phone) if phone else "NULL"},
     {escape_sql_string(zalo) if zalo else "NULL"},
@@ -175,9 +203,13 @@ def generate_sql_from_json(json_file, output_file, managed_by_id=None):
     {escape_sql_string(province) if province else "NULL"},
     {escape_sql_string(address) if address else "NULL"},
     {escape_sql_string(price) if price else "NULL"},
+    {escape_sql_string(price_15min) if price_15min else "NULL"},
+    {escape_sql_string(payment_info) if payment_info else "NULL"},
     {escape_sql_string(services_json)},
     {escape_sql_string(working_hours) if working_hours else "NULL"},
+    {escape_sql_string(instruction) if instruction else "NULL"},
     {escape_sql_string(images_json)},
+    {escape_sql_string(videos_json)},
     {escape_sql_string(cover_image) if cover_image else "NULL"},
     {escape_sql_string(tags_json)},
     {1 if is_verified else 0},

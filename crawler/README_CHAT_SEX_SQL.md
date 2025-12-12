@@ -103,6 +103,16 @@ python generate_chat_sex_sql.py \
   --managed-by-id YOUR_ADMIN_ID  # Optional
 ```
 
+## Xóa tất cả data trong bảng
+
+```sql
+-- Cách 1: DELETE (có thể rollback)
+DELETE FROM `chat_sex_girls`;
+
+-- Cách 2: TRUNCATE (nhanh hơn, không thể rollback, reset AUTO_INCREMENT)
+TRUNCATE TABLE `chat_sex_girls`;
+```
+
 ## Kiểm tra sau khi import
 
 ```sql
