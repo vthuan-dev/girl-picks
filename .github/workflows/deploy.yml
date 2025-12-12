@@ -66,6 +66,7 @@ jobs:
             cd "$APP_DIR/backend"
             npm ci
             npx prisma migrate deploy
+            npx prisma generate
             npm run build
 
             echo "==> Restart backend with PM2"

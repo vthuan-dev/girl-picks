@@ -141,12 +141,26 @@ export class ChatSexService {
     ]);
 
     // Parse JSON fields
-    const parsedData = data.map((item) => ({
-      ...item,
-      images: typeof item.images === 'string' ? JSON.parse(item.images) : item.images,
-      services: typeof item.services === 'string' ? JSON.parse(item.services) : item.services,
-      tags: typeof item.tags === 'string' ? JSON.parse(item.tags) : item.tags,
-    }));
+    const parsedData = data.map((item: any) => {
+      try {
+        return {
+          ...item,
+          images: typeof item.images === 'string' ? JSON.parse(item.images) : (item.images || []),
+          services: typeof item.services === 'string' ? JSON.parse(item.services) : (item.services || []),
+          tags: typeof item.tags === 'string' ? JSON.parse(item.tags) : (item.tags || []),
+          videos: typeof item.videos === 'string' ? JSON.parse(item.videos) : (item.videos || []),
+        };
+      } catch (error) {
+        console.error('Error parsing JSON fields for item:', item.id, error);
+        return {
+          ...item,
+          images: [],
+          services: [],
+          tags: [],
+          videos: [],
+        };
+      }
+    });
 
     return {
       data: parsedData,
@@ -178,12 +192,24 @@ export class ChatSexService {
     }
 
     // Parse JSON fields
-    return {
-      ...girl,
-      images: typeof girl.images === 'string' ? JSON.parse(girl.images) : girl.images,
-      services: typeof girl.services === 'string' ? JSON.parse(girl.services) : girl.services,
-      tags: typeof girl.tags === 'string' ? JSON.parse(girl.tags) : girl.tags,
-    };
+    try {
+      return {
+        ...girl,
+        images: typeof girl.images === 'string' ? JSON.parse(girl.images) : (girl.images || []),
+        services: typeof girl.services === 'string' ? JSON.parse(girl.services) : (girl.services || []),
+        tags: typeof girl.tags === 'string' ? JSON.parse(girl.tags) : (girl.tags || []),
+        videos: typeof (girl as any).videos === 'string' ? JSON.parse((girl as any).videos) : ((girl as any).videos || []),
+      };
+    } catch (error) {
+      console.error('Error parsing JSON fields for girl:', girl.id, error);
+      return {
+        ...girl,
+        images: [],
+        services: [],
+        tags: [],
+        videos: [],
+      };
+    }
   }
 
   async update(id: string, dto: UpdateChatSexGirlDto, managedById: string) {
