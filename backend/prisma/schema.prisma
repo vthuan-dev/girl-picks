@@ -751,7 +751,7 @@ model ChatSexGirl {
   
   // Metadata
   tags        Json     @default("[]") // Array of tag strings
-  sourceUrl   String?  // Original URL from crawler
+  sourceUrl   String?  @db.Text // Original URL from crawler (can be long)
   crawledAt   DateTime? // When data was crawled
   
   // Timestamps
