@@ -34,8 +34,16 @@ export async function POST(request: NextRequest) {
 
     // Create uploads directory if it doesn't exist
     const uploadsDir = join(process.cwd(), 'public', 'uploads', 'posts');
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true });
+    try {
+      if (!existsSync(uploadsDir)) {
+        await mkdir(uploadsDir, { recursive: true });
+      }
+    } catch (dirError: any) {
+      console.error('Error creating uploads directory:', dirError);
+      return NextResponse.json(
+        { error: 'Không thể tạo thư mục upload', message: dirError.message },
+        { status: 500 }
+      );
     }
 
     // Generate unique filename
@@ -60,8 +68,13 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: any) {
     console.error('Error uploading file:', error);
+    const errorMessage = error.message || 'Không thể tải file lên';
     return NextResponse.json(
-      { error: 'Không thể tải file lên', message: error.message },
+      { 
+        error: errorMessage,
+        message: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      },
       { status: 500 }
     );
   }

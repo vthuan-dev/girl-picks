@@ -62,6 +62,8 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
   const [commentContents, setCommentContents] = useState<Record<string, string>>({});
   const [submittingComments, setSubmittingComments] = useState<Set<string>>(new Set());
   const [loadingComments, setLoadingComments] = useState<Set<string>>(new Set());
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [lightboxImages, setLightboxImages] = useState<string[]>([]);
 
   const requireAuth = () => {
     if (!isAuthenticated || !user) {
@@ -76,6 +78,16 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
   useEffect(() => {
     loadReviews();
   }, [girlId]);
+
+  // Lock body scroll when lightbox is open
+  useEffect(() => {
+    if (lightboxImage) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [lightboxImage]);
 
   const loadReviews = async () => {
     try {
@@ -761,7 +773,8 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
                       key={index}
                       className="relative aspect-square rounded-lg overflow-hidden bg-secondary/20 border border-secondary/30 group cursor-pointer"
                       onClick={() => {
-                          window.open(fullUrl, '_blank');
+                        setLightboxImages(review.images || []);
+                        setLightboxImage(displayUrl);
                       }}
                     >
                       <Image
@@ -947,6 +960,133 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Lightbox Modal */}
+      {lightboxImage && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center animate-in fade-in duration-200"
+          onClick={() => {
+            setLightboxImage(null);
+            setLightboxImages([]);
+          }}
+        >
+          {/* Close Button */}
+          <button
+            onClick={() => {
+              setLightboxImage(null);
+              setLightboxImages([]);
+            }}
+            className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors z-50"
+            aria-label="Đóng"
+          >
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+
+          {/* Image */}
+          <div 
+            className="relative w-full h-full max-w-4xl max-h-[90vh] mx-4 animate-in zoom-in-95 duration-300"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Image
+              src={lightboxImage}
+              alt="Review image"
+              fill
+              className="object-contain"
+              sizes="100vw"
+              priority
+              unoptimized
+            />
+          </div>
+
+          {/* Navigation & Thumbnails */}
+          {lightboxImages.length > 1 && (() => {
+            // Normalize URLs for comparison
+            const normalizeUrl = (url: string) => {
+              if (url.startsWith('/')) return url;
+              if (url.startsWith('http://') || url.startsWith('https://')) return url;
+              return `/${url}`;
+            };
+            
+            const normalizedLightboxImage = normalizeUrl(lightboxImage);
+            const normalizedImages = lightboxImages.map(normalizeUrl);
+            const currentIndex = normalizedImages.findIndex(img => {
+              // Compare by removing protocol and domain if present
+              const img1 = img.replace(/^https?:\/\/[^/]+/, '');
+              const img2 = normalizedLightboxImage.replace(/^https?:\/\/[^/]+/, '');
+              return img1 === img2 || img === normalizedLightboxImage;
+            });
+            
+            return (
+              <>
+                {/* Previous Button */}
+                {currentIndex > 0 && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const prevUrl = lightboxImages[currentIndex - 1];
+                      const displayUrl = normalizeUrl(prevUrl);
+                      setLightboxImage(displayUrl);
+                    }}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors z-50"
+                    aria-label="Ảnh trước"
+                  >
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                )}
+
+                {/* Next Button */}
+                {currentIndex < lightboxImages.length - 1 && currentIndex >= 0 && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const nextUrl = lightboxImages[currentIndex + 1];
+                      const displayUrl = normalizeUrl(nextUrl);
+                      setLightboxImage(displayUrl);
+                    }}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors z-50"
+                    aria-label="Ảnh sau"
+                  >
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                )}
+
+                {/* Thumbnails */}
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 p-2 bg-black/50 rounded-lg max-w-[90vw] overflow-x-auto">
+                  {lightboxImages.map((img, i) => {
+                    const displayUrl = normalizeUrl(img);
+                    const isActive = (() => {
+                      const img1 = displayUrl.replace(/^https?:\/\/[^/]+/, '');
+                      const img2 = normalizedLightboxImage.replace(/^https?:\/\/[^/]+/, '');
+                      return img1 === img2 || displayUrl === normalizedLightboxImage;
+                    })();
+                    
+                    return (
+                      <button
+                        key={i}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setLightboxImage(displayUrl);
+                        }}
+                        className={`relative w-14 h-14 rounded overflow-hidden border-2 transition-all flex-shrink-0 ${
+                          isActive ? 'border-primary' : 'border-transparent hover:border-white/50'
+                        }`}
+                      >
+                        <Image src={displayUrl} alt="" fill className="object-cover" unoptimized />
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            );
+          })()}
         </div>
       )}
     </div>

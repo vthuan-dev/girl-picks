@@ -8,10 +8,23 @@ import type { Review } from '@/modules/reviews/api/reviews.api';
 import { getGirlDetailUrl, generateSlug } from '@/lib/utils/slug';
 import { useAuthStore } from '@/store/auth.store';
 import toast from 'react-hot-toast';
+import { useEffect } from 'react';
 
 export default function ReviewsPageClient() {
   const [page, setPage] = useState(1);
   const limit = 20;
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [lightboxImages, setLightboxImages] = useState<string[]>([]);
+
+  // Lock body scroll when lightbox is open
+  useEffect(() => {
+    if (lightboxImage) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [lightboxImage]);
 
   const { data, isLoading, error, refetch } = useQuery(
     ['reviews', 'all', page],
@@ -89,8 +102,114 @@ export default function ReviewsPageClient() {
       ) : (
         <div className="space-y-4">
           {data?.reviews?.map((review: Review) => (
-            <ReviewCard key={review.id} review={review} formatDate={formatDate} />
+            <ReviewCard 
+              key={review.id} 
+              review={review} 
+              formatDate={formatDate}
+              onImageClick={(images, currentImage) => {
+                setLightboxImages(images);
+                setLightboxImage(currentImage);
+              }}
+            />
           ))}
+        </div>
+      )}
+
+      {/* Lightbox Modal */}
+      {lightboxImage && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center animate-in fade-in duration-200"
+          onClick={() => {
+            setLightboxImage(null);
+            setLightboxImages([]);
+          }}
+        >
+          {/* Close Button */}
+          <button
+            onClick={() => {
+              setLightboxImage(null);
+              setLightboxImages([]);
+            }}
+            className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors z-50"
+            aria-label="Đóng"
+          >
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+
+          {/* Image */}
+          <div 
+            className="relative w-full h-full max-w-4xl max-h-[90vh] mx-4 animate-in zoom-in-95 duration-300"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Image
+              src={lightboxImage}
+              alt="Review image"
+              fill
+              className="object-contain"
+              sizes="100vw"
+              priority
+              unoptimized
+            />
+          </div>
+
+          {/* Navigation & Thumbnails */}
+          {lightboxImages.length > 1 && (
+            <>
+              {/* Previous Button */}
+              {lightboxImages.indexOf(lightboxImage) > 0 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const currentIndex = lightboxImages.indexOf(lightboxImage);
+                    setLightboxImage(lightboxImages[currentIndex - 1]);
+                  }}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors z-50"
+                  aria-label="Ảnh trước"
+                >
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+              )}
+
+              {/* Next Button */}
+              {lightboxImages.indexOf(lightboxImage) < lightboxImages.length - 1 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const currentIndex = lightboxImages.indexOf(lightboxImage);
+                    setLightboxImage(lightboxImages[currentIndex + 1]);
+                  }}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors z-50"
+                  aria-label="Ảnh sau"
+                >
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              )}
+
+              {/* Thumbnails */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 p-2 bg-black/50 rounded-lg max-w-[90vw] overflow-x-auto">
+                {lightboxImages.map((img, i) => (
+                  <button
+                    key={i}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setLightboxImage(img);
+                    }}
+                    className={`relative w-14 h-14 rounded overflow-hidden border-2 transition-all flex-shrink-0 ${
+                      lightboxImage === img ? 'border-primary' : 'border-transparent hover:border-white/50'
+                    }`}
+                  >
+                    <Image src={img} alt="" fill className="object-cover" unoptimized />
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -121,7 +240,15 @@ export default function ReviewsPageClient() {
 }
 
 
-function ReviewCard({ review, formatDate }: { review: Review; formatDate: (date: string) => string }) {
+function ReviewCard({ 
+  review, 
+  formatDate,
+  onImageClick 
+}: { 
+  review: Review; 
+  formatDate: (date: string) => string;
+  onImageClick: (images: string[], currentImage: string) => void;
+}) {
   const { isAuthenticated, user } = useAuthStore();
   const requireAuth = () => {
     if (!isAuthenticated || !user) {
@@ -221,7 +348,9 @@ function ReviewCard({ review, formatDate }: { review: Review; formatDate: (date:
                 key={index} 
                 className="relative overflow-hidden rounded-xl bg-secondary/20 group cursor-pointer"
                 style={{ aspectRatio: '4 / 5' }}
-                onClick={() => window.open(imageUrl, '_blank')}
+                onClick={() => {
+                  onImageClick(review.images || [], imageUrl);
+                }}
               >
                 <Image
                   src={imageUrl}
