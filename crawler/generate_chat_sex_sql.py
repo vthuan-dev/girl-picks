@@ -178,8 +178,8 @@ def generate_sql_from_json(json_file, output_file, managed_by_id=None):
                 videos = []
             videos_json = json.dumps(videos, ensure_ascii=False) if videos else "[]"
             
-            # Tạo INSERT statement với IGNORE để skip duplicate
-            sql = f"""INSERT IGNORE INTO `chat_sex_girls` (
+            # Tạo INSERT statement với ON DUPLICATE KEY UPDATE để update nếu đã tồn tại
+            sql = f"""INSERT INTO `chat_sex_girls` (
     `id`, `managedById`, `name`, `slug`, `title`, `age`, `birthYear`, `height`, `weight`, `bio`, `phone`, `zalo`, `telegram`,
     `location`, `province`, `address`, `price`, `price15min`, `paymentInfo`, `services`, `workingHours`, `instruction`,
     `images`, `videos`, `coverImage`, `tags`,
@@ -222,7 +222,39 @@ def generate_sql_from_json(json_file, output_file, managed_by_id=None):
     {escape_sql_string(mysql_datetime) if crawled_at else "NULL"},
     {escape_sql_string(mysql_datetime)},
     {escape_sql_string(mysql_datetime)}
-);"""
+) ON DUPLICATE KEY UPDATE
+    `name` = VALUES(`name`),
+    `slug` = VALUES(`slug`),
+    `title` = VALUES(`title`),
+    `age` = VALUES(`age`),
+    `birthYear` = VALUES(`birthYear`),
+    `height` = VALUES(`height`),
+    `weight` = VALUES(`weight`),
+    `bio` = VALUES(`bio`),
+    `phone` = VALUES(`phone`),
+    `zalo` = VALUES(`zalo`),
+    `telegram` = VALUES(`telegram`),
+    `location` = VALUES(`location`),
+    `province` = VALUES(`province`),
+    `address` = VALUES(`address`),
+    `price` = VALUES(`price`),
+    `price15min` = VALUES(`price15min`),
+    `paymentInfo` = VALUES(`paymentInfo`),
+    `services` = VALUES(`services`),
+    `workingHours` = VALUES(`workingHours`),
+    `instruction` = VALUES(`instruction`),
+    `images` = VALUES(`images`),
+    `videos` = VALUES(`videos`),
+    `coverImage` = VALUES(`coverImage`),
+    `tags` = VALUES(`tags`),
+    `isVerified` = VALUES(`isVerified`),
+    `isFeatured` = VALUES(`isFeatured`),
+    `isActive` = VALUES(`isActive`),
+    `isAvailable` = VALUES(`isAvailable`),
+    `rating` = VALUES(`rating`),
+    `sourceUrl` = VALUES(`sourceUrl`),
+    `crawledAt` = VALUES(`crawledAt`),
+    `updatedAt` = VALUES(`updatedAt`);"""
             
             sql_statements.append(sql)
             sql_statements.append("")

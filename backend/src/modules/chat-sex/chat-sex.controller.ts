@@ -10,6 +10,7 @@ import {
   Query,
   ParseIntPipe,
   DefaultValuePipe,
+  Request,
 } from '@nestjs/common';
 import { ChatSexService } from './chat-sex.service';
 import { CreateChatSexGirlDto } from './dto/create-chat-sex-girl.dto';
@@ -26,12 +27,13 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiQuery,
+  ApiBody,
 } from '@nestjs/swagger';
 
 @ApiTags('Chat Sex')
 @Controller('chat-sex')
 export class ChatSexController {
-  constructor(private readonly chatSexService: ChatSexService) {}
+  constructor(private readonly chatSexService: ChatSexService) { }
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -152,6 +154,38 @@ export class ChatSexController {
     @CurrentUser('id') managedById: string,
   ) {
     return this.chatSexService.remove(id, managedById);
+  }
+
+  // ==================== Review Endpoints ====================
+
+  @Get(':id/reviews')
+  @ApiOperation({ summary: 'Get reviews for a chat sex girl' })
+  @ApiResponse({ status: 200, description: 'Reviews retrieved successfully' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  getReviews(
+    @Param('id') id: string,
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '10',
+  ) {
+    return this.chatSexService.getReviews(
+      id,
+      parseInt(page),
+      parseInt(limit),
+    );
+  }
+
+  @Post(':id/reviews')
+  @ApiOperation({ summary: 'Create a review for a chat sex girl' })
+  @ApiResponse({ status: 201, description: 'Review created successfully' })
+  @ApiBody({ type: Object }) // Should be CreateChatSexReviewDto
+  createReview(
+    @Param('id') id: string,
+    @Body() dto: any,
+    @Request() req?: any,
+  ) {
+    const userId = req?.user?.id; // Optional: get from JWT if logged in
+    return this.chatSexService.createReview(id, dto, userId);
   }
 }
 

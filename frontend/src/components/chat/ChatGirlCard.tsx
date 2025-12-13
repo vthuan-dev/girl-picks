@@ -1,13 +1,15 @@
 'use client';
 
-import Image from 'next/image';
+import { useState } from 'react';
 import Link from 'next/link';
+import { chatSexApi } from '@/modules/chat-sex/api/chat-sex.api';
 
 interface ChatGirlCardProps {
   girl: {
     id?: string;
     title: string;
     thumbnail: string;
+    images?: string[]; // All available images for fallback
     year?: number;
     rating?: number;
     reviews?: number;
@@ -18,41 +20,75 @@ interface ChatGirlCardProps {
 }
 
 export default function ChatGirlCard({ girl }: ChatGirlCardProps) {
-  const thumbnailUrl = girl.thumbnail || 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=400&h=300&fit=crop';
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const fallbackImages = girl.images || [];
+
+  // Get current image URL with fallback logic
+  const getCurrentImageUrl = () => {
+    // Build array of all available images (thumbnail + images array)
+    const allImages: string[] = [];
+
+    // Filter function to exclude sprite images (they're broken/black)
+    const isValidImage = (url: string) => {
+      return url && !url.toLowerCase().includes('sprite');
+    };
+
+    // Add thumbnail if exists, different from first image, and not a sprite
+    if (girl.thumbnail && isValidImage(girl.thumbnail) && girl.thumbnail !== fallbackImages[0]) {
+      allImages.push(girl.thumbnail);
+    }
+
+    // Add all valid images from array (exclude sprites)
+    const validImages = fallbackImages.filter(isValidImage);
+    allImages.push(...validImages);
+
+    // Get current image or fallback to placeholder
+    if (currentImageIndex < allImages.length && allImages[currentImageIndex]) {
+      return allImages[currentImageIndex];
+    }
+
+    // Final fallback
+    return 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=400&h=300&fit=crop';
+  };
+
+  const handleImageError = () => {
+    // Try next image
+    setCurrentImageIndex(prev => prev + 1);
+  };
+
+  const thumbnailUrl = getCurrentImageUrl();
+
+  const handleClick = async (e: React.MouseEvent) => {
+    // Increment view count when card is clicked
+    if (girl.id) {
+      try {
+        await chatSexApi.incrementView(girl.id);
+      } catch (error) {
+        console.error('Failed to increment view:', error);
+      }
+    }
+  };
 
   return (
-    <Link href={girl.detailUrl || `#`} className="block">
+    <Link href={girl.detailUrl || `#`} className="block" onClick={handleClick}>
       <div className="group relative bg-background-light rounded-lg overflow-hidden hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300 cursor-pointer border border-secondary/30 hover:border-primary/50 transform hover:-translate-y-1">
         {/* Thumbnail Container */}
         <div className="relative w-full aspect-video overflow-hidden bg-secondary/20">
-          <Image
+          {/* Using regular img instead of Next.js Image for better error handling */}
+          <img
             src={thumbnailUrl}
             alt={girl.title}
-            fill
-            className="object-cover group-hover:scale-110 transition-transform duration-500"
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
-            unoptimized
+            className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+            onError={handleImageError}
+            loading="lazy"
           />
 
           {/* Gradient Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
-          {/* Play Button Overlay */}
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
-            <div className="w-16 h-16 bg-primary/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-xl">
-              <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            </div>
-          </div>
+          {/* Play Button Overlay - Removed for chat sex (profiles, not videos) */}
 
-          {/* Duration Badge - Bottom Left */}
-          <div className="absolute bottom-2 left-2 bg-background/95 backdrop-blur-md px-2 py-1 rounded-md flex items-center gap-1 shadow-xl z-10">
-            <svg className="w-3.5 h-3.5 text-text" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span className="text-text font-semibold text-xs">00:00</span>
-          </div>
+          {/* Duration Badge - Removed for chat sex (profiles, not videos) */}
 
           {/* Views Badge - Top Right */}
           {girl.views && (
@@ -83,14 +119,14 @@ export default function ChatGirlCard({ girl }: ChatGirlCardProps) {
                 <div className="flex items-center gap-1">
                   <span className="text-yellow-400 text-xs">★</span>
                   <span className="text-text font-semibold text-xs">{girl.rating.toFixed(1)}</span>
-                  {girl.reviews && (
+                  {girl.reviews && girl.reviews > 0 && (
                     <span className="text-text-muted text-xs">({girl.reviews})</span>
                   )}
                 </div>
               )}
             </div>
 
-            {girl.views2 && (
+            {girl.views2 && girl.views2 > 0 && (
               <div className="flex items-center gap-1 text-text-muted text-xs">
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />

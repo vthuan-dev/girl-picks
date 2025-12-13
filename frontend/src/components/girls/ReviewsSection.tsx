@@ -22,6 +22,7 @@ interface Review {
   liked?: boolean;
   replies?: Reply[];
   status?: 'PENDING' | 'APPROVED' | 'REJECTED';
+  commentsCount?: number;
 }
 
 interface Reply {
@@ -54,6 +55,13 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
   const [submitting, setSubmitting] = useState(false);
   const [loadingLikes, setLoadingLikes] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  
+  // Comment states
+  const [reviewComments, setReviewComments] = useState<Record<string, ReviewComment[]>>({});
+  const [showCommentForms, setShowCommentForms] = useState<Record<string, boolean>>({});
+  const [commentContents, setCommentContents] = useState<Record<string, string>>({});
+  const [submittingComments, setSubmittingComments] = useState<Set<string>>(new Set());
+  const [loadingComments, setLoadingComments] = useState<Set<string>>(new Set());
 
   const requireAuth = () => {
     if (!isAuthenticated || !user) {
@@ -85,6 +93,9 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
             console.error('Error loading likes:', error);
           }
 
+          // Get comments count from API if available
+          const commentsCount = apiReview._count?.comments || 0;
+
           return {
             id: apiReview.id,
             userId: apiReview.customer.id,
@@ -98,6 +109,7 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
             liked: false, // TODO: Check if current user liked this
             status: apiReview.status,
             replies: [], // Will load separately if needed
+            commentsCount, // Store comment count
           };
         })
       );
@@ -108,6 +120,87 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
       toast.error('Không thể tải đánh giá. Vui lòng thử lại sau.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadComments = async (reviewId: string) => {
+    if (loadingComments.has(reviewId) || reviewComments[reviewId]) {
+      return; // Already loading or loaded
+    }
+
+    try {
+      setLoadingComments((prev) => new Set(prev).add(reviewId));
+      const response = await reviewsApi.getComments(reviewId, 1, 50);
+      setReviewComments((prev) => ({
+        ...prev,
+        [reviewId]: response.data || [],
+      }));
+    } catch (error) {
+      console.error('Error loading comments:', error);
+      toast.error('Không thể tải bình luận');
+    } finally {
+      setLoadingComments((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(reviewId);
+        return newSet;
+      });
+    }
+  };
+
+  const handleToggleCommentForm = (reviewId: string) => {
+    if (!requireAuth()) return;
+    
+    setShowCommentForms((prev) => ({
+      ...prev,
+      [reviewId]: !prev[reviewId],
+    }));
+
+    // Load comments when opening the form
+    if (!showCommentForms[reviewId] && !reviewComments[reviewId]) {
+      loadComments(reviewId);
+    }
+  };
+
+  const handleSubmitComment = async (reviewId: string) => {
+    if (!requireAuth()) return;
+    
+    const content = commentContents[reviewId]?.trim();
+    if (!content) {
+      toast.error('Vui lòng nhập nội dung bình luận');
+      return;
+    }
+
+    try {
+      setSubmittingComments((prev) => new Set(prev).add(reviewId));
+      const newComment = await reviewsApi.addComment(reviewId, { content });
+      
+      // Add comment to state
+      setReviewComments((prev) => ({
+        ...prev,
+        [reviewId]: [newComment, ...(prev[reviewId] || [])],
+      }));
+
+      // Clear comment input and close form
+      setCommentContents((prev) => {
+        const newContents = { ...prev };
+        delete newContents[reviewId];
+        return newContents;
+      });
+      setShowCommentForms((prev) => ({
+        ...prev,
+        [reviewId]: false,
+      }));
+
+      toast.success('Bình luận thành công!');
+    } catch (error: any) {
+      console.error('Error submitting comment:', error);
+      toast.error(error.response?.data?.message || 'Không thể gửi bình luận');
+    } finally {
+      setSubmittingComments((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(reviewId);
+        return newSet;
+      });
     }
   };
 
@@ -138,6 +231,22 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
     }
     if (!comment.trim()) {
       toast.error('Vui lòng nhập nội dung đánh giá');
+      return;
+    }
+    
+    // Validation: Prevent creating reviews with very short text (1-2 words) without images
+    // This ensures comments stay as comments, not become reviews
+    const trimmedComment = comment.trim();
+    const wordCount = trimmedComment.split(/\s+/).filter(word => word.length > 0).length;
+    const hasImages = selectedImages.length > 0 || imageFiles.length > 0;
+    
+    if (wordCount <= 2 && !hasImages) {
+      toast.error('Vui lòng nhập nội dung đánh giá đầy đủ hơn hoặc thêm hình ảnh. Bình luận ngắn nên được thêm vào phần bình luận của review, không phải tạo review mới.');
+      return;
+    }
+    
+    if (wordCount < 5 && !hasImages) {
+      toast.error('Vui lòng nhập nội dung đánh giá chi tiết hơn (ít nhất 5 từ) hoặc thêm hình ảnh.');
       return;
     }
 
@@ -696,16 +805,13 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
                   <span>Thích ({review.likes})</span>
                 </button>
                 <button
-                  onClick={() => {
-                    if (!requireAuth()) return;
-                    toast('Tính năng phản hồi sẽ sớm được cập nhật.');
-                  }}
+                  onClick={() => handleToggleCommentForm(review.id)}
                   className="flex items-center gap-2 text-text-muted hover:text-primary transition-colors text-sm cursor-pointer"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                   </svg>
-                  <span>Phản hồi</span>
+                  <span>Phản hồi ({reviewComments[review.id]?.length || review.commentsCount || 0})</span>
                 </button>
                 {review.userId !== user?.id && (
                   <button className="flex items-center gap-2 text-text-muted hover:text-primary transition-colors text-sm cursor-pointer ml-auto">
@@ -717,7 +823,104 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
                 )}
               </div>
 
-              {/* Replies */}
+              {/* Comment Form */}
+              {showCommentForms[review.id] && (
+                <div className="mt-4 pl-0 sm:pl-16 space-y-3">
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <textarea
+                        value={commentContents[review.id] || ''}
+                        onChange={(e) =>
+                          setCommentContents((prev) => ({
+                            ...prev,
+                            [review.id]: e.target.value,
+                          }))
+                        }
+                        placeholder="Viết bình luận..."
+                        rows={3}
+                        maxLength={500}
+                        className="w-full px-3 py-2 bg-background border border-secondary/50 rounded-xl text-text placeholder:text-text-muted resize-none focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all text-sm"
+                      />
+                      <div className="flex justify-end gap-2 mt-2">
+                        <button
+                          onClick={() => {
+                            setShowCommentForms((prev) => ({
+                              ...prev,
+                              [review.id]: false,
+                            }));
+                            setCommentContents((prev) => {
+                              const newContents = { ...prev };
+                              delete newContents[review.id];
+                              return newContents;
+                            });
+                          }}
+                          className="px-3 py-1.5 text-text-muted hover:text-text rounded-lg transition-colors text-sm"
+                        >
+                          Hủy
+                        </button>
+                        <button
+                          onClick={() => handleSubmitComment(review.id)}
+                          disabled={submittingComments.has(review.id) || !commentContents[review.id]?.trim()}
+                          className="px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 text-sm font-medium"
+                        >
+                          {submittingComments.has(review.id) ? (
+                            <>
+                              <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              Đang gửi...
+                            </>
+                          ) : (
+                            'Gửi'
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Comments List */}
+              {reviewComments[review.id] && reviewComments[review.id].length > 0 && (
+                <div className="mt-4 pl-0 sm:pl-16 space-y-3">
+                  {loadingComments.has(review.id) ? (
+                    <div className="text-center py-4">
+                      <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+                    </div>
+                  ) : (
+                    reviewComments[review.id].map((comment) => (
+                      <div key={comment.id} className="flex items-start gap-2">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0">
+                          {comment.user?.avatarUrl ? (
+                            <img
+                              src={comment.user.avatarUrl}
+                              alt={comment.user.fullName}
+                              className="w-full h-full rounded-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-text-muted text-xs font-semibold">
+                              {comment.user?.fullName?.charAt(0)?.toUpperCase() || 'U'}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <div className="bg-background/60 rounded-xl px-3 py-2 inline-block max-w-full">
+                            <span className="font-medium text-text text-sm">
+                              {comment.user?.fullName || 'Người dùng'}
+                            </span>
+                            <p className="text-text text-sm whitespace-pre-wrap break-words mt-0.5">
+                              {comment.content}
+                            </p>
+                          </div>
+                          <span className="text-xs text-text-muted ml-1 mt-1 block">
+                            {formatDate(comment.createdAt)}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {/* Legacy Replies (if any) */}
               {review.replies && review.replies.length > 0 && (
                 <div className="mt-4 pl-4 border-l-2 border-primary/20 space-y-3">
                   {review.replies.map((reply) => (

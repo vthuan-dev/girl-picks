@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { chatSexApi, ChatSexGirl } from '@/modules/chat-sex/api/chat-sex.api';
 import toast from 'react-hot-toast';
+import ReviewSection from '@/components/chat/ReviewSection';
 
 interface ChatSexDetailClientProps {
   id: string;
@@ -26,7 +27,7 @@ export default function ChatSexDetailClient({ id }: ChatSexDetailClientProps) {
     try {
       const data = await chatSexApi.getById(id);
       setGirl(data);
-      
+
       // Increment view count
       await chatSexApi.incrementView(id);
     } catch (error: any) {
@@ -128,6 +129,18 @@ export default function ChatSexDetailClient({ id }: ChatSexDetailClientProps) {
   const mainImage = girl.coverImage || images[0] || '/images/placeholder.jpg';
   const currentImage = images[currentImageIndex] || mainImage;
 
+  // Clean title by removing promotional text
+  const cleanTitle = (title: string) => {
+    if (!title) return title;
+
+    // Remove common promotional patterns
+    return title
+      .replace(/\s*-\s*vào\s+gaigu\.link\s+khi\s+bị\s+chặn/gi, '')
+      .replace(/\s*-\s*v[aà]o\s+[^\s]+\.link\s+khi\s+b[ịi]\s+ch[ặa]n/gi, '')
+      .replace(/\s*vào\s+gaigu\.link\s+khi\s+bị\s+chặn\s*-?\s*/gi, '')
+      .trim();
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Breadcrumb */}
@@ -162,7 +175,7 @@ export default function ChatSexDetailClient({ id }: ChatSexDetailClientProps) {
                 {girl.name}
               </h1>
               {girl.title && (
-                <p className="text-text-muted text-sm">{girl.title}</p>
+                <p className="text-text-muted text-sm">{cleanTitle(girl.title)}</p>
               )}
             </div>
 
@@ -171,22 +184,20 @@ export default function ChatSexDetailClient({ id }: ChatSexDetailClientProps) {
               <div className="flex gap-2 mb-2">
                 <button
                   onClick={() => setShowVideo(false)}
-                  className={`px-4 py-2 rounded ${
-                    !showVideo
-                      ? 'bg-primary text-white'
-                      : 'bg-background-light text-text-muted hover:bg-secondary/30'
-                  } transition-colors`}
+                  className={`px-4 py-2 rounded ${!showVideo
+                    ? 'bg-primary text-white'
+                    : 'bg-background-light text-text-muted hover:bg-secondary/30'
+                    } transition-colors`}
                 >
                   Click xem ảnh
                 </button>
                 {videos.length > 0 && (
                   <button
                     onClick={() => setShowVideo(true)}
-                    className={`px-4 py-2 rounded ${
-                      showVideo
-                        ? 'bg-primary text-white'
-                        : 'bg-background-light text-text-muted hover:bg-secondary/30'
-                    } transition-colors`}
+                    className={`px-4 py-2 rounded ${showVideo
+                      ? 'bg-primary text-white'
+                      : 'bg-background-light text-text-muted hover:bg-secondary/30'
+                      } transition-colors`}
                   >
                     Click xem video
                   </button>
@@ -290,11 +301,10 @@ export default function ChatSexDetailClient({ id }: ChatSexDetailClientProps) {
                         setCurrentImageIndex(idx);
                         setShowVideo(false);
                       }}
-                      className={`relative flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border-2 transition-all ${
-                        currentImageIndex === idx && !showVideo
-                          ? 'border-primary shadow-lg'
-                          : 'border-secondary/30 hover:border-primary/50'
-                      }`}
+                      className={`relative flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border-2 transition-all ${currentImageIndex === idx && !showVideo
+                        ? 'border-primary shadow-lg'
+                        : 'border-secondary/30 hover:border-primary/50'
+                        }`}
                     >
                       <Image
                         src={img}
@@ -481,6 +491,9 @@ export default function ChatSexDetailClient({ id }: ChatSexDetailClientProps) {
                 </p>
               </div>
             )}
+
+            {/* Reviews Section */}
+            <ReviewSection girlId={id} girlName={girl.name} />
           </div>
 
           {/* Right Column - Contact & Actions */}

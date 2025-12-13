@@ -134,6 +134,7 @@ model User {
   reviewedReports  Report[]        @relation("ReviewedBy")
   albums           Album[]         @relation("AlbumAuthor")
   managedChatSexGirls ChatSexGirl[] @relation("ChatSexGirlManager")
+  chatSexReviews   ChatSexReview[] @relation("ChatSexReviews")
 
   @@map("users")
 }
@@ -743,7 +744,7 @@ model ChatSexGirl {
   
   // Media
   images      Json     @default("[]") // Array of image URLs
-  videos      Json?    @default("[]") // Array of video URLs (multiple qualities)
+  videos      Json?    // Array of video URLs (multiple qualities) - nullable, no default
   coverImage  String?  // First image as cover
   
   // Status & Flags
@@ -767,9 +768,40 @@ model ChatSexGirl {
   
   // Relations
   managedBy   User?    @relation("ChatSexGirlManager", fields: [managedById], references: [id], onDelete: SetNull)
+  reviews     ChatSexReview[]
   
   @@index([isActive, isFeatured])
   @@index([province, isActive])
   @@index([isActive, viewCount])
   @@map("chat_sex_girls")
+}
+
+model ChatSexReview {
+  id        String   @id @default(uuid())
+  girlId    String   @map("girl_id")
+  userId    String?  @map("user_id")
+  
+  // Review content
+  rating    Int      // 1-5 stars
+  comment   String?  @db.Text
+  
+  // User info (for anonymous reviews)
+  userName  String?  @map("user_name")
+  
+  // Status
+  isApproved Boolean @default(true) @map("is_approved") // Auto-approve for now
+  isActive   Boolean @default(true) @map("is_active")
+  
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  girl      ChatSexGirl @relation(fields: [girlId], references: [id], onDelete: Cascade)
+  user      User?       @relation("ChatSexReviews", fields: [userId], references: [id], onDelete: SetNull)
+  
+  @@map("chat_sex_reviews")
+  @@index([girlId])
+  @@index([userId])
+  @@index([isApproved, isActive])
 }

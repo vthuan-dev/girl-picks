@@ -40,6 +40,21 @@ export interface ChatSexGirl {
   updatedAt: string;
 }
 
+export interface ChatSexReview {
+  id: string;
+  girlId: string;
+  userId?: string;
+  rating: number;
+  comment?: string;
+  userName?: string;
+  createdAt: string;
+  updatedAt: string;
+  user?: {
+    id: string;
+    fullName: string;
+  };
+}
+
 export const chatSexApi = {
   // Get all chat sex girls (public endpoint)
   getAll: async (params?: {
@@ -82,6 +97,36 @@ export const chatSexApi = {
   // Increment view count (public endpoint)
   incrementView: async (id: string): Promise<void> => {
     await apiClient.post(`/chat-sex/${id}/view`);
+  },
+
+  // Get reviews for a chat sex girl
+  getReviews: async (
+    girlId: string,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<PaginatedResponse<ChatSexReview>> => {
+    const response = await apiClient.get<any>(
+      `/chat-sex/${girlId}/reviews?page=${page}&limit=${limit}`,
+    );
+    const unwrapped = unwrapResponse(response.data);
+    return getPaginatedData<ChatSexReview>(unwrapped);
+  },
+
+  // Create a review for a chat sex girl
+  createReview: async (
+    girlId: string,
+    data: {
+      rating: number;
+      comment?: string;
+      userName?: string;
+    },
+  ): Promise<ChatSexReview> => {
+    const response = await apiClient.post<any>(
+      `/chat-sex/${girlId}/reviews`,
+      data,
+    );
+    const unwrapped = unwrapResponse(response.data);
+    return unwrapped as ChatSexReview;
   },
 };
 

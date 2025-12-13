@@ -12,12 +12,13 @@ import { Prisma } from '@prisma/client';
 // Type assertion for Prisma client with ChatSexGirl
 type PrismaWithChatSexGirl = PrismaService & {
   chatSexGirl: any;
+  chatSexReview: any;
 };
 
 @Injectable()
 export class ChatSexService {
   private prisma: PrismaWithChatSexGirl;
-  
+
   constructor(prisma: PrismaService) {
     this.prisma = prisma as PrismaWithChatSexGirl;
   }
@@ -47,7 +48,7 @@ export class ChatSexService {
       bio: dto.bio,
       phone: dto.phone,
       zalo: dto.zalo,
-      telegram: dto.telegram,
+      // telegram: dto.telegram, // Removed for privacy
       location: dto.location,
       province: dto.province,
       address: dto.address,
@@ -108,7 +109,7 @@ export class ChatSexService {
             { name: { contains: search } },
             { phone: { contains: search } },
             { zalo: { contains: search } },
-            { telegram: { contains: search } },
+            // { telegram: { contains: search } }, // Removed for privacy
             { bio: { contains: search } },
           ],
         }),
@@ -144,8 +145,9 @@ export class ChatSexService {
       // Parse JSON fields
       const parsedData = data.map((item: any) => {
         try {
+          const { telegram, ...itemWithoutTelegram } = item; // Exclude telegram for privacy
           return {
-            ...item,
+            ...itemWithoutTelegram,
             images: typeof item.images === 'string' ? JSON.parse(item.images) : (item.images || []),
             services: typeof item.services === 'string' ? JSON.parse(item.services) : (item.services || []),
             tags: typeof item.tags === 'string' ? JSON.parse(item.tags) : (item.tags || []),
@@ -197,8 +199,9 @@ export class ChatSexService {
 
     // Parse JSON fields
     try {
+      const { telegram, ...girlWithoutTelegram } = girl; // Exclude telegram for privacy
       return {
-        ...girl,
+        ...girlWithoutTelegram,
         images: typeof girl.images === 'string' ? JSON.parse(girl.images) : (girl.images || []),
         services: typeof girl.services === 'string' ? JSON.parse(girl.services) : (girl.services || []),
         tags: typeof girl.tags === 'string' ? JSON.parse(girl.tags) : (girl.tags || []),
@@ -231,7 +234,7 @@ export class ChatSexService {
       const baseSlug = generateSlug(dto.name);
       // Check existing slugs (excluding current record)
       const existingRecords = await this.prisma.chatSexGirl.findMany({
-        where: { 
+        where: {
           slug: { startsWith: baseSlug },
           id: { not: id },
         },
@@ -249,7 +252,7 @@ export class ChatSexService {
       ...(dto.bio !== undefined && { bio: dto.bio }),
       ...(dto.phone !== undefined && { phone: dto.phone }),
       ...(dto.zalo !== undefined && { zalo: dto.zalo }),
-      ...(dto.telegram !== undefined && { telegram: dto.telegram }),
+      // ...(dto.telegram !== undefined && { telegram: dto.telegram }), // Removed for privacy
       ...(dto.location !== undefined && { location: dto.location }),
       ...(dto.province !== undefined && { province: dto.province }),
       ...(dto.address !== undefined && { address: dto.address }),
@@ -340,6 +343,127 @@ export class ChatSexService {
       results,
       errors,
     };
+  }
+
+  // ==================== Review Methods ====================
+
+  /**
+   * Get reviews for a chat sex girl with pagination
+   */
+  async getReviews(
+    girlId: string,
+    page: number = 1,
+    limit: number = 10,
+  ) {
+    const skip = (page - 1) * limit;
+
+    const [reviews, total] = await Promise.all([
+      this.prisma.chatSexReview.findMany({
+        where: {
+          girlId,
+          isApproved: true,
+          isActive: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+            },
+          },
+        },
+      }),
+      this.prisma.chatSexReview.count({
+        where: {
+          girlId,
+          isApproved: true,
+          isActive: true,
+        },
+      }),
+    ]);
+
+    return {
+      data: reviews,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  /**
+   * Create a review for a chat sex girl
+   */
+  async createReview(
+    girlId: string,
+    dto: any, // CreateChatSexReviewDto
+    userId?: string,
+  ) {
+    // Check if girl exists
+    const girl = await this.prisma.chatSexGirl.findUnique({
+      where: { id: girlId },
+    });
+
+    if (!girl) {
+      throw new NotFoundException('Chat sex girl not found');
+    }
+
+    // Check if user already reviewed (if logged in)
+    if (userId) {
+      const existingReview = await this.prisma.chatSexReview.findFirst({
+        where: {
+          girlId,
+          userId,
+        },
+      });
+
+      if (existingReview) {
+        throw new BadRequestException('You have already reviewed this girl');
+      }
+    }
+
+    // Create review
+    const review = await this.prisma.chatSexReview.create({
+      data: {
+        girlId,
+        userId,
+        rating: dto.rating,
+        comment: dto.comment,
+        userName: dto.userName || 'Anonymous',
+        isApproved: true, // Auto-approve for now
+      },
+    });
+
+    // Update girl's average rating
+    await this.updateAverageRating(girlId);
+
+    return review;
+  }
+
+  /**
+   * Update average rating for a chat sex girl
+   */
+  private async updateAverageRating(girlId: string) {
+    const result = await this.prisma.chatSexReview.aggregate({
+      where: {
+        girlId,
+        isApproved: true,
+        isActive: true,
+      },
+      _avg: {
+        rating: true,
+      },
+    });
+
+    await this.prisma.chatSexGirl.update({
+      where: { id: girlId },
+      data: {
+        rating: result._avg.rating || null,
+      },
+    });
   }
 }
 

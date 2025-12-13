@@ -5,42 +5,20 @@ import ChatGirlCard from '@/components/chat/ChatGirlCard';
 import Pagination from '@/components/common/Pagination';
 import { chatSexApi, ChatSexGirl } from '@/modules/chat-sex/api/chat-sex.api';
 
-const hashtags = [
-  'Tất cả',
-  'Thủ dâm',
-  'Dâm thuỷ',
-  'Khẩu dâm',
-  'Mông to',
-  'Vú to',
-  'Lồn non',
-  'Sex toy',
-  'Gái teen',
-  'Mình dây',
-  'Nhiều lông',
-  'Cosplay',
-  'Mũm mĩm',
-  'Lỗ nhị',
-  'Giao hợp',
-  'Cạo lông',
-  'Máy bay',
-  'Cặp đôi',
-  'Chơi some',
-];
-
 interface ChatGirl {
   id: string;
   title: string;
   thumbnail: string;
+  images?: string[]; // All available images for fallback
   year: number;
   rating: number;
-  reviews: number;
+  reviews?: number; // Optional - chat sex girls don't have reviews
   views: number;
   views2: number;
   detailUrl: string;
 }
 
 export default function ChatSexPageClient() {
-  const [selectedHashtag, setSelectedHashtag] = useState('Tất cả');
   const [girls, setGirls] = useState<ChatGirl[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -49,7 +27,7 @@ export default function ChatSexPageClient() {
 
   useEffect(() => {
     fetchChatSexGirls();
-  }, [currentPage, selectedHashtag]);
+  }, [currentPage]);
 
   const fetchChatSexGirls = async () => {
     setLoading(true);
@@ -58,9 +36,6 @@ export default function ChatSexPageClient() {
         page: currentPage,
         limit: itemsPerPage,
         isActive: true, // Only show active girls
-        ...(selectedHashtag !== 'Tất cả' && {
-          search: selectedHashtag, // Use hashtag as search term
-        }),
       });
 
       console.log('[ChatSexPageClient] API Response:', data);
@@ -84,13 +59,13 @@ export default function ChatSexPageClient() {
         }
 
         const thumbnail = girl.coverImage || images[0] || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=300&fit=crop';
-        
+
         // Extract year from title or use current year
         const yearMatch = girl.title?.match(/\b(19|20)\d{2}\b/);
         const year = yearMatch ? parseInt(yearMatch[0]) : new Date().getFullYear();
 
         // Generate URL with slug if available
-        const detailUrl = girl.slug 
+        const detailUrl = girl.slug
           ? `/chat-sex/${girl.id}/${girl.slug}`
           : `/chat-sex/${girl.id}`;
 
@@ -98,9 +73,10 @@ export default function ChatSexPageClient() {
           id: girl.id,
           title: girl.name || girl.title || 'Gái Chat',
           thumbnail,
+          images, // Pass images array for fallback
           year,
           rating: girl.rating || 4.5,
-          reviews: 0, // Chat sex girls don't have reviews yet
+          // reviews: 0, // Removed - don't show reviews for chat sex girls
           views: girl.viewCount || 0,
           views2: girl.viewCount || 0,
           detailUrl,
@@ -122,10 +98,6 @@ export default function ChatSexPageClient() {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = Math.min(startIndex + itemsPerPage, total);
 
-  // Reset to page 1 when hashtag changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [selectedHashtag]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -172,90 +144,45 @@ export default function ChatSexPageClient() {
       </div>
 
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-6 sm:py-8">
-
-      {/* Hashtags Filters */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-1 h-6 bg-gradient-to-b from-primary to-primary-hover rounded-full"></div>
-          <h2 className="text-base sm:text-lg font-bold text-text uppercase tracking-wide">
-            Bộ lọc Hashtags
-          </h2>
-        </div>
-        <div className="flex flex-wrap gap-2 sm:gap-3">
-          {hashtags.map((hashtag) => (
-            <button
-              key={hashtag}
-              onClick={() => setSelectedHashtag(hashtag)}
-              className={`
-                group relative px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-semibold
-                transition-all duration-300 cursor-pointer overflow-hidden
-                ${
-                  selectedHashtag === hashtag
-                    ? 'bg-gradient-to-r from-primary to-primary-hover text-white shadow-xl shadow-primary/40 transform scale-105 border-2 border-primary/80'
-                    : 'bg-background-light border border-secondary/50 text-text hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 hover:border-primary/60 hover:shadow-lg hover:shadow-primary/10 hover:transform hover:scale-105 hover:border-primary/50'
-                }
-              `}
-            >
-              {/* Shine effect on selected */}
-              {selectedHashtag === hashtag && (
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-              )}
-              
-              {/* Hashtag icon for "Tất cả" */}
-              {hashtag === 'Tất cả' && (
-                <span className="inline-block mr-1.5">#</span>
-              )}
-              
-              <span className="relative">{hashtag === 'Tất cả' ? hashtag : `#${hashtag}`}</span>
-              
-              {/* Active indicator */}
-              {selectedHashtag === hashtag && (
-                <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-8 h-0.5 bg-white rounded-full"></div>
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Chat Girls Grid */}
-      {loading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 lg:gap-5">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <div key={i} className="bg-background-light border border-secondary/30 rounded-lg overflow-hidden animate-pulse">
-              <div className="w-full aspect-video bg-secondary/30"></div>
-              <div className="p-3 sm:p-4 space-y-2">
-                <div className="h-4 bg-secondary/30 rounded w-3/4"></div>
-                <div className="h-3 bg-secondary/30 rounded w-1/2"></div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : girls.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 sm:py-20">
-          <svg className="w-12 h-12 sm:w-16 sm:h-16 text-text-muted mb-3 sm:mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-          </svg>
-          <p className="text-text-muted text-base sm:text-lg">Không tìm thấy gái chat</p>
-          <p className="text-text-muted text-xs sm:text-sm mt-2">Thử thay đổi bộ lọc của bạn</p>
-        </div>
-      ) : (
-        <>
+        {/* Chat Girls Grid */}
+        {loading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 lg:gap-5">
-            {girls.map((girl: ChatGirl) => (
-              <ChatGirlCard key={girl.id} girl={girl} />
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div key={i} className="bg-background-light border border-secondary/30 rounded-lg overflow-hidden animate-pulse">
+                <div className="w-full aspect-video bg-secondary/30"></div>
+                <div className="p-3 sm:p-4 space-y-2">
+                  <div className="h-4 bg-secondary/30 rounded w-3/4"></div>
+                  <div className="h-3 bg-secondary/30 rounded w-1/2"></div>
+                </div>
+              </div>
             ))}
           </div>
+        ) : girls.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 sm:py-20">
+            <svg className="w-12 h-12 sm:w-16 sm:h-16 text-text-muted mb-3 sm:mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            <p className="text-text-muted text-base sm:text-lg">Không tìm thấy gái chat</p>
+            <p className="text-text-muted text-xs sm:text-sm mt-2">Thử thay đổi bộ lọc của bạn</p>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 lg:gap-5">
+              {girls.map((girl: ChatGirl) => (
+                <ChatGirlCard key={girl.id} girl={girl} />
+              ))}
+            </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
-            />
-          )}
-        </>
-      )}
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            )}
+          </>
+        )}
       </div>
     </div>
   );
