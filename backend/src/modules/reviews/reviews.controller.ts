@@ -197,4 +197,12 @@ export class ReviewsController {
   ) {
     return this.reviewsService.getComments(id, page, limit);
   }
+
+  @Get('debug/check-parent-id-column')
+  @Public()
+  @ApiOperation({ summary: 'Debug: Check if parent_id column exists' })
+  @ApiResponse({ status: 200, description: 'Column check result' })
+  async checkParentIdColumn() {
+    return this.reviewsService.checkParentIdColumnDebug();
+  }
 }
