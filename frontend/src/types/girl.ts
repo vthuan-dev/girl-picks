@@ -77,5 +77,8 @@ export interface UpdateGirlProfileDto {
   images?: string[];
   tags?: string[];
   isAvailable?: boolean;
+  price?: string;
+  services?: string[];
+  workingHours?: string;
 }
 

@@ -130,8 +130,8 @@ export default function GirlPostsPage() {
       setIsSubmitting(true);
       await postsApi.create({
         title: formData.title,
-        content: formData.content || undefined,
-        images: formData.images.length > 0 ? formData.images : undefined,
+        ...(formData.content && { content: formData.content }),
+        ...(formData.images.length > 0 && { images: formData.images }),
       });
       toast.success('Bài viết đã được tạo và đang chờ duyệt!');
       setFormData({ title: '', content: '', images: [] });

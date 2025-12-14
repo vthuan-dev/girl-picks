@@ -3,6 +3,9 @@ import { ApiResponse, PaginatedResponse } from '@/lib/api/types';
 import { Post, PostListParams, CreatePostDto, UpdatePostDto } from '@/types/post';
 import { unwrapResponse, getPaginatedData } from '@/lib/api/response-helper';
 
+// Re-export Post type for convenience
+export type { Post };
+
 export const postsApi = {
   // Get all posts (public - approved only by default)
   getAll: async (params?: PostListParams): Promise<PaginatedResponse<Post>> => {

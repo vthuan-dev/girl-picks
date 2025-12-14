@@ -64,9 +64,9 @@ export default function GirlPricingPage() {
         .filter((s) => s.length > 0);
 
       await girlsApi.updateProfile({
-        price: formData.price || undefined,
-        services: servicesArray.length > 0 ? servicesArray : undefined,
-        workingHours: formData.workingHours || undefined,
+        ...(formData.price && { price: formData.price }),
+        ...(servicesArray.length > 0 && { services: servicesArray }),
+        ...(formData.workingHours && { workingHours: formData.workingHours }),
       });
 
       toast.success('Cập nhật giá và dịch vụ thành công!');

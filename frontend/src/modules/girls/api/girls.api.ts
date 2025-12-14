@@ -69,11 +69,11 @@ export const girlsApi = {
     return response.data;
   },
 
-  // Update girl profile (self-update with CCCD required)
+  // Update girl profile (self-update with optional CCCD)
   updateProfile: async (data: UpdateGirlProfileDto & {
-    idCardFrontUrl: string;
-    idCardBackUrl: string;
-    selfieUrl: string;
+    idCardFrontUrl?: string;
+    idCardBackUrl?: string;
+    selfieUrl?: string;
   }): Promise<ApiResponse<Girl>> => {
     const response = await apiClient.patch<ApiResponse<Girl>>('/girls/me/profile', data);
     return response.data;

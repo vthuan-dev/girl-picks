@@ -70,7 +70,7 @@ export interface PostListParams {
 
 export interface CreatePostDto {
   title: string;
-  content: string;
+  content?: string;
   images?: string[];
   girlId?: string;
   videoUrl?: string;
