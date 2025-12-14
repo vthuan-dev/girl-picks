@@ -698,7 +698,7 @@ export class ReviewsService {
       }
     }
 
-    // Nếu có cột parent_id, dùng Prisma Client bình thường
+    // Nếu có cột parent_id, thử dùng Prisma Client, nếu lỗi thì fallback về raw SQL
     const commentData: any = {
       reviewId,
       userId,
@@ -710,18 +710,96 @@ export class ReviewsService {
       commentData.parentId = createReviewCommentDto.parentId;
     }
 
-    return await this.prisma.reviewComment.create({
-      data: commentData,
-      include: {
-        user: {
-          select: {
-            id: true,
-            fullName: true,
-            avatarUrl: true,
+    try {
+      return await this.prisma.reviewComment.create({
+        data: commentData,
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              avatarUrl: true,
+            },
           },
         },
-      },
-    });
+      });
+    } catch (prismaError: any) {
+      // Nếu Prisma Client lỗi (có thể do schema mismatch), fallback về raw SQL
+      const errorCode = prismaError?.code;
+      const errorMessage = prismaError?.message || '';
+      const isParentIdError = 
+        errorCode === 'P2022' ||
+        errorMessage.includes('parentId') || 
+        errorMessage.includes('parent_id') || 
+        errorMessage.includes('does not exist');
+      
+      if (isParentIdError) {
+        console.warn('[ReviewsService] Prisma Client error when creating comment, falling back to raw SQL. Error:', errorCode, errorMessage);
+        // Reset cache để check lại lần sau
+        this.hasParentIdColumn = null;
+        
+        // Dùng raw SQL
+        try {
+          const { randomUUID } = require('crypto');
+          const commentId = randomUUID();
+          const now = new Date();
+          
+          // Insert comment bằng raw SQL
+          if (createReviewCommentDto.parentId && createReviewCommentDto.parentId.trim() !== '') {
+            await this.prisma.$executeRaw`
+              INSERT INTO review_comments (id, reviewId, userId, content, parent_id, createdAt)
+              VALUES (${commentId}, ${reviewId}, ${userId}, ${createReviewCommentDto.content}, ${createReviewCommentDto.parentId}, ${now})
+            `;
+          } else {
+            await this.prisma.$executeRaw`
+              INSERT INTO review_comments (id, reviewId, userId, content, createdAt)
+              VALUES (${commentId}, ${reviewId}, ${userId}, ${createReviewCommentDto.content}, ${now})
+            `;
+          }
+          
+          // Lấy comment vừa tạo với user info
+          const newComment = await this.prisma.$queryRaw<any[]>`
+            SELECT 
+              rc.id,
+              rc.reviewId,
+              rc.userId,
+              rc.content,
+              rc.createdAt,
+              u.id as user_id,
+              u.fullName,
+              u.avatarUrl
+            FROM review_comments rc
+            INNER JOIN users u ON rc.userId = u.id
+            WHERE rc.id = ${commentId}
+            LIMIT 1
+          `;
+          
+          if (newComment && newComment.length > 0) {
+            const comment = newComment[0];
+            return {
+              id: comment.id,
+              reviewId: comment.reviewId,
+              userId: comment.userId,
+              content: comment.content,
+              createdAt: comment.createdAt,
+              user: {
+                id: comment.user_id,
+                fullName: comment.fullName,
+                avatarUrl: comment.avatarUrl,
+              },
+            };
+          }
+          
+          throw new InternalServerErrorException('Failed to create comment');
+        } catch (rawError: any) {
+          console.error('[ReviewsService] Raw SQL create comment also failed:', rawError);
+          throw new InternalServerErrorException(
+            'Failed to create comment. Please check database schema.'
+          );
+        }
+      }
+      throw prismaError;
+    }
   }
 
   async getComments(reviewId: string, page = 1, limit = 20) {
