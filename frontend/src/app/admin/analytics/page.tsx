@@ -3,6 +3,20 @@
 import { useState, useEffect } from 'react';
 import { analyticsApi, AnalyticsData } from '@/modules/admin/api/analytics.api';
 import toast from 'react-hot-toast';
+import {
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from 'recharts';
+import { format, parseISO } from 'date-fns';
+import { vi } from 'date-fns/locale';
 
 export default function AdminAnalyticsPage() {
   const [timeRange, setTimeRange] = useState<'7days' | '30days' | '90days' | '1year'>('7days');
@@ -24,6 +38,7 @@ export default function AdminAnalyticsPage() {
     setIsLoading(true);
     try {
       const data = await analyticsApi.getAnalytics(timeRange);
+      console.log('Analytics data loaded:', data);
       setAnalyticsData(data);
     } catch (error: any) {
       console.error('Error loading analytics:', error);
@@ -43,10 +58,61 @@ export default function AdminAnalyticsPage() {
     return num.toLocaleString('vi-VN');
   };
 
-  const metrics = analyticsData ? [
+  const formatChartDate = (dateString: string): string => {
+    try {
+      const date = parseISO(dateString);
+      if (timeRange === '7days') {
+        return format(date, 'EEE', { locale: vi });
+      } else if (timeRange === '30days') {
+        return format(date, 'dd/MM', { locale: vi });
+      } else if (timeRange === '90days') {
+        return format(date, 'dd/MM', { locale: vi });
+      } else {
+        return format(date, 'MM/yyyy', { locale: vi });
+      }
+    } catch {
+      return dateString;
+    }
+  };
+
+  const formatTooltipDate = (dateString: string): string => {
+    try {
+      const date = parseISO(dateString);
+      return format(date, 'dd/MM/yyyy', { locale: vi });
+    } catch {
+      return dateString;
+    }
+  };
+
+  // Prepare chart data
+  const trafficChartData = analyticsData?.trafficData?.map((item) => ({
+    date: formatChartDate(item.date),
+    fullDate: item.date,
+    visits: item.visits || 0,
+  })) || [];
+
+  // Custom tooltip component
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-background-light border border-secondary/50 rounded-lg p-3 shadow-lg">
+          <p className="text-text-muted text-sm mb-1">
+            {formatTooltipDate(data.fullDate)}
+          </p>
+          <p className="text-text font-semibold">
+            Lượt truy cập: <span className="text-blue-500">{formatNumber(payload[0].value)}</span>
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const metrics = analyticsData?.metrics ? [
     {
       label: 'Tổng lượt truy cập',
-      value: formatNumber(analyticsData.metrics.totalVisits),
+      value: formatNumber(analyticsData.metrics.totalVisits || 0),
       change: `+${analyticsData.metrics.visitsChange?.toFixed(1) || 0}%`,
       trend: 'up' as const,
       icon: (
@@ -59,7 +125,7 @@ export default function AdminAnalyticsPage() {
     },
     {
       label: 'Người dùng mới',
-      value: formatNumber(analyticsData.metrics.newUsers),
+      value: formatNumber(analyticsData.metrics.newUsers || 0),
       change: `+${analyticsData.metrics.usersChange?.toFixed(1) || 0}%`,
       trend: 'up' as const,
       icon: (
@@ -68,18 +134,6 @@ export default function AdminAnalyticsPage() {
         </svg>
       ),
       color: 'bg-green-500/20 text-green-500',
-    },
-    {
-      label: 'Doanh thu',
-      value: `${formatNumber(analyticsData.metrics.revenue)} VNĐ`,
-      change: `+${analyticsData.metrics.revenueChange?.toFixed(1) || 0}%`,
-      trend: 'up' as const,
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-      color: 'bg-yellow-500/20 text-yellow-500',
     },
   ] : [];
 
@@ -144,23 +198,104 @@ export default function AdminAnalyticsPage() {
       )}
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         {/* Traffic Chart */}
         <div className="bg-background-light rounded-xl border border-secondary/30 p-6">
           <h2 className="text-lg font-bold text-text mb-4">Lượt truy cập</h2>
-          <div className="h-64 flex items-center justify-center border-2 border-dashed border-secondary/30 rounded-lg">
-            <p className="text-text-muted">Biểu đồ sẽ được tích hợp sau</p>
-          </div>
-        </div>
-
-        {/* Revenue Chart */}
-        <div className="bg-background-light rounded-xl border border-secondary/30 p-6">
-          <h2 className="text-lg font-bold text-text mb-4">Doanh thu</h2>
-          <div className="h-64 flex items-center justify-center border-2 border-dashed border-secondary/30 rounded-lg">
-            <p className="text-text-muted">Biểu đồ sẽ được tích hợp sau</p>
-          </div>
+          {isLoading ? (
+            <div className="h-64 flex items-center justify-center">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-text-muted">Đang tải...</span>
+              </div>
+            </div>
+          ) : trafficChartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={256}>
+              <AreaChart data={trafficChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorVisits" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} />
+                <XAxis
+                  dataKey="date"
+                  stroke="#9ca3af"
+                  style={{ fontSize: '12px' }}
+                  tick={{ fill: '#9ca3af' }}
+                />
+                <YAxis
+                  stroke="#9ca3af"
+                  style={{ fontSize: '12px' }}
+                  tick={{ fill: '#9ca3af' }}
+                  tickFormatter={(value) => formatNumber(value)}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Area
+                  type="monotone"
+                  dataKey="visits"
+                  stroke="#3b82f6"
+                  strokeWidth={2}
+                  fillOpacity={1}
+                  fill="url(#colorVisits)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-64 flex items-center justify-center border-2 border-dashed border-secondary/30 rounded-lg">
+              <p className="text-text-muted">Không có dữ liệu</p>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Top Girls Section */}
+      {isLoading ? (
+        <div className="bg-background-light rounded-xl border border-secondary/30 p-6">
+          <h2 className="text-lg font-bold text-text mb-4">Gái gọi được xem nhiều nhất</h2>
+          <div className="space-y-3">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="animate-pulse">
+                <div className="h-20 bg-secondary/30 rounded-lg"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : analyticsData?.topGirls && analyticsData.topGirls.length > 0 ? (
+        <div className="bg-background-light rounded-xl border border-secondary/30 p-6">
+          <h2 className="text-lg font-bold text-text mb-4">Gái gọi được xem nhiều nhất</h2>
+          <div className="space-y-3">
+            {analyticsData.topGirls.map((girl, index) => (
+              <div key={girl.id} className="flex items-center justify-between p-4 bg-background rounded-xl border border-secondary/30 hover:border-primary/50 transition-colors">
+                <div className="flex items-center gap-4 flex-1">
+                  <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+                    <span className="text-primary font-bold text-sm">{index + 1}</span>
+                  </div>
+                  {girl.avatar ? (
+                    <img
+                      src={girl.avatar}
+                      alt={girl.name}
+                      className="w-12 h-12 rounded-lg object-cover border border-secondary/30"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-lg bg-secondary/30 flex items-center justify-center">
+                      <svg className="w-6 h-6 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-text truncate">{girl.name}</p>
+                    <p className="text-sm text-text-muted">{girl.views.toLocaleString('vi-VN')} lượt xem</p>
+                  </div>
+                </div>
+                <span className="text-sm font-medium text-green-500 ml-4">+{girl.change}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {/* Top Pages */}
       {isLoading ? (
@@ -174,11 +309,11 @@ export default function AdminAnalyticsPage() {
             ))}
           </div>
         </div>
-      ) : (
+      ) : analyticsData?.topPages && analyticsData.topPages.length > 0 ? (
         <div className="bg-background-light rounded-xl border border-secondary/30 p-6">
           <h2 className="text-lg font-bold text-text mb-4">Trang được truy cập nhiều nhất</h2>
           <div className="space-y-3">
-            {analyticsData?.topPages?.map((page, index) => (
+            {analyticsData.topPages.map((page, index) => (
               <div key={index} className="flex items-center justify-between p-4 bg-background rounded-xl border border-secondary/30">
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
@@ -192,6 +327,13 @@ export default function AdminAnalyticsPage() {
                 <span className="text-sm font-medium text-green-500">+{page.change}%</span>
               </div>
             ))}
+          </div>
+        </div>
+      ) : (
+        <div className="bg-background-light rounded-xl border border-secondary/30 p-6">
+          <h2 className="text-lg font-bold text-text mb-4">Trang được truy cập nhiều nhất</h2>
+          <div className="flex items-center justify-center py-12">
+            <p className="text-text-muted">Không có dữ liệu</p>
           </div>
         </div>
       )}

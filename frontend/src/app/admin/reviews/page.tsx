@@ -130,7 +130,7 @@ export default function AdminReviewsPage() {
     return Array.from({ length: 5 }).map((_, i) => (
       <svg
         key={i}
-        className={`w-4 h-4 ${i < rating ? 'text-yellow-500 fill-current' : 'text-gray-400'}`}
+        className={`w-6 h-6 ${i < rating ? 'text-yellow-500 fill-current' : 'text-gray-400'}`}
         fill="currentColor"
         viewBox="0 0 20 20"
       >

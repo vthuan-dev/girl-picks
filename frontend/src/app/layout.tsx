@@ -86,6 +86,7 @@ export const metadata: Metadata = {
 
 import ClientLayout from '@/components/layout/ClientLayout';
 import QueryProvider from '@/providers/QueryProvider';
+import PageViewTracker from '@/components/analytics/PageViewTracker';
 
 export default function RootLayout({
   children,
@@ -96,6 +97,7 @@ export default function RootLayout({
     <html lang="vi" suppressHydrationWarning>
       <body className={inter.className}>
         <QueryProvider>
+        <PageViewTracker />
         <StructuredData
           type="Organization"
           data={{

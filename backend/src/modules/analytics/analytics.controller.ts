@@ -101,12 +101,14 @@ export class AdminAnalyticsController {
   ) {
     const analytics = await this.analyticsService.getAnalytics(timeRange);
     const topPages = await this.analyticsService.getTopPages(10);
+    const topGirls = await this.analyticsService.getTopGirls(10);
     
     return {
       success: true,
       data: {
         ...analytics,
         topPages,
+        topGirls,
       },
     };
   }
@@ -122,6 +124,20 @@ export class AdminAnalyticsController {
     return {
       success: true,
       data: topPages,
+    };
+  }
+
+  @Get('girls')
+  @ApiOperation({ summary: 'Get top girls (Admin only)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'Top girls list' })
+  async getTopGirls(
+    @Query('limit') limit?: number,
+  ) {
+    const topGirls = await this.analyticsService.getTopGirls(limit ? Number(limit) : 10);
+    return {
+      success: true,
+      data: topGirls,
     };
   }
 }

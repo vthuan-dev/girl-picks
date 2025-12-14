@@ -287,5 +287,143 @@ export class AnalyticsService {
 
     return topPages;
   }
+
+  /**
+   * Get top girls by views
+   */
+  async getTopGirls(limit: number = 10) {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    // Get all page views for girl profiles (paths like /gai-goi/[id]/[slug])
+    const pageViews = await this.prisma.pageView.findMany({
+      where: {
+        createdAt: {
+          gte: thirtyDaysAgo,
+        },
+        path: {
+          startsWith: '/gai-goi/',
+        },
+      },
+      select: {
+        path: true,
+        sessionId: true,
+        title: true,
+      },
+    });
+
+    // Extract girl ID from path (format: /gai-goi/[id]/[slug])
+    const girlViewsMap = new Map<string, { views: Set<string>; name: string }>();
+    
+    pageViews.forEach((view) => {
+      // Extract ID from path like /gai-goi/123/abc-slug
+      const pathParts = view.path.split('/');
+      if (pathParts.length >= 3 && pathParts[1] === 'gai-goi') {
+        const girlId = pathParts[2];
+        const girlName = view.title || pathParts[3] || 'N/A';
+        
+        if (!girlViewsMap.has(girlId)) {
+          girlViewsMap.set(girlId, { views: new Set(), name: girlName });
+        }
+        girlViewsMap.get(girlId)!.views.add(view.sessionId);
+      }
+    });
+
+    // Get girl details from database
+    const girlIds = Array.from(girlViewsMap.keys());
+    const girls = await this.prisma.girl.findMany({
+      where: {
+        id: {
+          in: girlIds,
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        images: true,
+        userId: true,
+      },
+    });
+
+    // Get user details if needed
+    const userIds = girls.filter(g => g.userId).map(g => g.userId!);
+    const users = userIds.length > 0 ? await this.prisma.user.findMany({
+      where: {
+        id: {
+          in: userIds,
+        },
+      },
+      select: {
+        id: true,
+        fullName: true,
+      },
+    }) : [];
+    const usersMap = new Map(users.map(u => [u.id, u]));
+
+    // Create a map of girl details
+    const girlsMap = new Map(girls.map(g => [g.id, g]));
+
+    // Convert to array and sort
+    const result = Array.from(girlViewsMap.entries())
+      .map(([girlId, data]) => {
+        const girl = girlsMap.get(girlId);
+        const user = girl?.userId ? usersMap.get(girl.userId) : null;
+        // Get first image from images array (JSON)
+        const images = girl?.images ? (Array.isArray(girl.images) ? girl.images : JSON.parse(girl.images as any)) : [];
+        const avatar = images && images.length > 0 ? images[0] : null;
+        
+        return {
+          id: girlId,
+          name: girl?.name || user?.fullName || data.name,
+          avatar: avatar,
+          views: data.views.size,
+        };
+      })
+      .sort((a, b) => b.views - a.views)
+      .slice(0, limit);
+
+    // Calculate changes (compare with previous 30 days)
+    const sixtyDaysAgo = new Date();
+    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+
+    const topGirls = await Promise.all(
+      result.map(async (item) => {
+        const currentViews = item.views;
+        
+        // Get views from previous period (30-60 days ago) for this girl
+        const previousPageViews = await this.prisma.pageView.findMany({
+          where: {
+            path: {
+              startsWith: `/gai-goi/${item.id}/`,
+            },
+            createdAt: {
+              gte: sixtyDaysAgo,
+              lt: thirtyDaysAgo,
+            },
+          },
+          select: {
+            sessionId: true,
+          },
+        });
+
+        const previousSessions = new Set(previousPageViews.map(v => v.sessionId));
+        const previousViews = previousSessions.size;
+        
+        const change = previousViews > 0
+          ? ((currentViews - previousViews) / previousViews) * 100
+          : currentViews > 0 ? 100 : 0;
+
+        return {
+          id: item.id,
+          name: item.name,
+          avatar: item.avatar,
+          views: currentViews,
+          change: Number(change.toFixed(1)),
+        };
+      })
+    );
+
+    return topGirls;
+  }
 }
 

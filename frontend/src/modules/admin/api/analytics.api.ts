@@ -12,11 +12,20 @@ export interface AnalyticsMetrics {
   revenueChange?: number;
 }
 
+export interface TopGirl {
+  id: string;
+  name: string;
+  avatar?: string | null;
+  views: number;
+  change: number;
+}
+
 export interface AnalyticsData {
   metrics: AnalyticsMetrics;
   trafficData?: Array<{ date: string; visits: number }>;
   revenueData?: Array<{ date: string; revenue: number }>;
   topPages?: Array<{ page: string; views: number; change: number }>;
+  topGirls?: TopGirl[];
 }
 
 export const analyticsApi = {
@@ -27,10 +36,20 @@ export const analyticsApi = {
       const response = await apiClient.get<any>(`/admin/analytics?timeRange=${timeRange}`);
       const responseData = response.data;
       
+      // Handle nested response structure: { success: true, data: { success: true, data: {...} } }
       if (responseData.success && responseData.data) {
+        // Check if data has nested structure
+        if (responseData.data.success && responseData.data.data) {
+          return responseData.data.data;
+        }
+        // If data directly contains metrics
+        if (responseData.data.metrics) {
+          return responseData.data;
+        }
         return responseData.data;
       }
       
+      // Direct metrics structure
       if (responseData.metrics) {
         return responseData;
       }
