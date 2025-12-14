@@ -552,12 +552,18 @@ export class ReviewsService {
       const safeLimit = Math.min(Math.max(limit || 20, 1), 50); // Max 50 comments per page
       const safePage = Math.max(page || 1, 1);
 
-      const [comments, total] = await Promise.all([
-        this.prisma.reviewComment.findMany({
-          where: { 
-            reviewId,
-            parentId: null, // Chỉ lấy parent comments, không lấy replies
-          },
+      // Thử query với parentId, nếu lỗi thì fallback về query không có parentId
+      let whereClause: any = { reviewId, parentId: null };
+      let includeReplies = true;
+      
+      let comments: any[];
+      let total: number;
+
+      try {
+        // Thử query với parentId
+        [comments, total] = await Promise.all([
+          this.prisma.reviewComment.findMany({
+            where: whereClause,
           include: {
             user: {
               select: {
@@ -566,8 +572,63 @@ export class ReviewsService {
                 avatarUrl: true,
               },
             },
-            replies: {
-              take: 10, // Limit số replies được load để tránh query quá lớn
+            ...(includeReplies ? {
+              replies: {
+                take: 10, // Limit số replies được load để tránh query quá lớn
+                include: {
+                  user: {
+                    select: {
+                      id: true,
+                      fullName: true,
+                      avatarUrl: true,
+                    },
+                  },
+                  replies: {
+                    take: 5, // Limit số replies của replies
+                    include: {
+                      user: {
+                        select: {
+                          id: true,
+                          fullName: true,
+                          avatarUrl: true,
+                        },
+                      },
+                    },
+                    orderBy: {
+                      createdAt: 'asc',
+                    },
+                  },
+                },
+                orderBy: {
+                  createdAt: 'asc',
+                },
+              },
+              _count: {
+                select: {
+                  replies: true,
+                },
+              },
+            } : {}),
+          },
+          orderBy: { createdAt: 'desc' },
+          skip: (safePage - 1) * safeLimit,
+          take: safeLimit,
+        }),
+          this.prisma.reviewComment.count({ 
+            where: whereClause
+          }),
+        ]);
+      } catch (error: any) {
+        // Nếu lỗi là column parentId không tồn tại, fallback về query không có parentId
+        if (error?.message?.includes('parentId') || error?.message?.includes('parent_id') || error?.message?.includes('does not exist')) {
+          console.warn('parentId column does not exist, falling back to simple query');
+          whereClause = { reviewId };
+          includeReplies = false;
+          
+          // Query lại không có parentId
+          [comments, total] = await Promise.all([
+            this.prisma.reviewComment.findMany({
+              where: whereClause,
               include: {
                 user: {
                   select: {
@@ -576,43 +637,19 @@ export class ReviewsService {
                     avatarUrl: true,
                   },
                 },
-                replies: {
-                  take: 5, // Limit số replies của replies
-                  include: {
-                    user: {
-                      select: {
-                        id: true,
-                        fullName: true,
-                        avatarUrl: true,
-                      },
-                    },
-                  },
-                  orderBy: {
-                    createdAt: 'asc',
-                  },
-                },
               },
-              orderBy: {
-                createdAt: 'asc',
-              },
-            },
-            _count: {
-              select: {
-                replies: true,
-              },
-            },
-          },
-          orderBy: { createdAt: 'desc' },
-          skip: (safePage - 1) * safeLimit,
-          take: safeLimit,
-        }),
-        this.prisma.reviewComment.count({ 
-          where: { 
-            reviewId,
-            parentId: null, // Chỉ đếm parent comments
-          } 
-        }),
-      ]);
+              orderBy: { createdAt: 'desc' },
+              skip: (safePage - 1) * safeLimit,
+              take: safeLimit,
+            }),
+            this.prisma.reviewComment.count({ 
+              where: whereClause
+            }),
+          ]);
+        } else {
+          throw error;
+        }
+      }
 
       return {
         success: true,
