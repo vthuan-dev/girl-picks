@@ -548,74 +548,80 @@ export class ReviewsService {
         throw new NotFoundException('Review not found');
       }
 
+      // Validate limit để tránh query quá lớn
+      const safeLimit = Math.min(Math.max(limit || 20, 1), 50); // Max 50 comments per page
+      const safePage = Math.max(page || 1, 1);
+
       const [comments, total] = await Promise.all([
-      this.prisma.reviewComment.findMany({
-        where: { 
-          reviewId,
-          parentId: null, // Chỉ lấy parent comments, không lấy replies
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              fullName: true,
-              avatarUrl: true,
-            },
+        this.prisma.reviewComment.findMany({
+          where: { 
+            reviewId,
+            parentId: null, // Chỉ lấy parent comments, không lấy replies
           },
-          replies: {
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  fullName: true,
-                  avatarUrl: true,
-                },
+          include: {
+            user: {
+              select: {
+                id: true,
+                fullName: true,
+                avatarUrl: true,
               },
-              replies: {
-                include: {
-                  user: {
-                    select: {
-                      id: true,
-                      fullName: true,
-                      avatarUrl: true,
-                    },
+            },
+            replies: {
+              take: 10, // Limit số replies được load để tránh query quá lớn
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    fullName: true,
+                    avatarUrl: true,
                   },
                 },
-                orderBy: {
-                  createdAt: 'asc',
+                replies: {
+                  take: 5, // Limit số replies của replies
+                  include: {
+                    user: {
+                      select: {
+                        id: true,
+                        fullName: true,
+                        avatarUrl: true,
+                      },
+                    },
+                  },
+                  orderBy: {
+                    createdAt: 'asc',
+                  },
                 },
               },
+              orderBy: {
+                createdAt: 'asc',
+              },
             },
-            orderBy: {
-              createdAt: 'asc',
+            _count: {
+              select: {
+                replies: true,
+              },
             },
           },
-          _count: {
-            select: {
-              replies: true,
-            },
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      this.prisma.reviewComment.count({ 
-        where: { 
-          reviewId,
-          parentId: null, // Chỉ đếm parent comments
-        } 
-      }),
-    ]);
+          orderBy: { createdAt: 'desc' },
+          skip: (safePage - 1) * safeLimit,
+          take: safeLimit,
+        }),
+        this.prisma.reviewComment.count({ 
+          where: { 
+            reviewId,
+            parentId: null, // Chỉ đếm parent comments
+          } 
+        }),
+      ]);
 
       return {
         success: true,
         data: comments,
         meta: {
           total,
-          page,
-          limit,
-          totalPages: Math.ceil(total / limit),
+          page: safePage,
+          limit: safeLimit,
+          totalPages: Math.ceil(total / safeLimit),
         },
       };
     } catch (error) {
