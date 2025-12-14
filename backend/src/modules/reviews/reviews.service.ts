@@ -580,39 +580,11 @@ export class ReviewsService {
                       avatarUrl: true,
                     },
                   },
-                  replies: {
-                    include: {
-                      user: {
-                        select: {
-                          id: true,
-                          fullName: true,
-                          avatarUrl: true,
-                        },
-                      },
-                  replies: {
-                    include: {
-                      user: {
-                        select: {
-                          id: true,
-                          fullName: true,
-                          avatarUrl: true,
-                        },
-                      },
-                    },
-                    orderBy: {
-                      createdAt: 'asc',
-                    },
-                  },
                 },
                 orderBy: {
                   createdAt: 'asc',
                 },
               },
-            },
-            orderBy: {
-              createdAt: 'asc',
-            },
-          },
             },
             orderBy: {
               createdAt: 'asc',
