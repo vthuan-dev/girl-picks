@@ -31,6 +31,9 @@ export default function AdminGirlsPage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [createProfileModalOpen, setCreateProfileModalOpen] = useState(false);
+  const [imageViewerOpen, setImageViewerOpen] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+  const [selectedImageTitle, setSelectedImageTitle] = useState<string>('');
   const [selectedUser, setSelectedUser] = useState<{ id: string; email: string; fullName: string } | null>(null);
   const [selectedGirl, setSelectedGirl] = useState<Girl | null>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
@@ -466,6 +469,10 @@ export default function AdminGirlsPage() {
       toast.success('Duyệt xác thực thành công');
       loadGirls();
       loadStats();
+      // Reload detail if viewing this girl
+      if (selectedGirl && selectedGirl.id === id) {
+        handleView(id);
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Không thể duyệt xác thực');
     }
@@ -478,6 +485,10 @@ export default function AdminGirlsPage() {
       toast.success('Từ chối xác thực thành công');
       loadGirls();
       loadStats();
+      // Reload detail if viewing this girl
+      if (selectedGirl && selectedGirl.id === id) {
+        handleView(id);
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Không thể từ chối xác thực');
     }
@@ -746,6 +757,110 @@ export default function AdminGirlsPage() {
                       <p className="text-2xl font-bold text-text">{selectedGirl.totalReviews || 0}</p>
                     </div>
                   </div>
+
+                  {/* Verification Images - Hiển thị khi có yêu cầu xác thực */}
+                  {(selectedGirl.verificationStatus === 'PENDING' || selectedGirl.verificationStatus === 'REJECTED' || 
+                    selectedGirl.idCardFrontUrl || selectedGirl.idCardBackUrl || selectedGirl.selfieUrl) && (
+                    <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-6">
+                      <h3 className="text-lg font-bold text-text mb-4 flex items-center gap-2">
+                        <svg className="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                        Ảnh xác thực danh tính (CCCD)
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* CCCD Mặt trước */}
+                        {selectedGirl.idCardFrontUrl && (
+                          <div>
+                            <label className="text-sm font-semibold text-text-muted mb-2 block">CCCD Mặt trước</label>
+                            <div className="relative group">
+                              <img
+                                src={selectedGirl.idCardFrontUrl}
+                                alt="CCCD mặt trước"
+                                className="w-full h-48 object-contain rounded-lg border-2 border-secondary/30 bg-background p-2 cursor-pointer hover:border-primary transition-colors"
+                                onClick={() => {
+                                  setSelectedImageUrl(selectedGirl.idCardFrontUrl!);
+                                  setSelectedImageTitle('CCCD Mặt trước');
+                                  setImageViewerOpen(true);
+                                }}
+                              />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
+                                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                                </svg>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* CCCD Mặt sau */}
+                        {selectedGirl.idCardBackUrl && (
+                          <div>
+                            <label className="text-sm font-semibold text-text-muted mb-2 block">CCCD Mặt sau</label>
+                            <div className="relative group">
+                              <img
+                                src={selectedGirl.idCardBackUrl}
+                                alt="CCCD mặt sau"
+                                className="w-full h-48 object-contain rounded-lg border-2 border-secondary/30 bg-background p-2 cursor-pointer hover:border-primary transition-colors"
+                                onClick={() => {
+                                  setSelectedImageUrl(selectedGirl.idCardBackUrl!);
+                                  setSelectedImageTitle('CCCD Mặt sau');
+                                  setImageViewerOpen(true);
+                                }}
+                              />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
+                                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                                </svg>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Ảnh mặt mộc */}
+                        {selectedGirl.selfieUrl && (
+                          <div>
+                            <label className="text-sm font-semibold text-text-muted mb-2 block">Ảnh mặt mộc</label>
+                            <div className="relative group">
+                              <img
+                                src={selectedGirl.selfieUrl}
+                                alt="Ảnh mặt mộc"
+                                className="w-full h-48 object-contain rounded-lg border-2 border-secondary/30 bg-background p-2 cursor-pointer hover:border-primary transition-colors"
+                                onClick={() => {
+                                  setSelectedImageUrl(selectedGirl.selfieUrl!);
+                                  setSelectedImageTitle('Ảnh mặt mộc');
+                                  setImageViewerOpen(true);
+                                }}
+                              />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
+                                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                                </svg>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Action buttons for verification */}
+                      {selectedGirl.verificationStatus === 'PENDING' && (
+                        <div className="mt-4 flex gap-3">
+                          <button
+                            onClick={() => handleApproveVerification(selectedGirl.id)}
+                            className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium"
+                          >
+                            ✓ Duyệt xác thực
+                          </button>
+                          <button
+                            onClick={() => handleRejectVerification(selectedGirl.id)}
+                            className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium"
+                          >
+                            ✗ Từ chối
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Images */}
                   {selectedGirl.images && selectedGirl.images.length > 0 && (
@@ -1326,6 +1441,62 @@ export default function AdminGirlsPage() {
           Thêm gái gọi
         </Button>
       </div>
+
+      {/* Image Viewer Modal */}
+      {imageViewerOpen && selectedImageUrl && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm"
+          onClick={() => {
+            setImageViewerOpen(false);
+            setSelectedImageUrl(null);
+            setSelectedImageTitle('');
+          }}
+        >
+          <div className="relative max-w-7xl max-h-[90vh] w-full h-full flex items-center justify-center">
+            {/* Close button */}
+            <button
+              onClick={() => {
+                setImageViewerOpen(false);
+                setSelectedImageUrl(null);
+                setSelectedImageTitle('');
+              }}
+              className="absolute top-4 right-4 z-10 p-3 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Image title */}
+            {selectedImageTitle && (
+              <div className="absolute top-4 left-4 z-10 px-4 py-2 bg-black/50 rounded-lg text-white text-sm font-medium">
+                {selectedImageTitle}
+              </div>
+            )}
+
+            {/* Image */}
+            <img
+              src={selectedImageUrl}
+              alt={selectedImageTitle || 'Ảnh xác thực'}
+              className="max-w-full max-h-full object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+
+            {/* Download button */}
+            <a
+              href={selectedImageUrl}
+              download
+              onClick={(e) => e.stopPropagation()}
+              className="absolute bottom-4 right-4 z-10 p-3 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors"
+              title="Tải xuống"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+            </a>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

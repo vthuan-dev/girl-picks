@@ -23,7 +23,6 @@ export default function GirlProfileUpdateForm({ girl, onUpdate }: GirlProfileUpd
     price: girl.price || '',
     workingHours: girl.workingHours || '',
     services: (girl.services || []).join(', '),
-    images: (girl.images || []).join(', '),
   });
 
   // CCCD upload states
@@ -34,9 +33,15 @@ export default function GirlProfileUpdateForm({ girl, onUpdate }: GirlProfileUpd
   const [idCardBackPreview, setIdCardBackPreview] = useState<string | null>(girl.idCardBackUrl || null);
   const [selfiePreview, setSelfiePreview] = useState<string | null>(girl.selfieUrl || null);
 
+  // Profile images upload states
+  const [profileImages, setProfileImages] = useState<File[]>([]);
+  const [profileImagePreviews, setProfileImagePreviews] = useState<string[]>(girl.images || []);
+  const [existingImages, setExistingImages] = useState<string[]>(girl.images || []);
+
   const idCardFrontRef = useRef<HTMLInputElement>(null);
   const idCardBackRef = useRef<HTMLInputElement>(null);
   const selfieRef = useRef<HTMLInputElement>(null);
+  const profileImagesRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (
     file: File | null,
@@ -119,16 +124,43 @@ export default function GirlProfileUpdateForm({ girl, onUpdate }: GirlProfileUpd
         selfieUrl = await uploadImage(selfie);
       }
 
-      // Prepare update data
-      const updateData = {
-        ...formData,
+      // Upload profile images if new files are selected
+      let imageUrls = [...existingImages];
+      if (profileImages.length > 0) {
+        try {
+          const uploadedUrls = await Promise.all(
+            profileImages.map(file => uploadImage(file))
+          );
+          imageUrls = [...existingImages, ...uploadedUrls];
+        } catch (error) {
+          console.error('Error uploading images:', error);
+          toast.error('Có lỗi khi upload ảnh. Vui lòng thử lại.');
+          throw error;
+        }
+      }
+
+      // Prepare update data - only include fields allowed by backend DTO
+      const updateData: any = {
+        bio: formData.bio || undefined,
         age: formData.age ? parseInt(formData.age.toString()) : undefined,
-        services: formData.services ? formData.services.split(',').map(s => s.trim()).filter(Boolean) : [],
-        images: formData.images ? formData.images.split(',').map(s => s.trim()).filter(Boolean) : [],
+        height: formData.height || undefined,
+        weight: formData.weight || undefined,
+        measurements: formData.measurements || undefined,
+        origin: formData.origin || undefined,
+        address: formData.address || undefined,
+        price: formData.price || undefined,
+        images: imageUrls.length > 0 ? imageUrls : undefined,
         idCardFrontUrl: idCardFrontUrl!,
         idCardBackUrl: idCardBackUrl!,
         selfieUrl: selfieUrl!,
       };
+
+      // Remove undefined fields
+      Object.keys(updateData).forEach(key => {
+        if (updateData[key] === undefined || updateData[key] === null || updateData[key] === '') {
+          delete updateData[key];
+        }
+      });
 
       const response = await girlsApi.updateProfile(updateData);
       
@@ -137,7 +169,35 @@ export default function GirlProfileUpdateForm({ girl, onUpdate }: GirlProfileUpd
       toast.success('Cập nhật hồ sơ thành công! Hồ sơ của bạn đang chờ admin duyệt.');
       onUpdate?.(girlData as Girl);
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Cập nhật thất bại');
+      console.error('Update profile error:', error);
+      
+      // Handle validation errors
+      if (error.response?.status === 400) {
+        const errorData = error.response.data;
+        let errorMessage = 'Cập nhật thất bại';
+        
+        if (errorData.errors && Array.isArray(errorData.errors)) {
+          // Display validation errors
+          const errorList = errorData.errors.map((err: string) => {
+            // Translate common validation errors
+            if (err.includes('workingHours')) {
+              return 'Trường "Giờ làm việc" không được hỗ trợ trong cập nhật hồ sơ';
+            }
+            if (err.includes('services')) {
+              return 'Trường "Dịch vụ" không được hỗ trợ trong cập nhật hồ sơ';
+            }
+            return err;
+          }).join(', ');
+          
+          errorMessage = `Lỗi xác thực: ${errorList}`;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+        
+        toast.error(errorMessage, { duration: 5000 });
+      } else {
+        toast.error(error.response?.data?.message || error.message || 'Cập nhật thất bại');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -352,14 +412,90 @@ export default function GirlProfileUpdateForm({ girl, onUpdate }: GirlProfileUpd
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-text mb-2">Ảnh (URL, phân cách bằng dấu phẩy)</label>
-          <textarea
-            value={formData.images}
-            onChange={(e) => setFormData({ ...formData, images: e.target.value })}
-            rows={3}
-            placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
-            className="w-full px-4 py-2 bg-background-light border border-secondary rounded text-text focus:outline-none focus:ring-2 focus:ring-primary"
+          <label className="block text-sm font-medium text-text mb-2">Ảnh hồ sơ</label>
+          <input
+            ref={profileImagesRef}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={(e) => {
+              const files = Array.from(e.target.files || []);
+              setProfileImages(prev => [...prev, ...files]);
+              
+              // Create previews
+              files.forEach(file => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                  setProfileImagePreviews(prev => [...prev, reader.result as string]);
+                };
+                reader.readAsDataURL(file);
+              });
+            }}
+            className="hidden"
           />
+          <div
+            onClick={() => profileImagesRef.current?.click()}
+            className="cursor-pointer border-2 border-dashed border-secondary rounded-lg p-4 hover:border-primary transition-colors mb-4"
+          >
+            <div className="text-center py-4 text-text-muted">
+              <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <p className="text-sm">Click để chọn ảnh (có thể chọn nhiều ảnh)</p>
+            </div>
+          </div>
+          
+          {/* Image Previews */}
+          {profileImagePreviews.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {profileImagePreviews.map((preview, index) => {
+                const isExisting = index < existingImages.length;
+                const handleRemove = () => {
+                  if (isExisting) {
+                    // Remove from existing images
+                    const newExisting = existingImages.filter((_, i) => i !== index);
+                    setExistingImages(newExisting);
+                    // Update previews: keep existing (minus removed) + new files
+                    const newPreviews = [
+                      ...newExisting,
+                      ...profileImagePreviews.slice(existingImages.length)
+                    ];
+                    setProfileImagePreviews(newPreviews);
+                  } else {
+                    // Remove from new files
+                    const fileIndex = index - existingImages.length;
+                    const newFiles = profileImages.filter((_, i) => i !== fileIndex);
+                    setProfileImages(newFiles);
+                    // Update previews: keep existing + new files (minus removed)
+                    const newPreviews = [
+                      ...existingImages,
+                      ...profileImagePreviews.slice(existingImages.length).filter((_, i) => i !== fileIndex)
+                    ];
+                    setProfileImagePreviews(newPreviews);
+                  }
+                };
+                
+                return (
+                  <div key={`${isExisting ? 'existing' : 'new'}-${index}`} className="relative group">
+                    <img
+                      src={preview}
+                      alt={`Preview ${index + 1}`}
+                      className="w-full h-32 object-cover rounded-lg border border-secondary"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemove}
+                      className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 

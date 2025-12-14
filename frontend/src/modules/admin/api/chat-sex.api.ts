@@ -75,7 +75,7 @@ export interface ChatSexGirlListResponse {
 }
 
 class ChatSexApi {
-  private baseUrl = '/api/chat-sex';
+  private baseUrl = '/chat-sex';
 
   async getAll(options?: {
     page?: number;
@@ -98,38 +98,48 @@ class ChatSexApi {
     if (options?.isVerified !== undefined)
       params.append('isVerified', options.isVerified.toString());
 
-    const response = await fetch(
-      `${this.baseUrl}?${params.toString()}`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      },
+    const response = await apiClient.get<any>(
+      `${this.baseUrl}?${params.toString()}`
     );
-
-    if (!response.ok) {
-      throw new Error('Không thể tải danh sách gái chat');
+    
+    const responseData = response.data;
+    
+    if (responseData.success && responseData.data) {
+      return {
+        data: responseData.data.data || responseData.data,
+        meta: responseData.data.meta || responseData.meta || {
+          total: 0,
+          page: options?.page || 1,
+          limit: options?.limit || 20,
+          totalPages: 0,
+        },
+      };
     }
-
-    return response.json();
+    
+    return {
+      data: [],
+      meta: {
+        total: 0,
+        page: options?.page || 1,
+        limit: options?.limit || 20,
+        totalPages: 0,
+      },
+    };
   }
 
   async getById(id: string): Promise<ChatSexGirl> {
-    const response = await fetch(`${this.baseUrl}/${id}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-    });
-
-    if (!response.ok) {
-      throw new Error('Không thể tải thông tin gái chat');
+    const response = await apiClient.get<any>(`${this.baseUrl}/${id}`);
+    const responseData = response.data;
+    
+    if (responseData.success && responseData.data) {
+      return responseData.data;
     }
-
-    return response.json();
+    
+    if (responseData.id) {
+      return responseData;
+    }
+    
+    throw new Error('Không thể tải thông tin gái chat');
   }
 
   async create(dto: CreateChatSexGirlDto): Promise<ChatSexGirl> {
@@ -160,13 +170,7 @@ class ChatSexApi {
   }
 
   async incrementView(id: string): Promise<void> {
-    await fetch(`${this.baseUrl}/${id}/view`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-    });
+    await apiClient.post(`${this.baseUrl}/${id}/view`);
   }
 }
 
