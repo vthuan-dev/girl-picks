@@ -620,32 +620,115 @@ export class ReviewsService {
         ]);
       } catch (error: any) {
         // Nếu lỗi là column parentId không tồn tại, fallback về query không có parentId
-        if (error?.message?.includes('parentId') || error?.message?.includes('parent_id') || error?.message?.includes('does not exist')) {
-          console.warn('parentId column does not exist, falling back to simple query');
+        const errorCode = error?.code;
+        const errorMessage = error?.message || '';
+        const isParentIdError = 
+          errorCode === 'P2022' || // Prisma error code for column does not exist
+          errorMessage.includes('parentId') || 
+          errorMessage.includes('parent_id') || 
+          errorMessage.includes('does not exist') ||
+          errorMessage.includes('Unknown column') ||
+          errorMessage.includes('Unknown column \'parent_id\'') ||
+          errorMessage.includes('Unknown column \'parentId\'');
+        
+        if (isParentIdError) {
+          console.warn('parentId column does not exist, falling back to simple query. Error:', errorCode, errorMessage);
           whereClause = { reviewId };
           includeReplies = false;
           
-          // Query lại không có parentId
-          [comments, total] = await Promise.all([
-            this.prisma.reviewComment.findMany({
-              where: whereClause,
-              include: {
-                user: {
-                  select: {
-                    id: true,
-                    fullName: true,
-                    avatarUrl: true,
+          // Query lại không có parentId - dùng select thay vì include để tránh Prisma access parentId
+          // và thêm replies: [] và _count: { replies: 0 } để giữ format response giống nhau
+          try {
+            const [commentsData, totalCount] = await Promise.all([
+              this.prisma.reviewComment.findMany({
+                where: whereClause,
+                select: {
+                  id: true,
+                  reviewId: true,
+                  userId: true,
+                  content: true,
+                  createdAt: true,
+                  user: {
+                    select: {
+                      id: true,
+                      fullName: true,
+                      avatarUrl: true,
+                    },
                   },
+                  // KHÔNG include replies hoặc _count vì chúng phụ thuộc vào parentId
                 },
+                orderBy: { createdAt: 'desc' },
+                skip: (safePage - 1) * safeLimit,
+                take: safeLimit,
+              }),
+              this.prisma.reviewComment.count({ 
+                where: whereClause
+              }),
+            ]);
+            
+            // Map response để giữ format giống với query có replies
+            comments = commentsData.map(comment => ({
+              ...comment,
+              replies: [], // Empty array vì không có parentId
+              _count: {
+                replies: 0,
               },
-              orderBy: { createdAt: 'desc' },
-              skip: (safePage - 1) * safeLimit,
-              take: safeLimit,
-            }),
-            this.prisma.reviewComment.count({ 
-              where: whereClause
-            }),
-          ]);
+            }));
+            total = totalCount;
+          } catch (fallbackError: any) {
+            // Nếu vẫn lỗi, có thể Prisma Client vẫn cố access parentId
+            // Thử dùng raw query
+            console.error('Fallback query also failed, trying raw query:', fallbackError);
+            try {
+              const rawComments = await this.prisma.$queryRaw<any[]>`
+                SELECT 
+                  rc.id,
+                  rc.reviewId,
+                  rc.userId,
+                  rc.content,
+                  rc.createdAt,
+                  u.id as userId,
+                  u.fullName,
+                  u.avatarUrl
+                FROM review_comments rc
+                INNER JOIN users u ON rc.userId = u.id
+                WHERE rc.reviewId = ${reviewId}
+                ORDER BY rc.createdAt DESC
+                LIMIT ${safeLimit}
+                OFFSET ${(safePage - 1) * safeLimit}
+              `;
+              
+              const rawTotal = await this.prisma.$queryRaw<[{ count: bigint }]>`
+                SELECT COUNT(*) as count
+                FROM review_comments
+                WHERE reviewId = ${reviewId}
+              `;
+              
+              comments = rawComments.map((row: any) => ({
+                id: row.id,
+                reviewId: row.reviewId,
+                userId: row.userId,
+                content: row.content,
+                createdAt: row.createdAt,
+                user: {
+                  id: row.userId,
+                  fullName: row.fullName,
+                  avatarUrl: row.avatarUrl,
+                },
+                replies: [],
+                _count: {
+                  replies: 0,
+                },
+              }));
+              
+              total = Number(rawTotal[0]?.count || 0);
+            } catch (rawError: any) {
+              console.error('Raw query also failed:', rawError);
+              throw new InternalServerErrorException(
+                'Database schema mismatch: parentId column does not exist. Please run migrations: npx prisma migrate deploy'
+              );
+            }
+          }
         } else {
           throw error;
         }
