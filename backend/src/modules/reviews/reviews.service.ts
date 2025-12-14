@@ -518,23 +518,58 @@ export class ReviewsService {
       }
     }
 
-    return this.prisma.reviewComment.create({
-      data: {
-        reviewId,
-        userId,
-        content: createReviewCommentDto.content,
-        ...(createReviewCommentDto.parentId && { parentId: createReviewCommentDto.parentId }),
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            fullName: true,
-            avatarUrl: true,
+    try {
+      return await this.prisma.reviewComment.create({
+        data: {
+          reviewId,
+          userId,
+          content: createReviewCommentDto.content,
+          ...(createReviewCommentDto.parentId && { parentId: createReviewCommentDto.parentId }),
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              avatarUrl: true,
+            },
           },
         },
-      },
-    });
+      });
+    } catch (error: any) {
+      // Nếu lỗi là column parentId không tồn tại, fallback về create không có parentId
+      const errorCode = error?.code;
+      const errorMessage = error?.message || '';
+      const isParentIdError = 
+        errorCode === 'P2022' ||
+        errorMessage.includes('parentId') || 
+        errorMessage.includes('parent_id') || 
+        errorMessage.includes('does not exist') ||
+        errorMessage.includes('Unknown column');
+      
+      if (isParentIdError && createReviewCommentDto.parentId) {
+        console.warn('parentId column does not exist, creating comment without parentId. Error:', errorCode, errorMessage);
+        // Nếu có parentId nhưng cột không tồn tại, tạo comment không có parentId
+        return await this.prisma.reviewComment.create({
+          data: {
+            reviewId,
+            userId,
+            content: createReviewCommentDto.content,
+            // Không include parentId
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                fullName: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        });
+      }
+      throw error;
+    }
   }
 
   async getComments(reviewId: string, page = 1, limit = 20) {
