@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  InternalServerErrorException,
   Inject,
   forwardRef,
 } from '@nestjs/common';
@@ -537,16 +538,17 @@ export class ReviewsService {
   }
 
   async getComments(reviewId: string, page = 1, limit = 20) {
-    const review = await this.prisma.review.findUnique({
-      where: { id: reviewId },
-      select: { id: true },
-    });
+    try {
+      const review = await this.prisma.review.findUnique({
+        where: { id: reviewId },
+        select: { id: true },
+      });
 
-    if (!review) {
-      throw new NotFoundException('Review not found');
-    }
+      if (!review) {
+        throw new NotFoundException('Review not found');
+      }
 
-    const [comments, total] = await Promise.all([
+      const [comments, total] = await Promise.all([
       this.prisma.reviewComment.findMany({
         where: { 
           reviewId,
@@ -587,32 +589,13 @@ export class ReviewsService {
                           avatarUrl: true,
                         },
                       },
-                      replies: {
-                        include: {
-                          user: {
-                            select: {
-                              id: true,
-                              fullName: true,
-                              avatarUrl: true,
-                            },
-                          },
-                          replies: {
-                            include: {
-                              user: {
-                                select: {
-                                  id: true,
-                                  fullName: true,
-                                  avatarUrl: true,
-                                },
-                              },
-                            },
-                            orderBy: {
-                              createdAt: 'asc',
-                            },
-                          },
-                        },
-                        orderBy: {
-                          createdAt: 'asc',
+                  replies: {
+                    include: {
+                      user: {
+                        select: {
+                          id: true,
+                          fullName: true,
+                          avatarUrl: true,
                         },
                       },
                     },
@@ -625,6 +608,11 @@ export class ReviewsService {
                   createdAt: 'asc',
                 },
               },
+            },
+            orderBy: {
+              createdAt: 'asc',
+            },
+          },
             },
             orderBy: {
               createdAt: 'asc',
@@ -648,14 +636,26 @@ export class ReviewsService {
       }),
     ]);
 
-    return {
-      data: comments,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+      return {
+        success: true,
+        data: comments,
+        meta: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
+      };
+    } catch (error) {
+      console.error('Error fetching comments for review:', reviewId, error);
+      // Nếu là NotFoundException thì throw lại
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      // Các lỗi khác thì throw InternalServerErrorException
+      throw new InternalServerErrorException(
+        error instanceof Error ? error.message : 'Failed to fetch comments'
+      );
+    }
   }
 }
