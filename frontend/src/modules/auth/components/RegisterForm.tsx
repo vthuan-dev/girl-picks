@@ -77,7 +77,30 @@ export default function RegisterForm() {
       toast.success('Đăng ký thành công!');
       router.replace('/');
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || error.message || 'Đăng ký thất bại';
+      // Dịch các thông báo lỗi phổ biến từ server
+      let errorMessage = error.response?.data?.message || error.message || 'Đăng ký thất bại';
+      
+      // Dịch các thông báo lỗi tiếng Anh sang tiếng Việt
+      const errorTranslations: { [key: string]: string } = {
+        'Email already exists': 'Email đã được sử dụng',
+        'Username already exists': 'Tên người dùng đã được sử dụng',
+        'Invalid email': 'Email không hợp lệ',
+        'Password too weak': 'Mật khẩu quá yếu',
+        'Password must be at least': 'Mật khẩu phải có ít nhất',
+        'Request failed with status code 400': 'Thông tin không hợp lệ',
+        'Request failed with status code 409': 'Thông tin đã tồn tại',
+        'Request failed with status code 500': 'Lỗi máy chủ, vui lòng thử lại sau',
+        'Network Error': 'Lỗi kết nối, vui lòng kiểm tra internet',
+      };
+      
+      // Kiểm tra và dịch thông báo lỗi
+      for (const [english, vietnamese] of Object.entries(errorTranslations)) {
+        if (errorMessage.includes(english) || errorMessage === english) {
+          errorMessage = vietnamese;
+          break;
+        }
+      }
+      
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);

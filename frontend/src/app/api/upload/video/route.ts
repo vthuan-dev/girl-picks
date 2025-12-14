@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
 
     if (!file) {
       return NextResponse.json(
-        { error: 'No file uploaded' },
+        { error: 'Không có file được tải lên' },
         { status: 400 }
       );
     }
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     // Validate file type
     if (!file.type.startsWith('video/')) {
       return NextResponse.json(
-        { error: 'File must be a video' },
+        { error: 'File phải là video' },
         { status: 400 }
       );
     }
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     const maxSize = 100 * 1024 * 1024; // 100MB
     if (file.size > maxSize) {
       return NextResponse.json(
-        { error: 'File size must be less than 100MB' },
+        { error: 'Kích thước file phải nhỏ hơn 100MB' },
         { status: 400 }
       );
     }

@@ -147,7 +147,7 @@ export const girlsApi = {
       if (response.data && response.data.user) {
         return response.data as { user: any; needsProfileSetup: boolean };
       }
-      throw new Error('Invalid response format');
+      throw new Error('Định dạng phản hồi không hợp lệ');
     } catch (error: any) {
       console.error('Create admin error:', error);
       if (error?.code === 'ERR_NETWORK' || error?.message?.includes('CONNECTION_REFUSED') || error?.code === 'ECONNREFUSED') {

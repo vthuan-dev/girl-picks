@@ -23,7 +23,7 @@ export default function LatestReviews({ limit = 6 }: LatestReviewsProps) {
     ['reviews', 'latest', page],
     async () => {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/reviews?limit=${pageSize}&page=${page}&status=APPROVED`);
-      if (!response.ok) throw new Error('Failed to fetch reviews');
+      if (!response.ok) throw new Error('Không thể tải đánh giá');
       const result = await response.json();
       return result.data?.data || result.data || [];
     },
@@ -187,8 +187,7 @@ function ReviewCard({ review, onRefetch }: { review: Review; onRefetch: () => vo
   };
 
   const images = review.images || [];
-  const mainImg = images[0];
-  const sideImgs = images.slice(1, 4);
+  const displayImages = images.slice(0, 4); // Chỉ hiển thị 4 ảnh đầu tiên
 
   return (
     <div className="border border-secondary/20 rounded-xl p-3 md:p-4 bg-background-light/60 md:max-w-4xl md:mx-auto">
@@ -235,49 +234,30 @@ function ReviewCard({ review, onRefetch }: { review: Review; onRefetch: () => vo
         </Link>
       )}
 
-      {/* Images collage */}
-      {mainImg && (
-        <div className="flex flex-col gap-2 mt-2">
-          <div className="grid gap-2 md:grid-cols-3">
-            <div className={sideImgs.length > 0 ? 'md:col-span-2' : 'md:col-span-3'}>
-              <div 
-                className="relative w-full aspect-[4/3] md:aspect-video rounded-xl overflow-hidden bg-secondary/20 cursor-pointer group"
-                onClick={() => setLightboxImage(mainImg)}
-              >
-                <Image
-                  src={mainImg}
-                  alt="Review"
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
-                  unoptimized
-                />
-              </div>
+      {/* Images grid - Layout 2x2: trên 1-2, dưới 3-4 */}
+      {displayImages.length > 0 && (
+        <div className="grid grid-cols-2 gap-2 mt-2">
+          {displayImages.map((img, i) => (
+            <div 
+              key={i}
+              className="relative w-full aspect-square rounded-xl overflow-hidden bg-secondary/20 cursor-pointer group"
+              onClick={() => setLightboxImage(img)}
+            >
+              <Image
+                src={img}
+                alt={`Review image ${i + 1}`}
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                unoptimized
+              />
+              {/* Hiển thị số ảnh còn lại nếu là ảnh thứ 4 và còn nhiều ảnh hơn */}
+              {i === 3 && images.length > 4 && (
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">+{images.length - 4}</span>
+                </div>
+              )}
             </div>
-            {sideImgs.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-1 gap-2">
-                {sideImgs.map((img, i) => (
-                  <div 
-                    key={i}
-                    className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-secondary/20 cursor-pointer group"
-                    onClick={() => setLightboxImage(img)}
-                  >
-                    <Image
-                      src={img}
-                      alt=""
-                      fill
-                      className="object-cover group-hover:scale-110 transition-transform duration-300"
-                      unoptimized
-                    />
-                    {i === sideImgs.length - 1 && images.length > 4 && (
-                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                        <span className="text-white font-bold text-sm">+{images.length - 4}</span>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          ))}
         </div>
       )}
 

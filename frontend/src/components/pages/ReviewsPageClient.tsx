@@ -32,7 +32,7 @@ export default function ReviewsPageClient() {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/reviews?page=${page}&limit=${limit}&status=APPROVED`
       );
-      if (!response.ok) throw new Error('Failed to fetch reviews');
+      if (!response.ok) throw new Error('Không thể tải đánh giá');
       const result = await response.json();
       return {
         reviews: result.data?.data || result.data || [],
@@ -339,15 +339,15 @@ function ReviewCard({
         </div>
       </div>
 
-      {/* Images */}
+      {/* Images - Layout 2x2: trên 1-2, dưới 3-4 */}
       {review.images && review.images.length > 0 && (
         <div className="px-4 pb-4">
-          <div className={`grid gap-3 ${review.images.length === 1 ? 'grid-cols-1' : review.images.length === 2 ? 'grid-cols-2' : 'grid-cols-2 md:grid-cols-3'}`}>
-            {review.images.slice(0, 6).map((imageUrl, index) => (
+          <div className="grid grid-cols-2 gap-2">
+            {review.images.slice(0, 4).map((imageUrl, index) => (
               <div 
                 key={index} 
                 className="relative overflow-hidden rounded-xl bg-secondary/20 group cursor-pointer"
-                style={{ aspectRatio: '4 / 5' }}
+                style={{ aspectRatio: '1 / 1' }}
                 onClick={() => {
                   onImageClick(review.images || [], imageUrl);
                 }}
@@ -359,6 +359,12 @@ function ReviewCard({
                   className="object-cover group-hover:scale-105 transition-transform duration-300"
                   unoptimized
                 />
+                {/* Hiển thị số ảnh còn lại nếu là ảnh thứ 4 và còn nhiều ảnh hơn */}
+                {index === 3 && review.images.length > 4 && (
+                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                    <span className="text-white font-bold text-sm">+{review.images.length - 4}</span>
+                  </div>
+                )}
               </div>
             ))}
           </div>

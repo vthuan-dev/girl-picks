@@ -110,7 +110,7 @@ class ChatSexApi {
     );
 
     if (!response.ok) {
-      throw new Error('Failed to fetch chat sex girls');
+      throw new Error('Không thể tải danh sách gái chat');
     }
 
     return response.json();
@@ -126,7 +126,7 @@ class ChatSexApi {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to fetch chat sex girl');
+      throw new Error('Không thể tải thông tin gái chat');
     }
 
     return response.json();

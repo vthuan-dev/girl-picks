@@ -104,7 +104,33 @@ export default function LoginForm() {
     } catch (error: any) {
       console.error('❌ Login error:', error);
       console.error('Error response:', error.response?.data);
-      const errorMessage = error.response?.data?.message || error.message || 'Đăng nhập thất bại';
+      
+      // Dịch các thông báo lỗi phổ biến từ server
+      let errorMessage = error.response?.data?.message || error.message || 'Đăng nhập thất bại';
+      
+      // Dịch các thông báo lỗi tiếng Anh sang tiếng Việt
+      const errorTranslations: { [key: string]: string } = {
+        'Invalid credentials': 'Thông tin đăng nhập không đúng',
+        'Invalid email or password': 'Email hoặc mật khẩu không đúng',
+        'User not found': 'Không tìm thấy người dùng',
+        'Account is disabled': 'Tài khoản đã bị vô hiệu hóa',
+        'Account is locked': 'Tài khoản đã bị khóa',
+        'Too many login attempts': 'Quá nhiều lần đăng nhập thất bại',
+        'Request failed with status code 401': 'Thông tin đăng nhập không đúng',
+        'Request failed with status code 403': 'Bạn không có quyền truy cập',
+        'Request failed with status code 404': 'Không tìm thấy tài nguyên',
+        'Request failed with status code 500': 'Lỗi máy chủ, vui lòng thử lại sau',
+        'Network Error': 'Lỗi kết nối, vui lòng kiểm tra internet',
+      };
+      
+      // Kiểm tra và dịch thông báo lỗi
+      for (const [english, vietnamese] of Object.entries(errorTranslations)) {
+        if (errorMessage.includes(english) || errorMessage === english) {
+          errorMessage = vietnamese;
+          break;
+        }
+      }
+      
       toast.error(errorMessage);
       setIsLoading(false);
     }
