@@ -518,14 +518,21 @@ export class ReviewsService {
       }
     }
 
+    // Chuẩn bị data, chỉ include parentId nếu thực sự có giá trị
+    const commentData: any = {
+      reviewId,
+      userId,
+      content: createReviewCommentDto.content,
+    };
+    
+    // Chỉ thêm parentId nếu có giá trị và không phải empty string
+    if (createReviewCommentDto.parentId && createReviewCommentDto.parentId.trim() !== '') {
+      commentData.parentId = createReviewCommentDto.parentId;
+    }
+
     try {
       return await this.prisma.reviewComment.create({
-        data: {
-          reviewId,
-          userId,
-          content: createReviewCommentDto.content,
-          ...(createReviewCommentDto.parentId && { parentId: createReviewCommentDto.parentId }),
-        },
+        data: commentData,
         include: {
           user: {
             select: {
@@ -547,9 +554,9 @@ export class ReviewsService {
         errorMessage.includes('does not exist') ||
         errorMessage.includes('Unknown column');
       
-      if (isParentIdError && createReviewCommentDto.parentId) {
+      if (isParentIdError) {
         console.warn('parentId column does not exist, creating comment without parentId. Error:', errorCode, errorMessage);
-        // Nếu có parentId nhưng cột không tồn tại, tạo comment không có parentId
+        // Tạo comment không có parentId
         return await this.prisma.reviewComment.create({
           data: {
             reviewId,
