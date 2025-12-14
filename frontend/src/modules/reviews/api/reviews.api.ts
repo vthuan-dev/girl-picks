@@ -29,10 +29,15 @@ export interface ReviewComment {
   id: string;
   content: string;
   createdAt: string;
+  parentId?: string | null;
   user: {
     id: string;
     fullName: string;
     avatarUrl?: string | null;
+  };
+  replies?: ReviewComment[];
+  _count?: {
+    replies: number;
   };
 }
 
@@ -46,6 +51,7 @@ export interface CreateReviewDto {
 
 export interface CreateReviewCommentDto {
   content: string;
+  parentId?: string; // ID của comment cha nếu đây là reply
 }
 
 export const reviewsApi = {

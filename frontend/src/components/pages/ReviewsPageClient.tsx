@@ -1,14 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useQuery } from 'react-query';
 import Image from 'next/image';
 import Link from 'next/link';
-import type { Review } from '@/modules/reviews/api/reviews.api';
+import type { Review, ReviewComment } from '@/modules/reviews/api/reviews.api';
+import { reviewsApi } from '@/modules/reviews/api/reviews.api';
 import { getGirlDetailUrl, generateSlug } from '@/lib/utils/slug';
 import { useAuthStore } from '@/store/auth.store';
 import toast from 'react-hot-toast';
-import { useEffect } from 'react';
 
 export default function ReviewsPageClient() {
   const [page, setPage] = useState(1);
@@ -250,6 +250,18 @@ function ReviewCard({
   onImageClick: (images: string[], currentImage: string) => void;
 }) {
   const { isAuthenticated, user } = useAuthStore();
+  const [liked, setLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(review._count?.likes || 0);
+  const [liking, setLiking] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [comments, setComments] = useState<ReviewComment[]>([]);
+  const [commentsCount, setCommentsCount] = useState(review._count?.comments || 0);
+  const [comment, setComment] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState<{ [key: string]: string }>({});
+
   const requireAuth = () => {
     if (!isAuthenticated || !user) {
       toast.error('Vui lòng đăng nhập để thực hiện thao tác này');
@@ -266,6 +278,125 @@ function ReviewCard({
       ? `/girls/${girlId}/${girlSlug}`
       : getGirlDetailUrl(girlId, girlName || generateSlug(String(girlId)))
     : '#';
+
+  // Fetch comments when expanded
+  const fetchComments = useCallback(async () => {
+    try {
+      setLoadingComments(true);
+      const result = await reviewsApi.getComments(review.id);
+      const commentsData = result.data || [];
+      const organizedComments = commentsData.map((cmt: ReviewComment) => ({
+        ...cmt,
+        replies: cmt.replies || [],
+      }));
+      setComments(organizedComments);
+      setCommentsCount(result.total || commentsData.length);
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      toast.error('Không thể tải bình luận');
+    } finally {
+      setLoadingComments(false);
+    }
+  }, [review.id]);
+
+  useEffect(() => {
+    if (expanded) {
+      fetchComments();
+    }
+  }, [expanded, fetchComments]);
+
+  const handleLike = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để thích');
+      return;
+    }
+    if (liking) {
+      return;
+    }
+    try {
+      setLiking(true);
+      const result = await reviewsApi.toggleLike(review.id);
+      setLiked(result.liked);
+      setLikesCount(result.likesCount);
+    } catch (error: any) {
+      console.error('Error toggling like:', error);
+      let errorMessage = 'Không thể thích bài viết';
+      if (error.response?.status === 401) {
+        errorMessage = 'Vui lòng đăng nhập để thích bài viết';
+      } else if (error.response?.status === 403) {
+        errorMessage = 'Bạn không có quyền thực hiện hành động này';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      toast.error(errorMessage);
+    } finally {
+      setLiking(false);
+    }
+  };
+
+  // Helper function để tìm và cập nhật comment/reply trong nested structure
+  const addReplyToComment = (comments: ReviewComment[], parentId: string, newReply: ReviewComment): ReviewComment[] => {
+    return comments.map(cmt => {
+      if (cmt.id === parentId) {
+        return {
+          ...cmt,
+          replies: [...(cmt.replies || []), {
+            ...newReply,
+            parentId: parentId,
+          }],
+          _count: {
+            ...cmt._count,
+            replies: (cmt._count?.replies || 0) + 1,
+          },
+        };
+      }
+      if (cmt.replies && cmt.replies.length > 0) {
+        return {
+          ...cmt,
+          replies: addReplyToComment(cmt.replies, parentId, newReply),
+        };
+      }
+      return cmt;
+    });
+  };
+
+  const handleComment = async (parentId?: string) => {
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để bình luận');
+      return;
+    }
+    
+    const commentText = parentId ? (replyText[parentId] || '').trim() : comment.trim();
+    if (!commentText) return;
+    
+    try {
+      setSubmitting(true);
+      const newComment = await reviewsApi.addComment(review.id, { 
+        content: commentText,
+        ...(parentId && { parentId })
+      });
+      
+      if (parentId) {
+        setReplyText(prev => ({ ...prev, [parentId]: '' }));
+        setReplyingTo(null);
+        setComments(prevComments => addReplyToComment(prevComments, parentId, newComment));
+        setCommentsCount(prev => prev + 1);
+      } else {
+        setComment('');
+        setComments(prevComments => [newComment, ...prevComments]);
+        setCommentsCount(prev => prev + 1);
+      }
+      
+      toast.success(parentId ? 'Đã gửi phản hồi' : 'Đã gửi bình luận');
+    } catch (error: any) {
+      console.error('Error adding comment:', error);
+      toast.error('Không thể gửi bình luận');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="bg-background-light rounded-lg border border-secondary/30 hover:border-primary/50 transition-all overflow-hidden">
@@ -372,44 +503,217 @@ function ReviewCard({
       )}
 
       {/* Footer */}
-      <div className="px-4 py-3 border-t border-secondary/20 flex items-center gap-4">
-        <button
-          onClick={() => {
-            if (!requireAuth()) return;
-            toast('Tính năng thích sẽ sớm được cập nhật.');
-          }}
-          className="flex items-center gap-1.5 text-text-muted hover:text-primary transition-colors cursor-pointer"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-          </svg>
-          <span className="text-sm">{review._count?.likes || 0} thích</span>
-        </button>
-        <button
-          onClick={() => {
-            if (!requireAuth()) return;
-            toast('Tính năng bình luận sẽ sớm được cập nhật.');
-          }}
-          className="flex items-center gap-1.5 text-text-muted hover:text-primary transition-colors cursor-pointer"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-          </svg>
-          <span className="text-sm">{review._count?.comments || 0} bình luận</span>
-        </button>
-        <button
-          onClick={() => {
-            if (!requireAuth()) return;
-            toast('Tính năng chia sẻ sẽ sớm được cập nhật.');
-          }}
-          className="flex items-center gap-1.5 text-text-muted hover:text-primary transition-colors cursor-pointer ml-auto"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-          </svg>
-          <span className="text-sm">Chia sẻ</span>
-        </button>
+      <div className="px-4 py-3 border-t border-secondary/20">
+        <div className="flex items-center gap-4 mb-3">
+          <button
+            type="button"
+            onClick={handleLike}
+            disabled={liking}
+            className={`flex items-center gap-1.5 hover:text-primary transition-colors ${liked ? 'text-primary' : 'text-text-muted'} ${liking ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            <svg className="w-5 h-5" fill={liked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+            <span className="text-sm">{likesCount} thích</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setExpanded(!expanded)}
+            className="flex items-center gap-1.5 text-text-muted hover:text-primary transition-colors cursor-pointer"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            <span className="text-sm">{commentsCount} bình luận</span>
+          </button>
+        </div>
+
+        {/* Comments Section */}
+        {expanded && (
+          <div className="mt-4 space-y-3 border-t border-secondary/20 pt-4">
+            {loadingComments ? (
+              <div className="text-center py-4 text-text-muted text-sm">Đang tải bình luận...</div>
+            ) : comments.length > 0 ? (
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {comments.map((cmt) => (
+                  <CommentItem
+                    key={cmt.id}
+                    comment={cmt}
+                    isAuthenticated={isAuthenticated}
+                    replyingTo={replyingTo}
+                    setReplyingTo={setReplyingTo}
+                    replyText={replyText}
+                    setReplyText={setReplyText}
+                    onReply={handleComment}
+                    submitting={submitting}
+                    formatDate={(dateString: string) => {
+                      const date = new Date(dateString);
+                      return date.toLocaleDateString('vi-VN', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      });
+                    }}
+                    depth={0}
+                    maxDepth={5}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-2 text-text-muted text-sm">Chưa có bình luận nào</div>
+            )}
+            
+            {/* Comment Input */}
+            {isAuthenticated && (
+              <div className="flex gap-2 mt-4">
+                <input
+                  type="text"
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="Viết bình luận..."
+                  className="flex-1 px-3 py-2 bg-background border border-secondary/30 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-primary/50"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && comment.trim()) {
+                      handleComment();
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => handleComment()}
+                  disabled={submitting || !comment.trim()}
+                  className="px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors font-medium"
+                >
+                  {submitting ? '...' : 'Gửi'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
+    </div>
+  );
+}
+
+// CommentItem component (same as in LatestReviews.tsx)
+function CommentItem({
+  comment,
+  isAuthenticated,
+  replyingTo,
+  setReplyingTo,
+  replyText,
+  setReplyText,
+  onReply,
+  submitting,
+  formatDate,
+  depth = 0,
+  maxDepth = 5,
+}: {
+  comment: ReviewComment;
+  isAuthenticated: boolean;
+  replyingTo: string | null;
+  setReplyingTo: (id: string | null) => void;
+  replyText: { [key: string]: string };
+  setReplyText: (text: { [key: string]: string } | ((prev: { [key: string]: string }) => { [key: string]: string })) => void;
+  onReply: (parentId: string) => void | Promise<void>;
+  submitting: boolean;
+  formatDate: (dateString: string) => string;
+  depth?: number;
+  maxDepth?: number;
+}) {
+  const hasReplies = comment.replies && comment.replies.length > 0;
+  const isReplying = replyingTo === comment.id;
+  const currentReplyText = replyText[comment.id] || '';
+  const isNested = depth > 0;
+
+  const getMarginLeft = () => {
+    if (!isNested) return '';
+    const marginMap: { [key: number]: string } = {
+      1: 'ml-4',
+      2: 'ml-8',
+      3: 'ml-12',
+      4: 'ml-16',
+      5: 'ml-20',
+    };
+    return marginMap[depth] || 'ml-4';
+  };
+
+  return (
+    <div className={`space-y-2 ${getMarginLeft()}`}>
+      <div className={`flex gap-3 ${isNested ? 'p-2' : 'p-3'} ${isNested ? 'bg-background/50' : 'bg-background'} rounded-lg ${isNested ? '' : 'border border-secondary/20'}`}>
+        <div className={`${isNested ? 'w-6 h-6' : 'w-8 h-8'} rounded-full ${isNested ? 'bg-primary/80' : 'bg-primary'} flex items-center justify-center flex-shrink-0`}>
+          <span className="text-white font-bold text-xs">
+            {comment.user?.fullName?.charAt(0)?.toUpperCase() || 'U'}
+          </span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className={`font-semibold text-text ${isNested ? 'text-xs' : 'text-sm'}`}>{comment.user?.fullName || 'Ẩn danh'}</span>
+            <span className="text-text-muted text-xs">
+              {formatDate(comment.createdAt)}
+            </span>
+          </div>
+          <p className={`text-text ${isNested ? 'text-xs' : 'text-sm'} whitespace-pre-wrap mb-2`}>{comment.content}</p>
+          
+          {isAuthenticated && depth < maxDepth && (
+            <button
+              type="button"
+              onClick={() => setReplyingTo(isReplying ? null : comment.id)}
+              className="text-xs text-primary hover:text-primary-hover transition-colors"
+            >
+              {isReplying ? 'Hủy' : 'Trả lời'}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {isReplying && isAuthenticated && depth < maxDepth && (
+        <div className={`${isNested ? 'ml-4' : 'ml-11'} flex gap-2`}>
+          <input
+            type="text"
+            value={currentReplyText}
+            onChange={(e) => setReplyText(prev => ({ ...prev, [comment.id]: e.target.value }))}
+            placeholder={`Trả lời ${comment.user?.fullName || 'bình luận này'}...`}
+            className="flex-1 px-3 py-2 bg-background border border-secondary/30 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-primary/50"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && currentReplyText.trim()) {
+                onReply(comment.id);
+              }
+            }}
+          />
+          <button
+            type="button"
+            onClick={async () => { await onReply(comment.id); }}
+            disabled={submitting || !currentReplyText.trim()}
+            className="px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors font-medium"
+          >
+            {submitting ? '...' : 'Gửi'}
+          </button>
+        </div>
+      )}
+
+      {hasReplies && depth < maxDepth && (
+        <div className={`${isNested ? 'ml-4' : 'ml-11'} space-y-2 ${depth === 0 ? 'border-l-2 border-secondary/20 pl-3' : ''}`}>
+          {comment.replies!.map((reply) => (
+            <CommentItem
+              key={reply.id}
+              comment={reply}
+              isAuthenticated={isAuthenticated}
+              replyingTo={replyingTo}
+              setReplyingTo={setReplyingTo}
+              replyText={replyText}
+              setReplyText={setReplyText}
+              onReply={onReply}
+              submitting={submitting}
+              formatDate={formatDate}
+              depth={depth + 1}
+              maxDepth={maxDepth}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -500,11 +500,29 @@ export class ReviewsService {
       throw new BadRequestException('Only approved reviews can be commented');
     }
 
+    // Nếu có parentId, kiểm tra parent comment có tồn tại không
+    if (createReviewCommentDto.parentId) {
+      const parentComment = await this.prisma.reviewComment.findUnique({
+        where: { id: createReviewCommentDto.parentId },
+        select: { id: true, reviewId: true },
+      });
+
+      if (!parentComment) {
+        throw new NotFoundException('Parent comment not found');
+      }
+
+      // Đảm bảo parent comment thuộc cùng review
+      if (parentComment.reviewId !== reviewId) {
+        throw new BadRequestException('Parent comment does not belong to this review');
+      }
+    }
+
     return this.prisma.reviewComment.create({
       data: {
         reviewId,
         userId,
         content: createReviewCommentDto.content,
+        ...(createReviewCommentDto.parentId && { parentId: createReviewCommentDto.parentId }),
       },
       include: {
         user: {
@@ -530,7 +548,10 @@ export class ReviewsService {
 
     const [comments, total] = await Promise.all([
       this.prisma.reviewComment.findMany({
-        where: { reviewId },
+        where: { 
+          reviewId,
+          parentId: null, // Chỉ lấy parent comments, không lấy replies
+        },
         include: {
           user: {
             select: {
@@ -539,12 +560,92 @@ export class ReviewsService {
               avatarUrl: true,
             },
           },
+          replies: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  avatarUrl: true,
+                },
+              },
+              replies: {
+                include: {
+                  user: {
+                    select: {
+                      id: true,
+                      fullName: true,
+                      avatarUrl: true,
+                    },
+                  },
+                  replies: {
+                    include: {
+                      user: {
+                        select: {
+                          id: true,
+                          fullName: true,
+                          avatarUrl: true,
+                        },
+                      },
+                      replies: {
+                        include: {
+                          user: {
+                            select: {
+                              id: true,
+                              fullName: true,
+                              avatarUrl: true,
+                            },
+                          },
+                          replies: {
+                            include: {
+                              user: {
+                                select: {
+                                  id: true,
+                                  fullName: true,
+                                  avatarUrl: true,
+                                },
+                              },
+                            },
+                            orderBy: {
+                              createdAt: 'asc',
+                            },
+                          },
+                        },
+                        orderBy: {
+                          createdAt: 'asc',
+                        },
+                      },
+                    },
+                    orderBy: {
+                      createdAt: 'asc',
+                    },
+                  },
+                },
+                orderBy: {
+                  createdAt: 'asc',
+                },
+              },
+            },
+            orderBy: {
+              createdAt: 'asc',
+            },
+          },
+          _count: {
+            select: {
+              replies: true,
+            },
+          },
         },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,
       }),
-      this.prisma.reviewComment.count({ where: { reviewId } }),
+      this.prisma.reviewComment.count({ 
+        where: { 
+          reviewId,
+          parentId: null, // Chỉ đếm parent comments
+        } 
+      }),
     ]);
 
     return {

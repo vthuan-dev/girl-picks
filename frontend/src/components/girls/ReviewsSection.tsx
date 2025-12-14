@@ -220,18 +220,45 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
     const formData = new FormData();
     formData.append('file', file);
 
+    try {
     const response = await fetch('/api/upload/review', {
       method: 'POST',
       body: formData,
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Không thể tải ảnh lên');
+        let errorMessage = 'Không thể tải ảnh lên';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+          
+          // Handle specific error codes
+          if (response.status === 403) {
+            errorMessage = 'Bạn không có quyền upload ảnh. Vui lòng đăng nhập lại.';
+          } else if (response.status === 413) {
+            errorMessage = 'File quá lớn. Vui lòng chọn file nhỏ hơn 5MB.';
+          } else if (response.status === 400) {
+            errorMessage = errorData.error || 'File không hợp lệ. Vui lòng chọn file ảnh.';
+          }
+        } catch (parseError) {
+          // If response is not JSON, use status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
     }
 
     const data = await response.json();
+      if (!data.url) {
+        throw new Error('Phản hồi từ server không hợp lệ');
+      }
     return data.url;
+    } catch (error: any) {
+      // Re-throw with better error message
+      if (error.message) {
+        throw error;
+      }
+      throw new Error(error.message || 'Không thể tải ảnh lên. Vui lòng thử lại.');
+    }
   };
 
   const handleSubmitReview = async (e: React.FormEvent) => {

@@ -2,7 +2,9 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useState } from 'react';
 import { Girl } from '@/types/girl';
+import { girlsApi } from '../api/girls.api';
 
 interface GirlCardProps {
   girl: Girl;
@@ -13,6 +15,7 @@ interface GirlCardInternalProps extends GirlCardProps {
 }
 
 export default function GirlCard({ girl, index = 0 }: GirlCardInternalProps) {
+  const [viewCount, setViewCount] = useState(girl.viewCount || 0);
   const imageUrl = girl.avatar || girl.images?.[0] || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=600&fit=crop';
 
   // Generate URL with slug if available, otherwise use ID
@@ -23,8 +26,21 @@ export default function GirlCard({ girl, index = 0 }: GirlCardInternalProps) {
   // First 6 images should have priority for LCP optimization
   const isPriority = index < 6;
 
+  // Handle click to increment view count
+  const handleClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+    // Increment view count optimistically
+    setViewCount(prev => prev + 1);
+    
+    // Call API to increment view count (fire and forget - don't block navigation)
+    girlsApi.incrementView(girl.id).catch((error) => {
+      // If API call fails, revert the optimistic update
+      console.error('Failed to increment view count:', error);
+      setViewCount(prev => Math.max(0, prev - 1));
+    });
+  };
+
   return (
-    <Link href={girlUrl} className="block">
+    <Link href={girlUrl} className="block" onClick={handleClick}>
       <div className="group relative bg-background-light rounded-lg overflow-hidden hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300 cursor-pointer border border-secondary/30 hover:border-primary/50 transform hover:-translate-y-1">
         {/* Image Container - Top Section */}
         <div className="relative w-full aspect-[3/4] overflow-hidden bg-secondary/20">
@@ -168,13 +184,13 @@ export default function GirlCard({ girl, index = 0 }: GirlCardInternalProps) {
             )}
             
             {/* View Count */}
-            {girl.viewCount !== undefined && (
+            {(viewCount > 0 || girl.viewCount !== undefined) && (
             <div className="flex items-center gap-1 text-text-muted text-xs">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
-                <span>{girl.viewCount.toLocaleString('vi-VN')}</span>
+                <span>{viewCount.toLocaleString('vi-VN')}</span>
             </div>
             )}
           </div>
