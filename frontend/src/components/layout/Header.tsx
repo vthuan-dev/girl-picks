@@ -7,6 +7,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { UserRole } from '@/types/auth';
 import NotificationBell from '@/components/common/NotificationBell';
+import { provinceToSlug, slugToProvince } from '@/lib/location/provinceSlugs';
 
 export default function Header() {
   const { user, isAuthenticated, logout } = useAuthStore();
@@ -23,10 +24,20 @@ export default function Header() {
 
   const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
-      setIsMenuOpen(false); // Close mobile menu after search
+    const query = searchQuery.trim();
+    if (!query) return;
+
+    // Nếu người dùng gõ tên tỉnh (Sài Gòn, sai gon, HCM...), chuyển sang URL SEO /{slug}
+    const slugCandidate = provinceToSlug(query);
+    const province = slugCandidate ? slugToProvince(slugCandidate) : null;
+
+    if (province && slugCandidate) {
+      router.push(`/${slugCandidate}`);
+    } else {
+      router.push(`/search?q=${encodeURIComponent(query)}`);
     }
+
+    setIsMenuOpen(false); // Close mobile menu after search
   }, [searchQuery, router]);
 
   const handleLogout = useCallback(() => {

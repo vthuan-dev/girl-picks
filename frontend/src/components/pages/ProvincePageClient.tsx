@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Header from '@/components/layout/Header';
 import LocationFilters from '@/components/sections/LocationFilters';
 import GirlList from '@/modules/girls/components/GirlList';
 import PopularTags from '@/components/sections/PopularTags';
@@ -42,7 +41,6 @@ export default function ProvincePageClient({ province, slug }: ProvincePageClien
 
   return (
     <>
-      <Header />
       <div className="px-3 sm:px-4 lg:px-8 py-3">
         <Link href="/" className="inline-flex items-center gap-2 text-primary font-semibold hover:text-primary-hover">
           <span>Trang chủ</span>
@@ -56,9 +54,6 @@ export default function ProvincePageClient({ province, slug }: ProvincePageClien
               <h1 className="text-2xl lg:text-3xl font-bold text-text mb-2">
                 Danh mục: <span className="text-primary">{displayTitle}</span>
               </h1>
-              <p className="text-sm text-text-muted">
-                URL rút gọn cho SEO: /{slug}
-              </p>
             </div>
           </div>
         </div>

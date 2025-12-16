@@ -2,14 +2,16 @@
 export const dynamic = 'force-dynamic';
 
 import { useEffect, useMemo, useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import GirlList from '@/modules/girls/components/GirlList';
 import PopularTags from '@/components/sections/PopularTags';
 import LocationFilters from '@/components/sections/LocationFilters';
 import Header from '@/components/layout/Header';
+import { provinceToSlug, slugToProvince } from '@/lib/location/provinceSlugs';
 import Link from 'next/link';
 
 function SearchContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const rawQuery = searchParams.get('q') || '';
   const query = useMemo(() => {
@@ -42,24 +44,21 @@ function SearchContent() {
 
   const isPhoneQuery = useMemo(() => /\d{6,}/.test(query || ''), [query]);
 
-  // Update selected province if query contains location and is not phone
+  // Nếu query là tên tỉnh → redirect sang URL SEO /{slug}
   useEffect(() => {
-    if (query && !selectedTag && !isPhoneQuery) {
-      // Check if query matches a province
-      const provinces = ['Sài Gòn', 'Hà Nội', 'Đà Nẵng', 'Bình Dương', 'Đồng Nai'];
-      const matchedProvince = provinces.find(p => 
-        query.toLowerCase().includes(p.toLowerCase()) || 
-        p.toLowerCase().includes(query.toLowerCase())
-      );
-      if (matchedProvince) {
-        setSelectedProvince(matchedProvince);
-      } else {
-        setSelectedProvince(null);
-      }
-    } else if (isPhoneQuery) {
-      setSelectedProvince(null);
+    if (!query || selectedTag || isPhoneQuery) return;
+
+    const slug = provinceToSlug(query);
+    const province = slug ? slugToProvince(slug) : null;
+
+    if (slug && province) {
+      router.replace(`/${slug}`);
+      return;
     }
-  }, [query, selectedTag, isPhoneQuery]);
+
+    // Nếu không phải tỉnh, reset selectedProvince (chế độ search thường)
+    setSelectedProvince(null);
+  }, [query, selectedTag, isPhoneQuery, router]);
 
   const displayTitle = selectedProvince || query || selectedTag || 'Tìm kiếm';
 
@@ -92,6 +91,10 @@ function SearchContent() {
             onLocationChange={(location) => {
               if (location) {
                 setSelectedProvince(location);
+                const slug = provinceToSlug(location);
+                if (slug) {
+                  router.push(`/${slug}`);
+                }
               } else {
                 setSelectedProvince(null);
               }
