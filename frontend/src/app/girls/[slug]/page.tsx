@@ -1,0 +1,263 @@
+import type { Metadata } from 'next';
+import { notFound, redirect } from 'next/navigation';
+import { getGirlBySlug } from '@/lib/api/server-client';
+import StructuredData from '@/components/seo/StructuredData';
+import GirlGallery from '@/components/girls/GirlGallery';
+import GirlInfoCard from '@/components/girls/GirlInfoCard';
+import RelatedGirls from '@/components/girls/RelatedGirls';
+import GirlBioSection from '@/components/girls/GirlBioSection';
+import ExpandableText from '@/components/common/ExpandableText';
+import ReviewsSection from '@/components/girls/ReviewsSection';
+import Breadcrumbs from '@/components/common/Breadcrumbs';
+import ViewTracker from '@/components/common/ViewTracker';
+import { Girl } from '@/types/girl';
+import { generateSlug } from '@/lib/utils/slug';
+import Header from '@/components/layout/Header';
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gaigo1.net';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+interface PageProps {
+  params: Promise<{ slug: string }>;
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+
+  try {
+    const response = await getGirlBySlug(slug);
+    const girl = response.data as Girl;
+
+    if (!girl) {
+      return { title: 'Không tìm thấy' };
+    }
+
+    const displayName = (girl as any).name || girl.fullName || girl.username || girl.slug || '';
+    const girlName = displayName || '';
+    const girlPhone = (girl as any).phone || '';
+    const girlProvince = (girl as any).province || girl.district?.name || '';
+    const girlLocation = (girl as any).location || '';
+    const girlPrice = (girl as any).price || '';
+    const girlHeight = (girl as any).height || '';
+    const girlWeight = (girl as any).weight || '';
+    const girlMeasurements = (girl as any).measurements || '';
+    const girlBirthYear = (girl as any).birthYear;
+
+    const title = girlPhone
+      ? `${girlName}_ ${Array.isArray(girl.tags) ? girl.tags.slice(0, 3).join(', ') : ''}`
+      : `${girlName} - Gái gọi ${girlProvince} | Tìm Gái gọi`;
+
+    const descParts = [
+      girlName,
+      girlPhone ? `Điện thoại: ${girlPhone}` : '',
+      girlProvince ? `Khu vực: ${girlProvince}` : '',
+      girlLocation || '',
+      girlBirthYear ? `Năm sinh: ${girlBirthYear}` : '',
+      girlHeight ? `Chiều cao: ${girlHeight}` : '',
+      girlWeight ? `Cân nặng: ${girlWeight}` : '',
+      girlMeasurements ? `Số đo: ${girlMeasurements}` : '',
+      girlPrice ? `Giá: ${girlPrice}` : '',
+    ].filter(Boolean);
+    const description = descParts.join('. ') + '.';
+
+    const imageUrl = girl.images?.[0] || girl.avatar || `${siteUrl}/images/logo/logo.png`;
+    const canonicalSlug = girl.slug || generateSlug(girlName || '');
+    const finalSlug = canonicalSlug || slug;
+    const url = `${siteUrl}/girls/${finalSlug}`;
+
+    const phoneVariants = girlPhone
+      ? [girlPhone, girlPhone.replace(/\s/g, ''), `gái gọi ${girlPhone}`]
+      : [];
+
+    return {
+      title,
+      description,
+      keywords: [
+        girlName,
+        ...phoneVariants,
+        girlProvince ? `gái gọi ${girlProvince}` : '',
+        'gái gọi',
+        'gaigu',
+        'tìm gái gọi',
+        ...(Array.isArray(girl.tags) ? girl.tags : []),
+      ].filter(Boolean),
+      alternates: {
+        canonical: url,
+      },
+      openGraph: {
+        title: girlPhone ? `${girlName} — ${girlPhone}` : title,
+        description,
+        url,
+        type: 'profile',
+        images: [
+          {
+            url: imageUrl,
+            width: 1200,
+            height: 630,
+            alt: `${girlName} ${girlPhone}`,
+          },
+        ],
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: girlPhone ? `${girlName} — ${girlPhone}` : title,
+        description,
+        images: [imageUrl],
+      },
+      robots: {
+        index: true,
+        follow: true,
+        googleBot: {
+          index: true,
+          follow: true,
+          'max-video-preview': -1,
+          'max-image-preview': 'large',
+          'max-snippet': -1,
+        },
+      },
+    };
+  } catch {
+    return { title: 'Không tìm thấy' };
+  }
+}
+
+export default async function GirlDetailBySlugPage({ params }: PageProps) {
+  const { slug } = await params;
+
+  let girl: Girl;
+  try {
+    const response = await getGirlBySlug(slug);
+    girl = response.data as Girl;
+
+    if (!girl || !girl.id) {
+      notFound();
+    }
+
+    const canonicalSlug = girl.slug || generateSlug(girl.fullName || (girl as any).name || '');
+    if (canonicalSlug && slug !== canonicalSlug) {
+      redirect(`/girls/${canonicalSlug}`);
+    }
+  } catch (error: any) {
+    console.error('Error fetching girl by slug:', error);
+    notFound();
+  }
+
+  const displayName = (girl as any).name || girl.fullName || girl.username || girl.slug || 'Gái gọi';
+  const ratingValue = girl.rating ?? (girl as any).ratingAverage ?? 0;
+  const totalReviews = girl.totalReviews ?? 0;
+  const imageUrl =
+    girl.images?.[0] ||
+    girl.avatar ||
+    'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=1200&h=800&fit=crop';
+  const title = `${displayName} - Gái gọi ${girl.district?.name || ''}`;
+  const description = girl.bio || `Thông tin chi tiết về ${displayName}`;
+  const url = girl.slug ? `${siteUrl}/girls/${girl.slug}` : `${siteUrl}/girls/${slug}`;
+
+  const breadcrumbs = [
+    { label: 'Trang chủ', href: '/' },
+    { label: 'Gái gọi', href: '/girls' },
+    { label: displayName, href: url },
+  ];
+
+  const personStructuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: displayName,
+    description: description,
+    image: girl.images || [imageUrl],
+    ...(girl.district && {
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: girl.district.name,
+        addressRegion: girl.district.name,
+        addressCountry: 'VN',
+      },
+    }),
+    ...(girl.phone && {
+      telephone: girl.phone,
+    }),
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue,
+      reviewCount: totalReviews,
+      bestRating: 5,
+      worstRating: 1,
+    },
+  };
+
+  const breadcrumbStructuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbs.map((crumb, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: crumb.label,
+      item: `${siteUrl}${crumb.href}`,
+    })),
+  };
+
+  return (
+    <>
+      <Header />
+      <ViewTracker type="girl" id={girl.id} />
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(personStructuredData) }}
+      />
+      <StructuredData type="BreadcrumbList" data={breadcrumbStructuredData} />
+
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
+        <Breadcrumbs items={breadcrumbs} />
+
+        <div className="grid grid-cols-1 lg:grid-cols-[2fr,1fr] gap-6 lg:gap-10">
+          {/* Main content */}
+          <div className="space-y-6">
+            <GirlGallery images={girl.images as string[]} name={displayName} />
+            
+            {/* Bio: loại bỏ cảnh báo thanh toán 25 điểm nếu có */}
+            {(() => {
+              const cleanedBio = (girl.bio || '')
+                .replace(/Bạn đồng ý thanh toán 25 điểm để up đánh giá\??/gi, '')
+                .trim();
+              
+              if (!cleanedBio) {
+                return null;
+              }
+              
+              return (
+                <>
+                  <GirlBioSection bio={cleanedBio} />
+                  <ExpandableText text={cleanedBio} maxLength={300} />
+                </>
+              );
+            })()}
+
+            {/* Reviews nằm cùng cột với nội dung chính */}
+            <div className="pt-4 border-t border-secondary/30">
+              <ReviewsSection
+                girlId={girl.id}
+                totalReviews={totalReviews}
+                averageRating={ratingValue}
+              />
+            </div>
+          </div>
+
+          {/* Sidebar thông tin cơ bản */}
+          <div className="space-y-6 lg:sticky lg:top-20 h-fit">
+            <GirlInfoCard girl={girl} />
+          </div>
+        </div>
+
+        {/* Gái gọi liên quan – hiển thị toàn chiều ngang, dưới InnerLayoutRouter */}
+        <div className="mt-8">
+          <RelatedGirls currentGirlId={girl.id} districtId={girl.districtId} />
+        </div>
+      </div>
+    </>
+  );
+}
+
+

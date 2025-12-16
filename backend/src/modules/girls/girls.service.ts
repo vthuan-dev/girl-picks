@@ -679,12 +679,19 @@ export class GirlsService {
     const cacheKey = this.cacheService.generateKey('girls:detail', idOrSlug);
     
     // Try to get from cache first
-    const cachedGirl = await this.cacheService.get(cacheKey);
+    const cachedGirl = await this.cacheService.get<any>(cacheKey);
     if (cachedGirl) {
       console.log('[GirlsService] Cache hit for girl:', idOrSlug);
       // Still increment view count even if cached
-      if (incrementView) {
-        await this.incrementViewCount((cachedGirl as any).id);
+      if (incrementView && cachedGirl?.id) {
+        await this.incrementViewCount(cachedGirl.id);
+        // Tăng viewCount trong object trả về để UI thấy ngay
+        const updatedGirl = {
+          ...cachedGirl,
+          viewCount: (cachedGirl.viewCount || 0) + 1,
+        };
+        await this.cacheService.set(cacheKey, updatedGirl, 600);
+        return updatedGirl;
       }
       return cachedGirl;
     }
@@ -768,14 +775,20 @@ export class GirlsService {
     console.log(`[GirlsService] Found girl: ${girl.id}, isActive: ${girl.isActive}`);
 
     // Increment view count if requested
+    let result: any = girl;
     if (incrementView) {
       await this.incrementViewCount(girl.id);
+      // Tăng viewCount trong object trả về
+      result = {
+        ...girl,
+        viewCount: (girl.viewCount || 0) + 1,
+      };
     }
 
     // Cache the result for 10 minutes (600 seconds)
-    await this.cacheService.set(cacheKey, girl, 600);
+    await this.cacheService.set(cacheKey, result, 600);
 
-    return girl;
+    return result;
   }
 
   /**

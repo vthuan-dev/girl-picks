@@ -117,16 +117,16 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Bottom Section */}
-        <div className="border-t border-secondary/30 pt-4 sm:pt-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
-            <p className="text-text-muted text-xs sm:text-sm text-center sm:text-left">
+        {/* Bottom Section - Centered, balanced */}
+        <div className="border-t border-secondary/30 pt-5 sm:pt-6">
+          <div className="flex flex-col items-center justify-center text-center gap-3 sm:gap-2">
+            <p className="text-text-muted text-xs sm:text-sm flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-semibold text-xs">18+</span>
+              <span>Hãy chắc chắn rằng bạn đủ 18 tuổi để tham gia.</span>
+            </p>
+            <p className="text-text-muted text-xs sm:text-sm">
               © {currentYear}{' '}
               <span className="text-primary font-semibold">Tìm Gái gọi</span>. All rights reserved.
-            </p>
-            <p className="text-text-muted text-xs sm:text-sm text-center sm:text-right">
-              <span className="hidden sm:inline">Hãy chắc chắn rằng bạn đủ 18 tuổi để tham gia.</span>
-              <span className="sm:hidden">18+</span>
             </p>
           </div>
         </div>

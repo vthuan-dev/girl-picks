@@ -50,10 +50,10 @@ export default function GirlGallery({ images, name }: GirlGalleryProps) {
 
   return (
     <>
-      <div className="bg-background-light rounded-2xl overflow-hidden border border-secondary/30 shadow-lg">
+      <div className="max-w-2xl mx-auto bg-background-light rounded-2xl overflow-hidden border border-secondary/30 shadow-lg">
         {/* Main Image */}
         <div 
-          className="relative w-full aspect-[4/3] bg-secondary/20 overflow-hidden group cursor-pointer"
+          className="relative w-full aspect-[3/4] max-h-[55vh] bg-secondary/20 overflow-hidden group cursor-pointer"
           onClick={() => openLightbox(selectedIndex)}
         >
           <Image

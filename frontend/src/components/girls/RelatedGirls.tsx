@@ -168,26 +168,42 @@ export default function RelatedGirls({ currentGirlId, districtId }: RelatedGirls
   }
 
   return (
-    <div className="bg-background-light rounded-2xl p-4 sm:p-6 border border-secondary/30 shadow-lg sticky top-20">
+  <div className="bg-background-light rounded-2xl p-4 sm:p-6 border border-secondary/30 shadow-lg">
       <h2 className="text-xl font-bold text-text mb-4 flex items-center gap-2">
         <div className="w-1 h-6 bg-primary rounded-full"></div>
         Gái gọi liên quan
       </h2>
       
-      <div className="space-y-3">
+      {/* Grid layout: gái liên quan sắp xếp từ trái sang phải */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
         {girls.map((girl) => {
-          const imageUrl = girl.avatar || girl.images?.[0] || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=600&fit=crop';
+          // Resolve image: prefer avatar, else first image (handle JSON string), else fallback
+          const resolvedImage = (() => {
+            if (girl.avatar) return girl.avatar;
+            if (girl.images) {
+              if (Array.isArray(girl.images) && girl.images.length > 0) return girl.images[0] as string;
+              if (typeof girl.images === 'string') {
+                try {
+                  const parsed = JSON.parse(girl.images);
+                  if (Array.isArray(parsed) && parsed.length > 0) return parsed[0];
+                } catch {
+                  // ignore parse errors
+                }
+              }
+            }
+            return 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=600&fit=crop';
+          })();
           
           return (
             <Link
               key={girl.id}
-              href={`/girls/${girl.id}/${girl.slug || encodeURIComponent(girl.fullName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-').replace(/-+/g, '-'))}`}
-              className="flex gap-3 p-3 rounded-xl hover:bg-background border border-secondary/20 hover:border-primary/30 transition-all group cursor-pointer"
+              href={`/girls/${girl.slug || encodeURIComponent(girl.fullName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-').replace(/-+/g, '-'))}`}
+              className="flex flex-col rounded-xl hover:bg-background border border-secondary/20 hover:border-primary/30 transition-all group cursor-pointer overflow-hidden text-xs sm:text-sm"
             >
               {/* Thumbnail */}
-              <div className="relative w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0 rounded-lg overflow-hidden bg-secondary/20">
+              <div className="relative w-full h-40 sm:h-44 rounded-t-xl overflow-hidden bg-secondary/20">
                 <Image
-                  src={imageUrl}
+                  src={resolvedImage}
                   alt={girl.fullName}
                   fill
                   className="object-cover group-hover:scale-110 transition-transform duration-300"
@@ -204,8 +220,8 @@ export default function RelatedGirls({ currentGirlId, districtId }: RelatedGirls
               </div>
 
               {/* Info */}
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-text group-hover:text-primary transition-colors line-clamp-2 mb-1.5 text-sm leading-tight">
+              <div className="flex-1 min-w-0 p-2 sm:p-3">
+                <h3 className="font-semibold text-text group-hover:text-primary transition-colors line-clamp-2 mb-1 text-xs leading-tight sm:text-sm">
                   {girl.fullName}
                 </h3>
                 
@@ -282,12 +298,25 @@ export default function RelatedGirls({ currentGirlId, districtId }: RelatedGirls
       </div>
 
       {/* View All Link */}
-      <div className="mt-4 pt-4 border-t border-secondary/30">
+      <div className="mt-4 pt-4 border-t border-secondary/30 flex justify-center">
         <Link
           href="/girls"
-          className="block text-center px-4 py-2 text-sm font-medium text-primary hover:text-primary-hover transition-colors cursor-pointer"
+          className="inline-flex items-center justify-center mx-auto px-5 py-2.5 rounded-full text-sm font-semibold bg-primary/10 text-primary border border-primary/40 hover:bg-primary hover:text-white hover:border-primary shadow-sm hover:shadow-primary/30 transition-all cursor-pointer"
         >
-          Xem tất cả →
+          <span>Xem tất cả gái gọi</span>
+          <svg
+            className="w-4 h-4 ml-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5l7 7-7 7"
+            />
+          </svg>
         </Link>
       </div>
     </div>

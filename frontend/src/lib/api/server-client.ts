@@ -122,6 +122,30 @@ export async function getGirlById(id: string) {
 }
 
 /**
+ * Get girl by slug (server-side)
+ */
+export async function getGirlBySlug(slug: string) {
+  try {
+    const response = await serverApiClient<any>(`/girls/${slug}`);
+    if (response && typeof response === 'object') {
+      if ('success' in response && 'data' in response && (response as any).success) {
+        return { data: (response as any).data };
+      }
+      if ('id' in response || 'name' in response || 'fullName' in response) {
+        return { data: response };
+      }
+      if ('data' in response) {
+        return { data: (response as any).data };
+      }
+    }
+    return { data: response };
+  } catch (error: any) {
+    console.error(`Failed to fetch girl by slug ${slug}:`, error);
+    throw error;
+  }
+}
+
+/**
  * Get girls list (server-side)
  */
 export async function getGirls(params?: {

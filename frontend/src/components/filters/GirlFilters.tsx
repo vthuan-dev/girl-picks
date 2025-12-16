@@ -73,7 +73,7 @@ function FilterDropdown({
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`
-          flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all
+          flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all
           border ${hasValue 
             ? 'bg-primary/10 border-primary text-primary' 
             : 'bg-background-light border-secondary/50 text-text hover:border-primary/50'
@@ -129,14 +129,14 @@ export default function GirlFilters({ filters, onFilterChange }: GirlFiltersProp
   };
 
   return (
-    <div className="mb-6">
-      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+    <div className="mb-5 sm:mb-6">
+      <div className="bg-background-light/80 border border-secondary/40 rounded-2xl px-3 sm:px-4 py-3 sm:py-3 shadow-sm flex flex-wrap items-center gap-2 sm:gap-3">
         {/* Filter Label */}
-        <div className="flex items-center gap-2 text-text-muted mr-2">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="flex items-center gap-2 text-text-muted mr-1 sm:mr-2">
+          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
           </svg>
-          <span className="text-sm font-medium hidden sm:inline">Lọc theo:</span>
+          <span className="text-xs sm:text-sm font-medium">Lọc theo</span>
         </div>
 
         {/* Price Filter */}
@@ -182,7 +182,7 @@ export default function GirlFilters({ filters, onFilterChange }: GirlFiltersProp
         {hasActiveFilters && (
           <button
             onClick={handleClearAll}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
+            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-full transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

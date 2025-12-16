@@ -68,6 +68,15 @@ function isPublicRoute(pathname: string): boolean {
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Legacy redirect: /girls/:id/:slug -> /girls/:slug
+  const legacyGirlMatch = pathname.match(/^\/girls\/[^/]+\/([^/]+)\/?$/);
+  if (legacyGirlMatch) {
+    const slug = legacyGirlMatch[1];
+    const url = request.nextUrl.clone();
+    url.pathname = `/girls/${slug}`;
+    return NextResponse.redirect(url, 301);
+  }
   
   // Allow public routes
   if (isPublicRoute(pathname)) {
