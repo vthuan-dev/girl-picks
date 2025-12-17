@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import Button from '@/components/admin/Button';
-import IconButton from '@/components/admin/IconButton';
 import { reviewsApi, Review } from '@/modules/admin/api/reviews.api';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
@@ -309,7 +308,7 @@ export default function AdminReviewsPage() {
                     )}
                   </div>
                 </div>
-                <div className="flex gap-2 flex-shrink-0">
+                <div className="flex gap-3 flex-shrink-0">
                   {review.status === 'PENDING' && (
                     <>
                       <Button
@@ -328,15 +327,15 @@ export default function AdminReviewsPage() {
                       </Button>
                     </>
                   )}
-                  <IconButton
-                    variant="danger"
-                    title="Xóa"
+                  <button
                     onClick={() => handleDelete(review.id)}
+                    className="p-3 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                    title="Xóa"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
-                  </IconButton>
+                  </button>
                 </div>
               </div>
             </div>

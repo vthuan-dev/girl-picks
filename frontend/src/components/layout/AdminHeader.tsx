@@ -195,18 +195,18 @@ function AdminHeader() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-30 bg-background-light border-b border-secondary/30 backdrop-blur-xl">
+    <header className="fixed top-0 left-0 right-0 z-30 bg-[#1a1a2e] border-b border-secondary/30 backdrop-blur-xl">
       <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
         {/* Left: Search & Actions */}
         <div className="flex items-center gap-4 flex-1">
           {/* Search Bar */}
-          <div className="hidden md:flex items-center flex-1 max-w-md">
+          <div className="hidden md:flex items-center flex-1 max-w-lg">
             <div className="relative w-full">
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
                 {isSearching ? (
-                  <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                 ) : (
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 )}
@@ -217,7 +217,7 @@ function AdminHeader() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => searchResults.length > 0 && setShowSearchResults(true)}
-                className="w-full pl-10 pr-4 py-2 bg-background border border-secondary/50 rounded-lg text-sm text-text placeholder:text-text-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                className="w-full pl-10 pr-4 py-2.5 bg-background/80 border border-secondary/40 rounded-full text-sm text-text placeholder:text-text-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/60 focus:border-primary/60 shadow-sm focus:shadow-md transition-all"
               />
               
               {/* Search Results Dropdown */}
