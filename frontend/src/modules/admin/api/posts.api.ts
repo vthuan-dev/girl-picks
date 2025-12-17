@@ -127,6 +127,7 @@ export const postsApi = {
     images?: string[];
     girlId?: string;
     status?: string;
+    videoUrl?: string;
   }): Promise<Post> => {
     const response = await apiClient.post<Post>(`/admin/posts`, data);
     return response.data;
@@ -139,6 +140,7 @@ export const postsApi = {
     images?: string[];
     girlId?: string;
     status?: string;
+    videoUrl?: string;
   }): Promise<Post> => {
     const response = await apiClient.patch<Post>(`/admin/posts/${id}`, data);
     return response.data;

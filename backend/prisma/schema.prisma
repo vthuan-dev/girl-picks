@@ -135,6 +135,8 @@ model User {
   albums           Album[]         @relation("AlbumAuthor")
   managedChatSexGirls ChatSexGirl[] @relation("ChatSexGirlManager")
   chatSexReviews   ChatSexReview[] @relation("ChatSexReviews")
+  movieReviews        MovieReview[]
+  movieReviewComments MovieReviewComment[]
 
   @@map("users")
 }
@@ -261,6 +263,63 @@ model Post {
   comments   PostComment[]
 
   @@map("posts")
+}
+
+model Movie {
+  id          String     @id @default(uuid())
+  title       String
+  slug        String?   @unique
+  description String?
+  videoUrl    String
+  poster      String?
+  thumbnail   String?
+  duration    String?
+  categoryId  String?
+  tags        Json       @default("[]")
+  viewCount   Int        @default(0)
+  status      PostStatus @default(APPROVED)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  category    Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  reviews     MovieReview[]
+
+  @@index([status, createdAt])
+  @@map("movies")
+}
+
+model MovieReview {
+  id        String   @id @default(uuid())
+  movieId   String
+  userId    String
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  comments MovieReviewComment[]
+
+  @@index([movieId])
+  @@index([userId])
+  @@map("movie_reviews")
+}
+
+model MovieReviewComment {
+  id        String   @id @default(uuid())
+  reviewId  String
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+
+  review MovieReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([reviewId])
+  @@index([userId])
+  @@map("movie_review_comments")
 }
 
 model Review {
@@ -695,6 +754,7 @@ model Category {
 
   // Relations
   posts Post[]
+  movies Movie[]
 
   @@map("categories")
 }

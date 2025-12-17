@@ -70,6 +70,15 @@ const menuItems = [
     ),
   },
   {
+    title: 'Movies',
+    href: '/admin/movies',
+    icon: (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+      </svg>
+    ),
+  },
+  {
     title: 'Reviews',
     href: '/admin/reviews',
     icon: (
@@ -146,7 +155,7 @@ function AdminSidebar() {
       {/* Mobile Overlay - Chỉ hiển thị trên mobile khi sidebar mở */}
       {isMobileOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/50 z-30"
+          className="lg:hidden fixed inset-0 bg-black/50 z-20"
           onClick={() => setIsMobileOpen(false)}
           onTouchStart={() => setIsMobileOpen(false)}
           aria-hidden="true"
@@ -158,8 +167,8 @@ function AdminSidebar() {
         className={`
           fixed top-16 left-0 h-[calc(100vh-4rem)] w-64 border-r border-secondary/30
           transform transition-transform duration-300 ease-in-out overflow-y-auto
-          ${isMobileOpen ? 'translate-x-0 z-40' : '-translate-x-full z-20'}
-          lg:translate-x-0 lg:z-20
+          ${isMobileOpen ? 'translate-x-0 z-40' : '-translate-x-full z-10'}
+          lg:translate-x-0 lg:z-30
           bg-[#1a1a2e]
         `}
       >

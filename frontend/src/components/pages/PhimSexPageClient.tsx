@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import MovieCard from '@/components/movies/MovieCard';
 import Pagination from '@/components/common/Pagination';
 import StructuredData from '@/components/seo/StructuredData';
-import { postsApi } from '@/modules/posts/api/posts.api';
+import { moviesApi, type Movie } from '@/modules/movies/api/movies.api';
 import { categoriesApi, Category } from '@/modules/categories/api/categories.api';
 import { Post } from '@/types/post';
 
@@ -53,37 +53,26 @@ export default function PhimSexPageClient() {
   const fetchPosts = async () => {
     setLoading(true);
     try {
-      const data = await postsApi.getAll({
-        status: 'APPROVED', // Only show approved posts
+      const data = await moviesApi.getAll({
+        status: 'APPROVED', // Only show approved movies
         page: currentPage,
         limit: itemsPerPage,
         categoryId: selectedCategory || undefined,
       });
 
-      // Map posts to movie format
-      const mappedPosts = (data.data || []).map((post: Post) => {
-        // Handle images - can be JSON string or array
-        let images: string[] = [];
-        if (post.images) {
-          if (typeof post.images === 'string') {
-            try {
-              images = JSON.parse(post.images);
-            } catch {
-              images = [post.images];
-            }
-          } else if (Array.isArray(post.images)) {
-            images = post.images;
-          }
-        }
-
-        const thumbnail = images[0] || post.girl?.user?.avatarUrl || 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=400&h=300&fit=crop';
+      // Map movies to movie format
+      const mappedPosts = (data.data || []).map((post: Movie) => {
+        const thumbnail =
+          post.thumbnail ||
+          post.poster ||
+          'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=400&h=300&fit=crop';
         
         // Get category name from post.category relation or use default
-        const categoryName = (post.category as any)?.name || 'Khác';
+        const categoryName = (post as any)?.category?.name || 'Khác';
 
         // Duration: lấy từ post.duration nếu có, format nếu là số giây
         let duration: string | null = null;
-        const rawDuration = (post as any)?.duration || (post as any)?.videoDuration;
+        const rawDuration = post.duration || (post as any)?.videoDuration;
         
         if (rawDuration) {
           // Nếu là số (giây), format thành MM:SS hoặc HH:MM:SS
@@ -104,7 +93,7 @@ export default function PhimSexPageClient() {
         }
         
         // Debug: log để kiểm tra API response nếu không có duration
-        if (!duration && post.videoUrl) {
+        if (!duration && (post as any).videoUrl) {
           console.log('[PhimSexPageClient] Post without duration:', {
             id: post.id,
             title: post.title,
@@ -114,21 +103,21 @@ export default function PhimSexPageClient() {
           });
         }
 
-        // Generate URL with slug if available
+        // Generate URL with slug (SEO-friendly)
         const detailUrl = post.slug 
-          ? `/posts/${post.id}/${post.slug}`
-          : `/posts/${post.id}`;
+          ? `/movies/${post.slug}`
+          : `/movies/${post.id}`;
 
         return {
           id: post.id,
           title: post.title,
           thumbnail,
           duration,
-          views: post._count?.likes || Math.floor(Math.random() * 50000) + 10000,
+          views: post.viewCount || 0,
           rating: (4 + Math.random()).toFixed(1),
           detailUrl,
           category: categoryName,
-          poster: images[1] || thumbnail,
+          poster: post.poster || thumbnail,
         };
       });
 

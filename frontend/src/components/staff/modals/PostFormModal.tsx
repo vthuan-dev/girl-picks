@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -14,6 +14,7 @@ const postSchema = z.object({
   images: z.array(z.string()).optional(),
   girlId: z.string().optional(),
   status: z.enum(['PENDING', 'APPROVED', 'REJECTED']).optional(),
+  videoUrl: z.string().optional(),
 });
 
 type PostFormData = z.infer<typeof postSchema>;
@@ -30,6 +31,10 @@ export default function PostFormModal({ isOpen, onClose, onSuccess, post }: Post
   const [girls, setGirls] = useState<{ id: string; name: string }[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [newImageUrl, setNewImageUrl] = useState('');
+  const [videoUrl, setVideoUrl] = useState<string>('');
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const isEditMode = !!post;
 
@@ -75,8 +80,10 @@ export default function PostFormModal({ isOpen, onClose, onSuccess, post }: Post
           images: images,
           girlId: post.girl?.id || '',
           status: post.status,
+          videoUrl: post.videoUrl || '',
         });
         setImageUrls(images);
+        setVideoUrl(post.videoUrl || '');
       } else {
         reset({
           title: '',
@@ -84,8 +91,10 @@ export default function PostFormModal({ isOpen, onClose, onSuccess, post }: Post
           images: [],
           girlId: '',
           status: 'APPROVED',
+          videoUrl: '',
         });
         setImageUrls([]);
+        setVideoUrl('');
       }
     }
   }, [isOpen, post, reset]);
@@ -118,6 +127,43 @@ export default function PostFormModal({ isOpen, onClose, onSuccess, post }: Post
     setValue('images', newImages);
   };
 
+  const handleVideoUpload = async (file: File) => {
+    if (!file) return;
+
+    if (!file.type.startsWith('video/')) {
+      toast.error('Vui lòng chọn file video hợp lệ (mp4, webm, ...)');
+      return;
+    }
+
+    setIsUploadingVideo(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/upload/video', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data?.url) {
+        throw new Error(data?.error || data?.message || 'Không thể upload video');
+      }
+
+      setVideoUrl(data.url);
+      setValue('videoUrl', data.url);
+      toast.success('Tải video lên thành công');
+    } catch (error: any) {
+      console.error('Video upload error:', error);
+      toast.error(error.message || 'Không thể tải video lên');
+    } finally {
+      setIsUploadingVideo(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   const onSubmit = async (data: PostFormData) => {
     setIsLoading(true);
     try {
@@ -128,6 +174,7 @@ export default function PostFormModal({ isOpen, onClose, onSuccess, post }: Post
           images: data.images,
           girlId: data.girlId || undefined,
           status: data.status,
+          videoUrl: data.videoUrl || videoUrl || undefined,
         });
         toast.success('Cập nhật phim thành công');
       } else {
@@ -137,6 +184,7 @@ export default function PostFormModal({ isOpen, onClose, onSuccess, post }: Post
           images: data.images,
           girlId: data.girlId || undefined,
           status: data.status,
+          videoUrl: data.videoUrl || videoUrl || undefined,
         });
         toast.success('Tạo phim thành công');
       }
@@ -235,7 +283,7 @@ export default function PostFormModal({ isOpen, onClose, onSuccess, post }: Post
 
           {/* Images */}
           <div>
-            <label className="block text-sm font-medium text-text mb-2">Hình ảnh/Video</label>
+            <label className="block text-sm font-medium text-text mb-2">Hình ảnh</label>
             <div className="space-y-3">
               <div className="flex gap-2">
                 <input
@@ -244,7 +292,7 @@ export default function PostFormModal({ isOpen, onClose, onSuccess, post }: Post
                   onChange={(e) => setNewImageUrl(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddImage())}
                   className="flex-1 px-4 py-2 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                  placeholder="Nhập URL hình ảnh/video và nhấn Enter"
+                  placeholder="Nhập URL hình ảnh và nhấn Enter"
                 />
                 <button
                   type="button"
@@ -279,6 +327,78 @@ export default function PostFormModal({ isOpen, onClose, onSuccess, post }: Post
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Video Upload */}
+          <div>
+            <label className="block text-sm font-medium text-text mb-2">Video (tùy chọn)</label>
+            <div className="space-y-3">
+              {videoUrl ? (
+                <div className="bg-background rounded-xl border border-secondary/40 p-3 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                  <div className="w-full sm:w-40 rounded-lg overflow-hidden bg-black/60 border border-secondary/40">
+                    <video
+                      src={videoUrl}
+                      controls
+                      className="w-full h-28 object-cover bg-black"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-text-muted break-all mb-2">
+                      {videoUrl}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setVideoUrl('');
+                          setValue('videoUrl', '');
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-background border border-secondary/40 text-xs text-text hover:bg-background-light transition-colors cursor-pointer"
+                      >
+                        Xóa video
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between gap-3 bg-background rounded-xl border border-dashed border-secondary/40 px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <div className="text-xs sm:text-sm">
+                      <p className="font-medium text-text">Chưa có video</p>
+                      <p className="text-text-muted">
+                        Hỗ trợ file <span className="font-medium">video/mp4</span>, tối đa <span className="font-medium">100MB</span>.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={isUploadingVideo}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="px-3 py-2 rounded-lg bg-primary text-white text-xs sm:text-sm font-medium hover:bg-primary-hover disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    {isUploadingVideo ? 'Đang tải...' : 'Chọn video'}
+                  </button>
+                </div>
+              )}
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="video/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    handleVideoUpload(file);
+                  }
+                }}
+              />
             </div>
           </div>
 

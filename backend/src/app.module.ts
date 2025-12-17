@@ -31,6 +31,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AlbumsModule } from './modules/albums/albums.module';
 import { AlbumCategoriesModule } from './modules/album-categories/album-categories.module';
 import { ChatSexModule } from './modules/chat-sex/chat-sex.module';
+import { MoviesModule } from './modules/movies/movies.module';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { ChatSexModule } from './modules/chat-sex/chat-sex.module';
     AlbumsModule,
     AlbumCategoriesModule,
     ChatSexModule,
+    MoviesModule,
     // ThrottlerModule.forRoot([
     //   {
     //     ttl: 60000, // 1 minute
