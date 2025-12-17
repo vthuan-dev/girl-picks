@@ -857,8 +857,24 @@ export class GirlsService {
       tags,
       services,
       name,
+      phone,
       ...rest
     } = createGirlDto;
+
+    // Validate phone uniqueness if provided
+    if (phone && phone.trim()) {
+      const normalizedPhone = phone.trim();
+      const existingGirl = await this.prisma.girl.findFirst({
+        where: { phone: normalizedPhone },
+        select: { id: true, name: true },
+      });
+
+      if (existingGirl) {
+        throw new BadRequestException(
+          `Số điện thoại ${normalizedPhone} đã được sử dụng bởi gái "${existingGirl.name || existingGirl.id}". Vui lòng sử dụng số điện thoại khác.`
+        );
+      }
+    }
 
     // Generate slug from name
     let slug: string | undefined;
@@ -878,6 +894,7 @@ export class GirlsService {
         ...rest,
         name,
         slug,
+        phone: phone?.trim() || null, // Normalize phone and set to null if empty
         managedById, // Track who manages this girl
         userId: null, // Girl is independent, not linked to user
         districts: districts ? (Array.isArray(districts) ? districts : [districts]) : [],
@@ -927,7 +944,25 @@ export class GirlsService {
       );
     }
 
-    const { districts, images, tags, services, name, ...rest } = updateGirlDto;
+    const { districts, images, tags, services, name, phone, ...rest } = updateGirlDto;
+
+    // Validate phone uniqueness if provided and changed
+    if (phone && phone.trim() && phone.trim() !== girl.phone) {
+      const normalizedPhone = phone.trim();
+      const existingGirl = await this.prisma.girl.findFirst({
+        where: { 
+          phone: normalizedPhone,
+          id: { not: id }, // Exclude current girl
+        },
+        select: { id: true, name: true },
+      });
+
+      if (existingGirl) {
+        throw new BadRequestException(
+          `Số điện thoại ${normalizedPhone} đã được sử dụng bởi gái "${existingGirl.name || existingGirl.id}". Vui lòng sử dụng số điện thoại khác.`
+        );
+      }
+    }
 
     // Generate slug if name changed
     let slug: string | undefined;
@@ -949,6 +984,7 @@ export class GirlsService {
       data: {
         ...rest,
         name,
+        ...(phone !== undefined && { phone: phone?.trim() || null }), // Normalize phone if provided
         ...(slug && { slug }),
         // @ts-ignore - managedById will exist after migration
         managedById: currentUser?.role === 'ADMIN' ? managedById : (girl as any).managedById,

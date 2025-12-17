@@ -149,7 +149,7 @@ model Girl {
   slug      String? @unique // URL-friendly slug for SEO
   age       Int?
   bio       String?
-  phone     String? // Phone number from crawler
+  phone     String? @unique // Phone number from crawler - must be unique
   birthYear Int? // Birth year from crawler
 
   // Physical Info
