@@ -243,7 +243,7 @@ export default async function GirlDetailBySlugPage({ params }: PageProps) {
         </div>
 
         {/* Reviews: dưới Thông tin cơ bản ở mobile, cột trái ở desktop */}
-        <div className="mt-6 lg:mt-8 lg:max-w-3xl">
+        <div className="mt-6 lg:mt-1 lg:max-w-3xl">
           <ReviewsSection
             girlId={girl.id}
             totalReviews={totalReviews}

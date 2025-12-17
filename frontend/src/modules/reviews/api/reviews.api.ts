@@ -99,6 +99,18 @@ export const reviewsApi = {
     return responseData;
   },
 
+  // Get like status (liked by current user + count)
+  getLikeStatus: async (reviewId: string): Promise<{ liked: boolean; likesCount: number }> => {
+    const response = await apiClient.get<any>(`/reviews/${reviewId}/like-status`);
+    const responseData = response.data;
+
+    if (responseData.success && responseData.data) {
+      return responseData.data;
+    }
+
+    return responseData;
+  },
+
   // Get likes count for a review
   getLikes: async (reviewId: string): Promise<number> => {
     const response = await apiClient.get<any>(`/reviews/${reviewId}/likes`);
@@ -134,8 +146,8 @@ export const reviewsApi = {
     
     if (responseData.success && responseData.data) {
       return {
-        data: Array.isArray(responseData.data.data) ? responseData.data.data : [],
-        total: responseData.data.total || 0,
+        data: Array.isArray(responseData.data) ? responseData.data : [],
+        total: responseData.meta?.total ?? Array.isArray(responseData.data) ? responseData.data.length : 0,
       };
     }
     

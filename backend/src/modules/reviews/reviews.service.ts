@@ -605,6 +605,34 @@ export class ReviewsService {
     };
   }
 
+  async getLikeStatus(reviewId: string, userId: string) {
+    const review = await this.prisma.review.findUnique({
+      where: { id: reviewId },
+      select: { id: true },
+    });
+
+    if (!review) {
+      throw new NotFoundException('Review not found');
+    }
+
+    const [likesCount, existing] = await Promise.all([
+      this.prisma.reviewLike.count({ where: { reviewId } }),
+      this.prisma.reviewLike.findUnique({
+        where: {
+          reviewId_userId: {
+            reviewId,
+            userId,
+          },
+        },
+      }),
+    ]);
+
+    return {
+      liked: Boolean(existing),
+      likesCount,
+    };
+  }
+
   async addComment(
     reviewId: string,
     userId: string,

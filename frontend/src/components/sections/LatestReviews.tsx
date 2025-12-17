@@ -321,6 +321,25 @@ function ReviewCard({ review }: { review: Review }) {
     });
   };
 
+  const loadLikeStatus = useCallback(async () => {
+    if (!isAuthenticated) return;
+    try {
+      const status = await reviewsApi.getLikeStatus(review.id);
+      if (typeof status?.liked === 'boolean') {
+        setLiked(status.liked);
+      }
+      if (typeof status?.likesCount === 'number') {
+        setLikesCount(status.likesCount);
+      }
+    } catch (error) {
+      console.error('Error loading like status:', error);
+    }
+  }, [isAuthenticated, review.id]);
+
+  useEffect(() => {
+    loadLikeStatus();
+  }, [loadLikeStatus]);
+
   const handleLike = async () => {
     if (!isAuthenticated) {
       toast.error('Vui lòng đăng nhập để thích');

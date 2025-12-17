@@ -55,13 +55,16 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
   const [submitting, setSubmitting] = useState(false);
   const [loadingLikes, setLoadingLikes] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  
+
   // Comment states
   const [reviewComments, setReviewComments] = useState<Record<string, ReviewComment[]>>({});
   const [showCommentForms, setShowCommentForms] = useState<Record<string, boolean>>({});
   const [commentContents, setCommentContents] = useState<Record<string, string>>({});
   const [submittingComments, setSubmittingComments] = useState<Set<string>>(new Set());
   const [loadingComments, setLoadingComments] = useState<Set<string>>(new Set());
+  const [showReplyForms, setShowReplyForms] = useState<Record<string, boolean>>({});
+  const [replyContents, setReplyContents] = useState<Record<string, string>>({});
+  const [submittingReplies, setSubmittingReplies] = useState<Set<string>>(new Set());
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
 
@@ -212,6 +215,91 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
         const newSet = new Set(prev);
         newSet.delete(reviewId);
         return newSet;
+      });
+    }
+  };
+
+  const handleToggleReplyForm = (commentId: string) => {
+    if (!requireAuth()) return;
+
+    setShowReplyForms((prev) => ({
+      ...prev,
+      [commentId]: !prev[commentId],
+    }));
+  };
+
+  const addReplyToComments = (
+    comments: ReviewComment[],
+    newReply: ReviewComment,
+  ): ReviewComment[] => {
+    return comments.map((comment) => {
+      if (comment.id === newReply.parentId) {
+        const existingReplies = comment.replies || [];
+        return {
+          ...comment,
+          replies: [...existingReplies, newReply],
+          _count: {
+            ...comment._count,
+            replies: (comment._count?.replies || 0) + 1,
+          },
+        };
+      }
+
+      if (comment.replies && comment.replies.length > 0) {
+        return {
+          ...comment,
+          replies: addReplyToComments(comment.replies, newReply),
+        };
+      }
+
+      return comment;
+    });
+  };
+
+  const handleSubmitReply = async (reviewId: string, parentCommentId: string) => {
+    if (!requireAuth()) return;
+
+    const content = replyContents[parentCommentId]?.trim();
+    if (!content) {
+      toast.error('Vui lòng nhập nội dung trả lời');
+      return;
+    }
+
+    try {
+      setSubmittingReplies((prev) => new Set(prev).add(parentCommentId));
+      const newReply = await reviewsApi.addComment(reviewId, {
+        content,
+        parentId: parentCommentId,
+      });
+
+      setReviewComments((prev) => {
+        const current = prev[reviewId] || [];
+        return {
+          ...prev,
+          [reviewId]: addReplyToComments(current, newReply),
+        };
+      });
+
+      // Clear input & close form
+      setReplyContents((prev) => {
+        const next = { ...prev };
+        delete next[parentCommentId];
+        return next;
+      });
+      setShowReplyForms((prev) => ({
+        ...prev,
+        [parentCommentId]: false,
+      }));
+
+      toast.success('Đã trả lời bình luận');
+    } catch (error: any) {
+      console.error('Error submitting reply:', error);
+      toast.error(error.response?.data?.message || 'Không thể gửi trả lời');
+    } finally {
+      setSubmittingReplies((prev) => {
+        const next = new Set(prev);
+        next.delete(parentCommentId);
+        return next;
       });
     }
   };
@@ -422,6 +510,128 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
+    });
+  };
+
+  const renderCommentTree = (
+    comments: ReviewComment[],
+    reviewId: string,
+    depth = 0,
+  ) => {
+    return comments.map((child) => {
+      const isReply = depth > 0;
+
+      return (
+        <div
+          key={child.id}
+          className={`mt-3 flex items-start gap-2 ${
+            isReply ? 'ml-6 pl-3 border-l-2 border-secondary/50' : ''
+          }`}
+        >
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0">
+            {child.user?.avatarUrl ? (
+              <img
+                src={child.user.avatarUrl}
+                alt={child.user.fullName}
+                className="w-full h-full rounded-full object-cover"
+              />
+            ) : (
+              <span className="text-text-muted text-xs font-semibold">
+                {child.user?.fullName?.charAt(0)?.toUpperCase() || 'U'}
+              </span>
+            )}
+          </div>
+          <div className="flex-1">
+            <div className="bg-background/60 rounded-xl px-3 py-2 inline-block max-w-full">
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-text text-sm">
+                  {child.user?.fullName || 'Người dùng'}
+                </span>
+                {child.user?.id === user?.id && (
+                  <span className="px-1.5 py-0.5 bg-primary/20 text-primary text-[10px] rounded-full font-medium">
+                    Bạn
+                  </span>
+                )}
+              </div>
+              <p className="text-text text-sm whitespace-pre-wrap break-words mt-0.5">
+                {child.content}
+              </p>
+            </div>
+            <div className="flex items-center gap-3 mt-1">
+              <span className="text-xs text-text-muted">
+                {formatDate(child.createdAt)}
+              </span>
+              <button
+                type="button"
+                onClick={() => handleToggleReplyForm(child.id)}
+                className="text-xs text-text-muted hover:text-primary font-medium cursor-pointer"
+              >
+                Trả lời
+              </button>
+            </div>
+
+            {showReplyForms[child.id] && (
+              <div className="mt-2">
+                <textarea
+                  value={replyContents[child.id] || ''}
+                  onChange={(e) =>
+                    setReplyContents((prev) => ({
+                      ...prev,
+                      [child.id]: e.target.value,
+                    }))
+                  }
+                  placeholder={`Trả lời ${child.user?.fullName || 'bình luận'}...`}
+                  rows={2}
+                  maxLength={500}
+                  className="w-full px-3 py-2 bg-background border border-secondary/50 rounded-xl text-text placeholder:text-text-muted resize-none focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all text-sm"
+                />
+                <div className="flex justify-end gap-2 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowReplyForms((prev) => ({
+                        ...prev,
+                        [child.id]: false,
+                      }));
+                      setReplyContents((prev) => {
+                        const next = { ...prev };
+                        delete next[child.id];
+                        return next;
+                      });
+                    }}
+                    className="px-3 py-1.5 text-text-muted hover:text-text rounded-lg transition-colors text-sm"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSubmitReply(reviewId, child.id)}
+                    disabled={
+                      submittingReplies.has(child.id) || !replyContents[child.id]?.trim()
+                    }
+                    className="px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 text-sm font-medium"
+                  >
+                    {submittingReplies.has(child.id) ? (
+                      <>
+                        <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Đang gửi...
+                      </>
+                    ) : (
+                      'Gửi'
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {child.replies && child.replies.length > 0 && depth < 3 && (
+              <div className="mt-2">
+                {renderCommentTree(child.replies, reviewId, depth + 1)}
+              </div>
+            )}
+          </div>
+        </div>
+      );
     });
   };
 
@@ -926,36 +1136,13 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
                       <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
                     </div>
                   ) : (
-                    reviewComments[review.id].map((comment) => (
-                      <div key={comment.id} className="flex items-start gap-2">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0">
-                          {comment.user?.avatarUrl ? (
-                            <img
-                              src={comment.user.avatarUrl}
-                              alt={comment.user.fullName}
-                              className="w-full h-full rounded-full object-cover"
-                            />
-                          ) : (
-                            <span className="text-text-muted text-xs font-semibold">
-                              {comment.user?.fullName?.charAt(0)?.toUpperCase() || 'U'}
-                            </span>
-                          )}
+                    <>
+                      {reviewComments[review.id].map((comment) => (
+                        <div key={comment.id} className="space-y-2">
+                          {renderCommentTree([comment], review.id, 0)}
                         </div>
-                        <div className="flex-1">
-                          <div className="bg-background/60 rounded-xl px-3 py-2 inline-block max-w-full">
-                            <span className="font-medium text-text text-sm">
-                              {comment.user?.fullName || 'Người dùng'}
-                            </span>
-                            <p className="text-text text-sm whitespace-pre-wrap break-words mt-0.5">
-                              {comment.content}
-                            </p>
-                          </div>
-                          <span className="text-xs text-text-muted ml-1 mt-1 block">
-                            {formatDate(comment.createdAt)}
-                          </span>
-                        </div>
-                      </div>
-                    ))
+                      ))}
+                    </>
                   )}
                 </div>
               )}

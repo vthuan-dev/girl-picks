@@ -23,12 +23,14 @@ export default function CustomerProfilePage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-text">Profile của tôi</h1>
-          <p className="text-text-muted mt-1">Quản lý thông tin cá nhân{isStaff ? ' và nội dung' : ''}</p>
+          <p className="text-text-muted mt-1 text-sm sm:text-base">
+            Quản lý thông tin cá nhân{isStaff ? ' và nội dung' : ''} của bạn
+          </p>
         </div>
         {activeTab === 'profile' && (
           <button
@@ -45,7 +47,7 @@ export default function CustomerProfilePage() {
 
       {/* Tabs for Staff */}
       {isStaff && (
-        <div className="flex gap-2 p-1 bg-background-light rounded-xl border border-secondary/30">
+        <div className="flex gap-2 p-1 bg-background-light rounded-xl border border-secondary/30 overflow-x-auto scrollbar-hide">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -67,11 +69,11 @@ export default function CustomerProfilePage() {
 
       {/* Profile Content */}
       {activeTab === 'profile' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           {/* Left Column - Avatar & Quick Info */}
           <div className="space-y-6">
             {/* Avatar Card */}
-            <div className="bg-background-light rounded-2xl border border-secondary/30 p-6 text-center">
+            <div className="bg-background-light rounded-2xl border border-secondary/30 p-6 text-center shadow-sm shadow-black/10">
               <div className="relative inline-block mb-4">
                 <div className="w-28 h-28 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 border-2 border-primary/30 flex items-center justify-center mx-auto">
                   <span className="text-4xl font-bold text-primary">
@@ -113,7 +115,7 @@ export default function CustomerProfilePage() {
 
             {/* Stats for Girl */}
             {isGirl && (
-              <div className="bg-background-light rounded-2xl border border-secondary/30 p-5 space-y-4">
+              <div className="bg-background-light rounded-2xl border border-secondary/30 p-5 space-y-4 shadow-sm shadow-black/10">
                 <h3 className="font-semibold text-text">Thống kê</h3>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -137,10 +139,10 @@ export default function CustomerProfilePage() {
           {/* Right Column - Details */}
           <div className="lg:col-span-2 space-y-6">
             {/* Info Card */}
-            <div className="bg-background-light rounded-2xl border border-secondary/30 p-6">
+            <div className="bg-background-light rounded-2xl border border-secondary/30 p-6 shadow-sm shadow-black/10">
               <h3 className="font-semibold text-text mb-5">Thông tin cá nhân</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div>
+                <div className="min-w-0">
                   <label className="block text-xs font-medium text-text-muted mb-1.5 uppercase tracking-wide">Họ tên</label>
                   {isEditing ? (
                     <input type="text" defaultValue={user?.fullName || ''} className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:border-primary transition-all" />
@@ -148,11 +150,11 @@ export default function CustomerProfilePage() {
                     <p className="text-text font-medium">{user?.fullName || 'Chưa cập nhật'}</p>
                   )}
                 </div>
-                <div>
+                <div className="min-w-0">
                   <label className="block text-xs font-medium text-text-muted mb-1.5 uppercase tracking-wide">Email</label>
                   <p className="text-text">{user?.email || 'N/A'}</p>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <label className="block text-xs font-medium text-text-muted mb-1.5 uppercase tracking-wide">Số điện thoại</label>
                   {isEditing ? (
                     <input type="tel" defaultValue={user?.phone || ''} className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:border-primary transition-all" />
@@ -201,7 +203,7 @@ export default function CustomerProfilePage() {
 
             {/* Gallery for Girl */}
             {isGirl && (
-              <div className="bg-background-light rounded-2xl border border-secondary/30 p-6">
+              <div className="bg-background-light rounded-2xl border border-secondary/30 p-6 shadow-sm shadow-black/10">
                 <div className="flex items-center justify-between mb-5">
                   <h3 className="font-semibold text-text">Hình ảnh</h3>
                   {isEditing && (
@@ -213,7 +215,7 @@ export default function CustomerProfilePage() {
                     </button>
                   )}
                 </div>
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[1, 2, 3, 4, 5, 6, 7, 8].map((item) => (
                     <div key={item} className="group relative aspect-square bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl border border-secondary/30 overflow-hidden hover:border-primary/30 transition-all">
                       <div className="w-full h-full flex items-center justify-center">

@@ -172,6 +172,15 @@ export class ReviewsController {
     return this.reviewsService.getLikes(id);
   }
 
+  @Get(':id/like-status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.CUSTOMER, UserRole.ADMIN, UserRole.GIRL, UserRole.STAFF_UPLOAD)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get like status (liked & count) for current user' })
+  getLikeStatus(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    return this.reviewsService.getLikeStatus(id, userId);
+  }
+
   @Post(':id/comments')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.CUSTOMER, UserRole.ADMIN)
