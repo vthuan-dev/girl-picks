@@ -15,9 +15,12 @@ export default function Breadcrumbs({ items }: BreadcrumbsProps) {
       <ol className="flex items-center gap-2 sm:gap-3 text-sm sm:text-base whitespace-nowrap min-w-max">
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
-          
+
           return (
-            <li key={index} className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            <li
+              key={index}
+              className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0"
+            >
               {index > 0 && (
                 <svg
                   className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 flex-shrink-0"
@@ -33,8 +36,8 @@ export default function Breadcrumbs({ items }: BreadcrumbsProps) {
                 </svg>
               )}
               {isLast ? (
-                <span 
-                  className="text-text font-medium" 
+                <span
+                  className="text-text font-medium leading-tight truncate max-w-[180px] sm:max-w-none"
                   aria-current="page"
                   title={item.label}
                 >
@@ -43,7 +46,7 @@ export default function Breadcrumbs({ items }: BreadcrumbsProps) {
               ) : (
                 <Link
                   href={item.href}
-                  className="text-text-muted hover:text-primary transition-colors cursor-pointer truncate max-w-[120px] sm:max-w-none"
+                  className="text-text-muted hover:text-primary transition-colors cursor-pointer break-words leading-tight max-w-[160px] sm:max-w-none"
                   title={item.label}
                 >
                   {item.label}

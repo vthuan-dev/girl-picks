@@ -209,24 +209,24 @@ export default async function GirlDetailBySlugPage({ params }: PageProps) {
       />
       <StructuredData type="BreadcrumbList" data={breadcrumbStructuredData} />
 
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-2 sm:py-6 lg:py-8">
         <Breadcrumbs items={breadcrumbs} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-[2fr,1fr] gap-6 lg:gap-10">
-          {/* Main content */}
+        <div className="flex flex-col lg:grid lg:grid-cols-[2fr,1fr] gap-6 lg:gap-10">
+          {/* Main content: gallery + bio */}
           <div className="space-y-6">
             <GirlGallery images={girl.images as string[]} name={displayName} />
-            
+
             {/* Bio: loại bỏ cảnh báo thanh toán 25 điểm nếu có */}
             {(() => {
               const cleanedBio = (girl.bio || '')
                 .replace(/Bạn đồng ý thanh toán 25 điểm để up đánh giá\??/gi, '')
                 .trim();
-              
+
               if (!cleanedBio) {
                 return null;
               }
-              
+
               return (
                 <>
                   <GirlBioSection bio={cleanedBio} />
@@ -234,21 +234,21 @@ export default async function GirlDetailBySlugPage({ params }: PageProps) {
                 </>
               );
             })()}
-
-            {/* Reviews nằm cùng cột với nội dung chính */}
-            <div className="pt-4 border-t border-secondary/30">
-              <ReviewsSection
-                girlId={girl.id}
-                totalReviews={totalReviews}
-                averageRating={ratingValue}
-              />
-            </div>
           </div>
 
           {/* Sidebar thông tin cơ bản */}
           <div className="space-y-6 lg:sticky lg:top-20 h-fit">
             <GirlInfoCard girl={girl} />
           </div>
+        </div>
+
+        {/* Reviews: dưới Thông tin cơ bản ở mobile, cột trái ở desktop */}
+        <div className="mt-6 lg:mt-8 lg:max-w-3xl">
+          <ReviewsSection
+            girlId={girl.id}
+            totalReviews={totalReviews}
+            averageRating={ratingValue}
+          />
         </div>
 
         {/* Gái gọi liên quan – hiển thị toàn chiều ngang, dưới InnerLayoutRouter */}

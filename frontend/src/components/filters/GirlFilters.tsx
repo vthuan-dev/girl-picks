@@ -130,7 +130,7 @@ export default function GirlFilters({ filters, onFilterChange }: GirlFiltersProp
 
   return (
     <div className="mb-5 sm:mb-6">
-      <div className="bg-background-light/80 border border-secondary/40 rounded-2xl px-3 sm:px-4 py-3 sm:py-3 shadow-sm flex flex-wrap items-center gap-2 sm:gap-3">
+      <div className="bg-background-light/80 border border-secondary/40 rounded-2xl px-3 sm:px-4 py-3 sm:py-3 shadow-sm flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-3">
         {/* Filter Label */}
         <div className="flex items-center gap-2 text-text-muted mr-1 sm:mr-2">
           <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -139,50 +139,53 @@ export default function GirlFilters({ filters, onFilterChange }: GirlFiltersProp
           <span className="text-xs sm:text-sm font-medium">Lọc theo</span>
         </div>
 
-        {/* Price Filter */}
-        <FilterDropdown
-          label="Giá"
-          icon={
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          }
-          options={priceOptions}
-          value={filters.price}
-          onChange={(value) => onFilterChange({ ...filters, price: value })}
-        />
+        {/* Filters group */}
+        <div className="flex flex-wrap gap-2 sm:gap-3">
+          {/* Price Filter */}
+          <FilterDropdown
+            label="Giá"
+            icon={
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            }
+            options={priceOptions}
+            value={filters.price}
+            onChange={(value) => onFilterChange({ ...filters, price: value })}
+          />
 
-        {/* Age Filter */}
-        <FilterDropdown
-          label="Tuổi"
-          icon={
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          }
-          options={ageOptions}
-          value={filters.age}
-          onChange={(value) => onFilterChange({ ...filters, age: value })}
-        />
+          {/* Age Filter */}
+          <FilterDropdown
+            label="Tuổi"
+            icon={
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            }
+            options={ageOptions}
+            value={filters.age}
+            onChange={(value) => onFilterChange({ ...filters, age: value })}
+          />
 
-        {/* Height Filter */}
-        <FilterDropdown
-          label="Chiều cao"
-          icon={
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-            </svg>
-          }
-          options={heightOptions}
-          value={filters.height}
-          onChange={(value) => onFilterChange({ ...filters, height: value })}
-        />
+          {/* Height Filter */}
+          <FilterDropdown
+            label="Chiều cao"
+            icon={
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+              </svg>
+            }
+            options={heightOptions}
+            value={filters.height}
+            onChange={(value) => onFilterChange({ ...filters, height: value })}
+          />
+        </div>
 
         {/* Clear All Button */}
         {hasActiveFilters && (
           <button
             onClick={handleClearAll}
-            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-full transition-colors"
+            className="mt-1 sm:mt-0 sm:ml-auto self-start sm:self-auto flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-full transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
