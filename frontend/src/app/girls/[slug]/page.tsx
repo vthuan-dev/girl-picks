@@ -209,12 +209,12 @@ export default async function GirlDetailBySlugPage({ params }: PageProps) {
       />
       <StructuredData type="BreadcrumbList" data={breadcrumbStructuredData} />
 
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-2 sm:py-6 lg:py-8">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-1 sm:py-6 lg:py-8">
         <Breadcrumbs items={breadcrumbs} />
 
-        <div className="flex flex-col lg:grid lg:grid-cols-[2fr,1fr] gap-6 lg:gap-10">
+        <div className="flex flex-col lg:grid lg:grid-cols-[2fr,1fr] gap-4 sm:gap-6 lg:gap-10">
           {/* Main content: gallery + bio */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <GirlGallery images={girl.images as string[]} name={displayName} />
 
             {/* Bio: loại bỏ cảnh báo thanh toán 25 điểm nếu có */}
@@ -237,13 +237,13 @@ export default async function GirlDetailBySlugPage({ params }: PageProps) {
           </div>
 
           {/* Sidebar thông tin cơ bản */}
-          <div className="space-y-6 lg:sticky lg:top-20 h-fit">
+          <div className="space-y-4 sm:space-y-6 lg:sticky lg:top-20 h-fit">
             <GirlInfoCard girl={girl} />
           </div>
         </div>
 
         {/* Reviews: dưới Thông tin cơ bản ở mobile, cột trái ở desktop */}
-        <div className="mt-6 lg:mt-1 lg:max-w-3xl">
+        <div className="mt-4 sm:mt-6 lg:mt-1 lg:max-w-3xl">
           <ReviewsSection
             girlId={girl.id}
             totalReviews={totalReviews}
@@ -252,7 +252,7 @@ export default async function GirlDetailBySlugPage({ params }: PageProps) {
         </div>
 
         {/* Gái gọi liên quan – hiển thị toàn chiều ngang, dưới InnerLayoutRouter */}
-        <div className="mt-8">
+        <div className="mt-4 sm:mt-8">
           <RelatedGirls currentGirlId={girl.id} districtId={girl.districtId} />
         </div>
       </div>

@@ -11,7 +11,7 @@ interface BreadcrumbsProps {
 
 export default function Breadcrumbs({ items }: BreadcrumbsProps) {
   return (
-    <nav aria-label="Breadcrumb" className="mb-4 overflow-x-auto scrollbar-hide">
+    <nav aria-label="Breadcrumb" className="mb-2 sm:mb-4 overflow-x-auto scrollbar-hide">
       <ol className="flex items-center gap-2 sm:gap-3 text-sm sm:text-base whitespace-nowrap min-w-max">
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
@@ -19,11 +19,11 @@ export default function Breadcrumbs({ items }: BreadcrumbsProps) {
           return (
             <li
               key={index}
-              className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0"
+              className={`flex items-center gap-1.5 sm:gap-3 flex-shrink-0 ${!isLast ? 'hidden sm:flex' : ''}`}
             >
               {index > 0 && (
                 <svg
-                  className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 flex-shrink-0"
+                  className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 flex-shrink-0 hidden sm:inline"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                   aria-hidden="true"
@@ -37,7 +37,7 @@ export default function Breadcrumbs({ items }: BreadcrumbsProps) {
               )}
               {isLast ? (
                 <span
-                  className="text-text font-medium leading-tight truncate max-w-[180px] sm:max-w-none"
+                  className="text-text font-medium leading-tight"
                   aria-current="page"
                   title={item.label}
                 >
@@ -46,7 +46,7 @@ export default function Breadcrumbs({ items }: BreadcrumbsProps) {
               ) : (
                 <Link
                   href={item.href}
-                  className="text-text-muted hover:text-primary transition-colors cursor-pointer break-words leading-tight max-w-[160px] sm:max-w-none"
+                  className="text-text-muted hover:text-primary transition-colors cursor-pointer leading-tight"
                   title={item.label}
                 >
                   {item.label}

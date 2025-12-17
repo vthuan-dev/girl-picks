@@ -142,7 +142,7 @@ export default function VideoPlayer({
         ref={videoRef}
         key={currentVideoUrl}
         controls
-        controlsList="nodownload nofullscreen noremoteplayback"
+        controlsList="nodownload noremoteplayback"
         disablePictureInPicture={false}
         poster={poster}
         className="w-full h-auto pointer-events-auto"
