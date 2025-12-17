@@ -518,7 +518,10 @@ function ReviewCard({
           </button>
           <button
             type="button"
-            onClick={() => setExpanded(!expanded)}
+            onClick={() => {
+              if (!requireAuth()) return;
+              setExpanded(!expanded);
+            }}
             className="flex items-center gap-1.5 text-text-muted hover:text-primary transition-colors cursor-pointer"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
