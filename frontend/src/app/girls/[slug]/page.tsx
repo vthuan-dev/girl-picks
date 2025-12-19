@@ -209,7 +209,7 @@ export default async function GirlDetailBySlugPage({ params }: PageProps) {
       />
       <StructuredData type="BreadcrumbList" data={breadcrumbStructuredData} />
 
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-1 sm:py-6 lg:py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-1 sm:py-6 lg:py-8">
         <Breadcrumbs items={breadcrumbs} />
 
         <div className="flex flex-col lg:grid lg:grid-cols-[2fr,1fr] gap-4 sm:gap-6 lg:gap-10">
