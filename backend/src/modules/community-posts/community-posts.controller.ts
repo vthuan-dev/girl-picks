@@ -167,6 +167,15 @@ export class CommunityPostsController {
     return this.communityPostsService.getLikes(id);
   }
 
+  @Get(':id/like-status')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get like status for current user' })
+  @ApiResponse({ status: 200, description: 'Like status' })
+  getLikeStatus(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    return this.communityPostsService.getLikeStatus(id, userId);
+  }
+
   @Post(':id/comments')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.CUSTOMER, UserRole.ADMIN, UserRole.GIRL)

@@ -200,6 +200,28 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
     });
   };
 
+  // Load like status when component mounts
+  const loadLikeStatus = useCallback(async () => {
+    if (!isAuthenticated) return;
+    try {
+      const status = await communityPostsApi.getLikeStatus(post.id);
+      if (typeof status?.liked === 'boolean') {
+        setLiked(status.liked);
+      }
+      if (typeof status?.likesCount === 'number') {
+        setLikesCount(status.likesCount);
+      }
+    } catch (error) {
+      console.error('Error loading like status:', error);
+      // If error, use initial count from post
+      setLikesCount(post._count?.likes || 0);
+    }
+  }, [isAuthenticated, post.id, post._count?.likes]);
+
+  useEffect(() => {
+    loadLikeStatus();
+  }, [loadLikeStatus]);
+
   const handleLike = async () => {
     if (!isAuthenticated) {
       toast.error('Vui lòng đăng nhập để thích');
@@ -256,6 +278,36 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
       }
       return cmt;
     });
+  };
+
+  const handleShare = async () => {
+    const url = `${window.location.origin}/community-posts/${post.id}`;
+    const shareData = {
+      title: post.title || 'Bài viết cộng đồng',
+      text: post.content.substring(0, 100) + '...',
+      url: url,
+    };
+
+    try {
+      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+        toast.success('Đã chia sẻ');
+      } else {
+        // Fallback: Copy to clipboard
+        await navigator.clipboard.writeText(url);
+        toast.success('Đã sao chép link vào clipboard');
+      }
+    } catch (error: any) {
+      if (error.name !== 'AbortError') {
+        // User cancelled or error occurred
+        try {
+          await navigator.clipboard.writeText(url);
+          toast.success('Đã sao chép link vào clipboard');
+        } catch (clipboardError) {
+          toast.error('Không thể chia sẻ');
+        }
+      }
+    }
   };
 
   const handleComment = async (parentId?: string) => {
@@ -400,6 +452,20 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
           </svg>
           {commentsCount}
         </div>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            handleShare();
+          }}
+          className="flex items-center gap-1.5 hover:text-primary transition-colors"
+          title="Chia sẻ"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+          </svg>
+        </button>
       </div>
 
       {/* Comments Section */}

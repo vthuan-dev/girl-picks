@@ -240,6 +240,18 @@ export const communityPostsApi = {
     return responseData.likesCount || 0;
   },
 
+  // Get like status for current user
+  getLikeStatus: async (id: string): Promise<{ liked: boolean; likesCount: number }> => {
+    const response = await apiClient.get<any>(`/community-posts/${id}/like-status`);
+    const responseData = response.data;
+    
+    if (responseData.success && responseData.data) {
+      return responseData.data;
+    }
+    
+    return responseData;
+  },
+
   // Add comment to a community post
   addComment: async (id: string, data: CreateCommunityPostCommentDto): Promise<CommunityPostComment> => {
     const response = await apiClient.post<any>(`/community-posts/${id}/comments`, data);
