@@ -25,7 +25,7 @@ export const communityPostsAdminApi = {
     queryParams.append('limit', (params?.limit || 20).toString());
 
     const response = await apiClient.get<ApiResponse<PaginatedResponse<CommunityPost>>>(
-      `/community-posts?${queryParams.toString()}`
+      `/admin/community-posts?${queryParams.toString()}`
     );
     return response.data.data;
   },
