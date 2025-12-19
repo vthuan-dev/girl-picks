@@ -202,20 +202,26 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5 p-6 bg-background rounded-xl border border-primary/20">
+    <form onSubmit={handleSubmit} className="space-y-6 p-6 sm:p-8 bg-background rounded-2xl border border-secondary/20 shadow-lg shadow-primary/5">
+      {/* Header */}
+      <div className="pb-4 border-b border-secondary/20">
+        <h2 className="text-xl sm:text-2xl font-bold text-text mb-2">Tạo bài viết mới</h2>
+        <p className="text-sm text-text-muted">Chia sẻ với cộng đồng và đợi admin duyệt</p>
+      </div>
+
       {/* Title (optional) */}
       <div>
-        <label htmlFor="post-title" className="block text-sm font-medium text-text mb-3">
-          Tiêu đề (tùy chọn)
+        <label htmlFor="post-title" className="block text-sm font-semibold text-text mb-2.5">
+          Tiêu đề <span className="text-text-muted font-normal">(tùy chọn)</span>
         </label>
         <input
           id="post-title"
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Nhập tiêu đề..."
+          placeholder="Nhập tiêu đề bài viết..."
           maxLength={100}
-          className="w-full px-4 py-3 bg-background-light border border-secondary/30 rounded-lg text-text placeholder:text-text-muted/50 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
+          className="w-full px-4 py-3 bg-background-light border border-secondary/30 rounded-xl text-text placeholder:text-text-muted/60 focus:outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all duration-200 cursor-text"
         />
         <div className="mt-2 text-xs text-text-muted text-right">
           {title.length}/100
@@ -224,35 +230,36 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
 
       {/* Content */}
       <div>
-        <label htmlFor="post-content" className="block text-sm font-medium text-text mb-3">
-          Nội dung <span className="text-primary">*</span>
+        <label htmlFor="post-content" className="block text-sm font-semibold text-text mb-2.5">
+          Nội dung <span className="text-primary font-semibold">*</span>
         </label>
         <textarea
           id="post-content"
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="Chia sẻ với cộng đồng..."
-          rows={4}
+          placeholder="Chia sẻ suy nghĩ, trải nghiệm hoặc điều gì đó thú vị với cộng đồng..."
+          rows={6}
           maxLength={1000}
-          className="w-full px-4 py-3 bg-background-light border border-secondary/30 rounded-lg text-text placeholder:text-text-muted/50 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all resize-none"
+          className="w-full px-4 py-3 bg-background-light border border-secondary/30 rounded-xl text-text placeholder:text-text-muted/60 focus:outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all duration-200 resize-none cursor-text"
         />
-        <div className="mt-2 text-xs text-text-muted text-right">
-          {content.length}/1000
+        <div className="mt-2 flex items-center justify-between text-xs">
+          <span className="text-text-muted">Tối thiểu 5 từ hoặc có hình ảnh</span>
+          <span className="text-text-muted">{content.length}/1000</span>
         </div>
       </div>
 
       {/* Image Upload */}
       <div>
-        <label className="block text-sm font-medium text-text mb-3">
-          Hình ảnh (tùy chọn)
+        <label className="block text-sm font-semibold text-text mb-2.5">
+          Hình ảnh <span className="text-text-muted font-normal">(tùy chọn, tối đa 5 ảnh)</span>
         </label>
         
         {/* Image Preview Grid */}
         {selectedImages.length > 0 && (
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mb-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-4">
             {selectedImages.map((imageUrl, index) => (
-              <div key={index} className="relative group">
-                <div className="aspect-square rounded-lg overflow-hidden bg-secondary/20 border border-secondary/30">
+              <div key={index} className="relative group cursor-pointer">
+                <div className="aspect-square rounded-xl overflow-hidden bg-secondary/20 border-2 border-secondary/30 group-hover:border-primary/50 transition-all duration-200">
                   <img
                     src={imageUrl}
                     alt={`Preview ${index + 1}`}
@@ -262,11 +269,11 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
                 <button
                   type="button"
                   onClick={() => removeImage(index)}
-                  className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer hover:bg-red-600 shadow-lg"
+                  className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 cursor-pointer hover:bg-red-600 hover:scale-110 shadow-lg"
                   aria-label="Xóa ảnh"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
@@ -276,11 +283,11 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
 
         {/* Upload Button */}
         {selectedImages.length < 5 && (
-          <label className="inline-flex items-center gap-2 px-4 py-2.5 bg-background-light border border-secondary/30 rounded-lg hover:bg-background hover:border-primary/50 transition-all cursor-pointer text-sm font-medium text-text">
-            <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <label className="inline-flex items-center gap-2.5 px-5 py-3 bg-background-light border-2 border-dashed border-secondary/30 rounded-xl hover:bg-background hover:border-primary/50 hover:border-solid transition-all duration-200 cursor-pointer text-sm font-medium text-text group">
+            <svg className="w-5 h-5 text-primary group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-            <span>Thêm ảnh</span>
+            <span>Thêm ảnh ({selectedImages.length}/5)</span>
             <input
               ref={fileInputRef}
               type="file"
@@ -293,24 +300,31 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
           </label>
         )}
         {selectedImages.length >= 5 && (
-          <p className="text-xs text-text-muted">Đã đạt giới hạn 5 ảnh</p>
+          <div className="px-4 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
+            <p className="text-xs text-yellow-600 dark:text-yellow-400 font-medium">Đã đạt giới hạn tối đa 5 ảnh</p>
+          </div>
         )}
       </div>
 
       {/* Submit Buttons */}
-      <div className="flex items-center gap-3 pt-2">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-4 border-t border-secondary/20">
         <button
           type="submit"
           disabled={!content.trim() || submitting}
-          className="px-6 py-2.5 bg-gradient-to-r from-primary to-primary-hover text-white rounded-lg hover:shadow-lg hover:shadow-primary/30 active:scale-95 transition-all font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none flex items-center gap-2"
+          className="flex-1 sm:flex-none px-6 py-3 bg-gradient-to-r from-primary to-primary-hover text-white rounded-xl hover:shadow-lg hover:shadow-primary/30 active:scale-[0.98] transition-all duration-200 font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none disabled:hover:scale-100 flex items-center justify-center gap-2"
         >
           {submitting ? (
             <>
-              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               <span>Đang gửi...</span>
             </>
           ) : (
-            'Đăng bài'
+            <>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              <span>Đăng bài</span>
+            </>
           )}
         </button>
         {onCancel && (
@@ -328,7 +342,7 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
               setImageFiles([]);
               onCancel();
             }}
-            className="px-6 py-2.5 bg-background-light border border-secondary/30 text-text rounded-lg hover:bg-background transition-colors font-medium cursor-pointer"
+            className="px-6 py-3 bg-background-light border border-secondary/30 text-text rounded-xl hover:bg-background hover:border-secondary/50 transition-all duration-200 font-medium cursor-pointer"
           >
             Hủy
           </button>

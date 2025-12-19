@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from 'react-query';
 import Link from 'next/link';
+import { useAuthStore } from '@/store/auth.store';
 import { communityPostsApi, type CommunityPost } from '@/modules/community-posts/api/community-posts.api';
 import CommunityPostCard from '@/components/community-posts/CommunityPostCard';
 
@@ -11,6 +12,7 @@ interface LatestCommunityPostsProps {
 }
 
 export default function LatestCommunityPosts({ limit = 6 }: LatestCommunityPostsProps) {
+  const { isAuthenticated } = useAuthStore();
   const pageSize = 10;
   const [page, setPage] = useState(1);
   const [posts, setPosts] = useState<CommunityPost[]>([]);
@@ -79,14 +81,27 @@ export default function LatestCommunityPosts({ limit = 6 }: LatestCommunityPosts
   return (
     <div className="mb-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
         <h2 className="text-lg font-bold text-text">Bài viết cộng đồng</h2>
-        <Link 
-          href="/community-posts" 
-          className="text-sm text-primary hover:text-primary-hover transition-colors"
-        >
-          Xem tất cả
-        </Link>
+        <div className="flex items-center gap-3">
+          {isAuthenticated && (
+            <Link
+              href="/community-posts/create"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary to-primary-hover text-white rounded-xl hover:shadow-lg hover:shadow-primary/30 active:scale-95 transition-all duration-200 font-medium cursor-pointer text-sm"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              <span>Đăng bài</span>
+            </Link>
+          )}
+          <Link 
+            href="/community-posts" 
+            className="text-sm text-primary hover:text-primary-hover transition-colors duration-200 cursor-pointer"
+          >
+            Xem tất cả
+          </Link>
+        </div>
       </div>
 
       {/* Posts List */}
