@@ -236,6 +236,13 @@ export class AdminService {
     limit?: number;
   }) {
     try {
+      // Check if Prisma Client has communityPost model
+      if (!this.prisma.communityPost) {
+        throw new Error(
+          'Prisma Client does not have communityPost model. Please run: npx prisma generate',
+        );
+      }
+
       const { status, search, page = 1, limit = 20 } = filters || {};
 
       const where: Prisma.CommunityPostWhereInput = {};
@@ -308,8 +315,17 @@ export class AdminService {
           totalPages: Math.ceil(total / limit),
         },
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in getAllCommunityPosts:', error);
+      // Provide more detailed error message
+      if (error.message?.includes('Unknown model') || error.message?.includes('does not exist')) {
+        throw new Error(
+          'Database table community_posts does not exist. Please run: npx prisma migrate deploy',
+        );
+      }
+      if (error.code === 'P2001' || error.code === 'P2025') {
+        throw new Error('Community posts table not found. Please check database migration.');
+      }
       throw error;
     }
   }
