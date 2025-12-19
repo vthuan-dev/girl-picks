@@ -31,22 +31,18 @@ export default function ClientHeader() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center bg-background-light">
+            <div className="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center bg-background-light relative">
               <Image 
                 src="/images/logo/logo.png" 
                 alt="Girl Pick Logo"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                  const parent = target.parentElement;
-                  if (parent) {
-                    parent.innerHTML = '<div class="w-full h-full flex items-center justify-center text-primary font-bold text-lg">GP</div>';
-                  }
-                }} 
                 width={40}
                 height={40}
                 className="w-full h-full object-contain"
               />
+              {/* Fallback text if image fails to load */}
+              <div className="absolute inset-0 flex items-center justify-center text-primary font-bold text-lg opacity-0 pointer-events-none">
+                GP
+              </div>
             </div>
             <span className="hidden sm:block text-lg font-semibold text-text">
               Khách hàng

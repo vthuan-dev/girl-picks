@@ -38,15 +38,11 @@ export default function LoginPage() {
                   height={96}
                   className="w-full h-full object-contain p-2"
                   priority
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                    const parent = target.parentElement;
-                    if (parent) {
-                      parent.innerHTML = '<div class="w-full h-full flex items-center justify-center text-primary font-bold text-2xl">GP</div>';
-                    }
-                  }}
                 />
+                {/* Fallback text if image fails to load */}
+                <div className="absolute inset-0 flex items-center justify-center text-primary font-bold text-2xl opacity-0 pointer-events-none">
+                  GP
+                </div>
               </div>
             </div>
           </div>

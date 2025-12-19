@@ -210,15 +210,11 @@ export default function Header() {
                   height={56}
                   className="w-full h-full object-contain"
                   priority
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                    const parent = target.parentElement;
-                    if (parent) {
-                      parent.innerHTML = '<div class="w-full h-full flex items-center justify-center text-primary font-bold text-lg">GP</div>';
-                    }
-                  }}
                 />
+                {/* Fallback text if image fails to load */}
+                <div className="absolute inset-0 flex items-center justify-center text-primary font-bold text-lg opacity-0 pointer-events-none">
+                  GP
+                </div>
               </div>
             </div>
             <div className="block min-w-0">

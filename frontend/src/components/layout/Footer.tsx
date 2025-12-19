@@ -52,15 +52,11 @@ export default function Footer() {
                 width={48}
                 height={48}
                 className="w-full h-full object-contain"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                  const parent = target.parentElement;
-                  if (parent) {
-                    parent.innerHTML = '<div class="w-full h-full flex items-center justify-center text-primary font-bold text-sm">GP</div>';
-                  }
-                }}
               />
+              {/* Fallback text if image fails to load */}
+              <div className="absolute inset-0 flex items-center justify-center text-primary font-bold text-sm opacity-0 pointer-events-none">
+                GP
+              </div>
             </div>
             <div>
               <h3 className="text-base sm:text-xl font-bold text-text group-hover:text-primary transition-colors">
