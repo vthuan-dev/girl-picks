@@ -64,6 +64,18 @@ export class AdminController {
     return this.adminService.getPendingPosts(page, limit);
   }
 
+  @Get('pending/community-posts')
+  @ApiOperation({ summary: 'Get pending community posts (Admin only)' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'List of pending community posts' })
+  getPendingCommunityPosts(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page?: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
+  ) {
+    return this.adminService.getPendingCommunityPosts(page, limit);
+  }
+
   @Get('pending/reviews')
   @ApiOperation({ summary: 'Get pending reviews (Admin only)' })
   @ApiQuery({ name: 'page', required: false, type: Number })

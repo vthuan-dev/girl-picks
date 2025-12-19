@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import LocationFilters from '@/components/sections/LocationFilters';
 import PopularTags from '@/components/sections/PopularTags';
-import LatestReviews from '@/components/sections/LatestReviews';
+import LatestCommunityPosts from '@/components/sections/LatestCommunityPosts';
 
 export default function HomePageClient() {
   const router = useRouter();
@@ -45,10 +45,10 @@ export default function HomePageClient() {
 
       {/* Main Content with Sidebar Layout */}
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-        {/* Main Content - Reviews */}
+        {/* Main Content - Community Posts */}
         <div className="flex-1 min-w-0">
-          {/* Latest Reviews Section - Đánh giá gái gọi */}
-          <LatestReviews limit={10} />
+          {/* Latest Community Posts Section - Bài viết cộng đồng */}
+          <LatestCommunityPosts limit={10} />
         </div>
 
         {/* Sidebar - Popular Tags */}

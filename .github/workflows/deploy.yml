@@ -62,11 +62,13 @@ jobs:
             . ./.env.production
             set +a
 
-            echo "==> Backend install, migrate, build"
+            echo "==> Backend install, generate Prisma client, migrate, build"
             cd "$APP_DIR/backend"
             npm ci
-            npx prisma migrate deploy
+            # Generate Prisma client first (needed for migrations)
             npx prisma generate
+            # Run migrations (will apply new migrations including community_posts)
+            npx prisma migrate deploy
             npm run build
 
             echo "==> Restart backend with PM2"

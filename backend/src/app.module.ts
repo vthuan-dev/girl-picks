@@ -17,6 +17,7 @@ import { GirlsModule } from './modules/girls/girls.module';
 import { DistrictsModule } from './modules/districts/districts.module';
 import { PostsModule } from './modules/posts/posts.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
+import { CommunityPostsModule } from './modules/community-posts/community-posts.module';
 import { MessagesModule } from './modules/messages/messages.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { ReportsModule } from './modules/reports/reports.module';
@@ -43,6 +44,7 @@ import { MoviesModule } from './modules/movies/movies.module';
     DistrictsModule,
     PostsModule,
     ReviewsModule,
+    CommunityPostsModule,
     MessagesModule,
     AdminModule,
     ReportsModule,

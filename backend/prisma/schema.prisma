@@ -137,6 +137,10 @@ model User {
   chatSexReviews   ChatSexReview[] @relation("ChatSexReviews")
   movieReviews        MovieReview[]
   movieReviewComments MovieReviewComment[]
+  communityPosts   CommunityPost[] @relation("CommunityPostAuthor")
+  communityPostLikes CommunityPostLike[]
+  communityPostComments CommunityPostComment[]
+  approvedCommunityPosts CommunityPost[] @relation("CommunityPostApprovedBy")
 
   @@map("users")
 }
@@ -212,6 +216,7 @@ model Girl {
   managedBy       User?            @relation("GirlManager", fields: [managedById], references: [id], onDelete: SetNull)
   posts           Post[]
   reviews         Review[]
+  communityPosts  CommunityPost[]
   favorites       Favorite[]
   viewHistory     ViewHistory[]
   bookings        Booking[]        @relation("GirlBookings")
@@ -405,6 +410,63 @@ model ReviewComment {
   replies  ReviewComment[] @relation("CommentReplies")
 
   @@map("review_comments")
+}
+
+model CommunityPost {
+  id          String     @id @default(uuid())
+  authorId    String
+  girlId      String?    // Optional: if post is related to a specific girl
+  title       String?    // Optional title
+  content     String
+  images      Json       @default("[]") // Array of image URLs stored as JSON
+  status      PostStatus @default(PENDING)
+  approvedById String?
+  approvedAt   DateTime?
+  viewCount    Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relations
+  author     User                    @relation("CommunityPostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  girl       Girl?                   @relation(fields: [girlId], references: [id], onDelete: SetNull)
+  approvedBy User?                   @relation("CommunityPostApprovedBy", fields: [approvedById], references: [id])
+  likes      CommunityPostLike[]
+  comments   CommunityPostComment[]
+
+  @@index([status, createdAt])
+  @@index([authorId])
+  @@index([girlId])
+  @@map("community_posts")
+}
+
+model CommunityPostLike {
+  id        String   @id @default(uuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  post CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@map("community_post_likes")
+}
+
+model CommunityPostComment {
+  id        String   @id @default(uuid())
+  postId    String
+  userId    String
+  content   String
+  parentId  String?  // For nested replies
+  createdAt DateTime @default(now())
+
+  post    CommunityPost        @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user    User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent  CommunityPostComment? @relation("CommunityCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies CommunityPostComment[] @relation("CommunityCommentReplies")
+
+  @@index([postId, parentId])
+  @@map("community_post_comments")
 }
 
 model PostLike {

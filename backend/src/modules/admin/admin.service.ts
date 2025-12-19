@@ -34,6 +34,7 @@ export class AdminService {
       totalRevenue,
       pendingPosts,
       pendingReviews,
+      pendingCommunityPosts,
       pendingVerifications,
       pendingReports,
       activeUsers,
@@ -54,6 +55,7 @@ export class AdminService {
       // Pending items
       this.prisma.post.count({ where: { status: PostStatus.PENDING } }),
       this.prisma.review.count({ where: { status: ReviewStatus.PENDING } }),
+      this.prisma.communityPost.count({ where: { status: PostStatus.PENDING } }),
       this.prisma.girl.count({
         where: { verificationStatus: VerificationStatus.PENDING },
       }),
@@ -130,6 +132,7 @@ export class AdminService {
       pending: {
         posts: pendingPosts,
         reviews: pendingReviews,
+        communityPosts: pendingCommunityPosts,
         verifications: pendingVerifications,
         reports: pendingReports,
       },
@@ -175,6 +178,54 @@ export class AdminService {
         limit,
         totalPages: Math.ceil(total / limit),
       },
+    };
+  }
+
+  async getPendingCommunityPosts(page = 1, limit = 20) {
+    const [posts, total] = await Promise.all([
+      this.prisma.communityPost.findMany({
+        where: { status: PostStatus.PENDING },
+        include: {
+          author: {
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+              avatarUrl: true,
+              role: true,
+            },
+          },
+          girl: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  fullName: true,
+                },
+              },
+            },
+          },
+          _count: {
+            select: {
+              likes: true,
+              comments: true,
+            },
+          },
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdAt: 'asc' },
+      }),
+      this.prisma.communityPost.count({
+        where: { status: PostStatus.PENDING },
+      }),
+    ]);
+
+    return {
+      data: posts,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
     };
   }
 
