@@ -33,12 +33,19 @@ export default function ClientHeader() {
           <Link href="/dashboard" className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center bg-background-light">
               <Image 
-                src="https://gaigu1.net/images/logo/logo.png?v=0.0.1" 
-                alt="Girl Pick Logo" 
+                src="/images/logo/logo.png" 
+                alt="Girl Pick Logo"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  const parent = target.parentElement;
+                  if (parent) {
+                    parent.innerHTML = '<div class="w-full h-full flex items-center justify-center text-primary font-bold text-lg">GP</div>';
+                  }
+                }} 
                 width={40}
                 height={40}
                 className="w-full h-full object-contain"
-                unoptimized
               />
             </div>
             <span className="hidden sm:block text-lg font-semibold text-text">

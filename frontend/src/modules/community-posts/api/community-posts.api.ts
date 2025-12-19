@@ -110,18 +110,35 @@ export const communityPostsApi = {
     const response = await apiClient.get<any>(`/community-posts?${queryParams.toString()}`);
     const responseData = response.data;
     
+    // Handle nested structure: { success: true, data: { data: [...], meta: {...} } }
     if (responseData.success && responseData.data) {
-      return {
-        data: Array.isArray(responseData.data) ? responseData.data : [],
-        meta: responseData.meta || {
-          total: 0,
-          page: params?.page || 1,
-          limit: params?.limit || 20,
-          totalPages: 0,
-        },
-      };
+      // Check if data.data exists (nested structure)
+      if (responseData.data.data && Array.isArray(responseData.data.data)) {
+        return {
+          data: responseData.data.data,
+          meta: responseData.data.meta || {
+            total: responseData.data.data.length,
+            page: params?.page || 1,
+            limit: params?.limit || 20,
+            totalPages: 1,
+          },
+        };
+      }
+      // If data is directly an array
+      if (Array.isArray(responseData.data)) {
+        return {
+          data: responseData.data,
+          meta: responseData.meta || {
+            total: responseData.data.length,
+            page: params?.page || 1,
+            limit: params?.limit || 20,
+            totalPages: 1,
+          },
+        };
+      }
     }
     
+    // Handle direct array response
     if (responseData.data && Array.isArray(responseData.data)) {
       return {
         data: responseData.data,

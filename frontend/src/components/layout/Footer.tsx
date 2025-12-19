@@ -47,12 +47,19 @@ export default function Footer() {
           <Link href="/" className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-0 group cursor-pointer">
             <div className="relative w-8 h-8 sm:w-12 sm:h-12 rounded-xl overflow-hidden bg-background-light shadow-lg group-hover:shadow-primary/30 transition-all flex-shrink-0">
               <Image
-                src="https://gaigu1.net/images/logo/logo.png?v=0.0.1"
+                src="/images/logo/logo.png"
                 alt="Tìm Gái gọi Logo"
                 width={48}
                 height={48}
                 className="w-full h-full object-contain"
-                unoptimized
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  const parent = target.parentElement;
+                  if (parent) {
+                    parent.innerHTML = '<div class="w-full h-full flex items-center justify-center text-primary font-bold text-sm">GP</div>';
+                  }
+                }}
               />
             </div>
             <div>

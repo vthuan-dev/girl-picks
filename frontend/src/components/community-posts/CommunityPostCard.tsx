@@ -327,10 +327,27 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
       {post.girl && (
         <Link 
           href={girlUrl}
-          className="inline-flex items-center gap-1 text-sm text-primary hover:text-primary-hover mb-3"
+          className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/30 rounded-lg hover:bg-primary/20 hover:border-primary/50 transition-all duration-200 mb-3 group cursor-pointer"
         >
-          @{post.girl.name || 'Xem gái'}
-          <span className="text-text-muted">#{post.girl.id?.slice(-6)}</span>
+          <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+            {post.girl.user?.avatarUrl ? (
+              <img 
+                src={post.girl.user.avatarUrl} 
+                alt={post.girl.name || 'Gái'} 
+                className="w-full h-full rounded-full object-cover"
+              />
+            ) : (
+              <span className="text-white text-xs font-bold">
+                {(post.girl.name || post.girl.user?.fullName || 'G')?.charAt(0).toUpperCase()}
+              </span>
+            )}
+          </div>
+          <span className="text-sm font-medium text-primary group-hover:text-primary-hover">
+            {post.girl.name || post.girl.user?.fullName || 'Gái gọi'}
+          </span>
+          <svg className="w-4 h-4 text-primary/60 group-hover:text-primary transition-transform duration-200 group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
         </Link>
       )}
 

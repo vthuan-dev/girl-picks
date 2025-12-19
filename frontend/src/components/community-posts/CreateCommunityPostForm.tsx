@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
 import toast from 'react-hot-toast';
 import { communityPostsApi } from '@/modules/community-posts/api/community-posts.api';
+import GirlSearchSelect from './GirlSearchSelect';
 
 interface CreateCommunityPostFormProps {
   onSuccess?: () => void;
@@ -16,10 +17,65 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
   const router = useRouter();
   const [content, setContent] = useState('');
   const [title, setTitle] = useState('');
+  const [selectedGirlId, setSelectedGirlId] = useState<string | undefined>();
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState<{
+    title?: string;
+    content?: string;
+    images?: string;
+  }>({});
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Validation constants
+  const MAX_TITLE_LENGTH = 100;
+  const MAX_CONTENT_LENGTH = 1000;
+  const MIN_CONTENT_WORDS = 5;
+  const MAX_IMAGES = 5;
+  const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+  const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+
+  // Validation functions
+  const validateTitle = (value: string): string | undefined => {
+    const trimmed = value.trim();
+    if (trimmed.length > 0 && trimmed.length < 3) {
+      return 'Tiêu đề phải có ít nhất 3 ký tự';
+    }
+    if (trimmed.length > MAX_TITLE_LENGTH) {
+      return `Tiêu đề không được vượt quá ${MAX_TITLE_LENGTH} ký tự`;
+    }
+    return undefined;
+  };
+
+  const validateContent = (value: string, hasImages: boolean): string | undefined => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return 'Nội dung không được để trống';
+    }
+    if (trimmed.length < 10) {
+      return 'Nội dung quá ngắn, vui lòng nhập chi tiết hơn';
+    }
+    if (trimmed.length > MAX_CONTENT_LENGTH) {
+      return `Nội dung không được vượt quá ${MAX_CONTENT_LENGTH} ký tự`;
+    }
+    
+    const wordCount = trimmed.split(/\s+/).filter(word => word.length > 0).length;
+    if (wordCount < MIN_CONTENT_WORDS && !hasImages) {
+      return `Nội dung phải có ít nhất ${MIN_CONTENT_WORDS} từ hoặc có hình ảnh`;
+    }
+    return undefined;
+  };
+
+  const validateImage = (file: File): string | undefined => {
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      return `File không hợp lệ. Chỉ chấp nhận: ${ALLOWED_IMAGE_TYPES.map(t => t.split('/')[1].toUpperCase()).join(', ')}`;
+    }
+    if (file.size > MAX_IMAGE_SIZE) {
+      return `File quá lớn. Kích thước tối đa: ${(MAX_IMAGE_SIZE / 1024 / 1024).toFixed(0)}MB`;
+    }
+    return undefined;
+  };
 
   const requireAuth = () => {
     if (!isAuthenticated || !user) {
@@ -72,26 +128,55 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
     }
   };
 
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setTitle(value);
+    
+    // Real-time validation
+    if (value.trim().length > 0) {
+      const error = validateTitle(value);
+      setErrors(prev => ({ ...prev, title: error }));
+    } else {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.title;
+        return newErrors;
+      });
+    }
+  };
+
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setContent(value);
+    
+    // Real-time validation
+    const hasImages = selectedImages.length > 0 || imageFiles.length > 0;
+    const error = validateContent(value, hasImages);
+    setErrors(prev => ({ ...prev, content: error }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!requireAuth()) return;
     
-    if (!content.trim()) {
-      toast.error('Vui lòng nhập nội dung bài viết');
-      return;
-    }
-    
-    const trimmedContent = content.trim();
-    const wordCount = trimmedContent.split(/\s+/).filter(word => word.length > 0).length;
+    // Validate all fields
     const hasImages = selectedImages.length > 0 || imageFiles.length > 0;
+    const titleError = title.trim() ? validateTitle(title) : undefined;
+    const contentError = validateContent(content, hasImages);
+    const imagesError = imageFiles.length > MAX_IMAGES 
+      ? `Chỉ được upload tối đa ${MAX_IMAGES} ảnh` 
+      : undefined;
     
-    if (wordCount <= 2 && !hasImages) {
-      toast.error('Vui lòng nhập nội dung đầy đủ hơn hoặc thêm hình ảnh');
-      return;
-    }
+    const newErrors: typeof errors = {};
+    if (titleError) newErrors.title = titleError;
+    if (contentError) newErrors.content = contentError;
+    if (imagesError) newErrors.images = imagesError;
     
-    if (wordCount < 5 && !hasImages) {
-      toast.error('Vui lòng nhập nội dung chi tiết hơn (ít nhất 5 từ) hoặc thêm hình ảnh');
+    setErrors(newErrors);
+    
+    // Check if there are any errors
+    if (Object.keys(newErrors).length > 0) {
+      toast.error('Vui lòng kiểm tra lại thông tin đã nhập');
       return;
     }
 
@@ -138,6 +223,7 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
         title: title.trim() || undefined,
         content: content.trim(),
         images: imageUrls.length > 0 ? imageUrls : undefined,
+        girlId: selectedGirlId || undefined,
       };
 
       await communityPostsApi.create(postData);
@@ -147,8 +233,10 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
       // Reset form
       setContent('');
       setTitle('');
+      setSelectedGirlId(undefined);
       setSelectedImages([]);
       setImageFiles([]);
+      setErrors({});
       
       if (onSuccess) {
         onSuccess();
@@ -166,13 +254,68 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
     const files = e.target.files;
     if (!files) return;
 
-    const newFiles = Array.from(files).slice(0, 5 - selectedImages.length);
-    const newImageFiles = [...imageFiles, ...newFiles];
+    const remainingSlots = MAX_IMAGES - selectedImages.length;
+    if (remainingSlots <= 0) {
+      toast.error(`Chỉ được upload tối đa ${MAX_IMAGES} ảnh`);
+      return;
+    }
+
+    const filesArray = Array.from(files);
+    const validFiles: File[] = [];
+    const invalidFiles: string[] = [];
+
+    // Validate each file
+    for (let i = 0; i < Math.min(filesArray.length, remainingSlots); i++) {
+      const file = filesArray[i];
+      const error = validateImage(file);
+      if (error) {
+        invalidFiles.push(`${file.name}: ${error}`);
+      } else {
+        validFiles.push(file);
+      }
+    }
+
+    // Show errors for invalid files
+    if (invalidFiles.length > 0) {
+      toast.error(invalidFiles[0]); // Show first error
+      if (invalidFiles.length > 1) {
+        console.warn('Multiple invalid files:', invalidFiles);
+      }
+    }
+
+    if (validFiles.length === 0) {
+      // Reset input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      return;
+    }
+
+    // Add valid files
+    const newImageFiles = [...imageFiles, ...validFiles];
     setImageFiles(newImageFiles);
 
     // Create preview URLs
-    const newImageUrls = newFiles.map((file) => URL.createObjectURL(file));
+    const newImageUrls = validFiles.map((file) => URL.createObjectURL(file));
     setSelectedImages([...selectedImages, ...newImageUrls]);
+
+    // Clear errors
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors.images;
+      return newErrors;
+    });
+
+    // Re-validate content (because images count changed)
+    if (content.trim()) {
+      const contentError = validateContent(content, true);
+      setErrors(prev => ({ ...prev, content: contentError }));
+    }
+
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const removeImage = (index: number) => {
@@ -218,14 +361,46 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
           id="post-title"
           type="text"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={handleTitleChange}
+          onBlur={() => {
+            if (title.trim()) {
+              const error = validateTitle(title);
+              setErrors(prev => ({ ...prev, title: error }));
+            }
+          }}
           placeholder="Nhập tiêu đề bài viết..."
-          maxLength={100}
-          className="w-full px-4 py-3 bg-background-light border border-secondary/30 rounded-xl text-text placeholder:text-text-muted/60 focus:outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all duration-200 cursor-text"
+          maxLength={MAX_TITLE_LENGTH}
+          className={`w-full px-4 py-3 bg-background-light border rounded-xl text-text placeholder:text-text-muted/60 focus:outline-none focus:ring-2 transition-all duration-200 cursor-text ${
+            errors.title 
+              ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/20' 
+              : 'border-secondary/30 focus:border-primary/60 focus:ring-primary/20'
+          }`}
         />
-        <div className="mt-2 text-xs text-text-muted text-right">
-          {title.length}/100
+        <div className="mt-2 flex items-center justify-between text-xs">
+          {errors.title ? (
+            <span className="text-red-500">{errors.title}</span>
+          ) : (
+            <span className="text-text-muted">Tối thiểu 3 ký tự nếu có tiêu đề</span>
+          )}
+          <span className={`text-right ${title.length > MAX_TITLE_LENGTH ? 'text-red-500' : 'text-text-muted'}`}>
+            {title.length}/{MAX_TITLE_LENGTH}
+          </span>
         </div>
+      </div>
+
+      {/* Tag Girl (optional) */}
+      <div>
+        <label className="block text-sm font-semibold text-text mb-2.5">
+          Tag gái gọi <span className="text-text-muted font-normal">(tùy chọn)</span>
+        </label>
+        <p className="text-xs text-text-muted mb-2">
+          Tìm và tag gái gọi vào bài viết để người đọc có thể click vào và xem chi tiết
+        </p>
+        <GirlSearchSelect
+          value={selectedGirlId}
+          onChange={setSelectedGirlId}
+          placeholder="Tìm kiếm gái gọi (tên, số điện thoại)..."
+        />
       </div>
 
       {/* Content */}
@@ -236,15 +411,32 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
         <textarea
           id="post-content"
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={handleContentChange}
+          onBlur={() => {
+            const hasImages = selectedImages.length > 0 || imageFiles.length > 0;
+            const error = validateContent(content, hasImages);
+            setErrors(prev => ({ ...prev, content: error }));
+          }}
           placeholder="Chia sẻ suy nghĩ, trải nghiệm hoặc điều gì đó thú vị với cộng đồng..."
           rows={6}
-          maxLength={1000}
-          className="w-full px-4 py-3 bg-background-light border border-secondary/30 rounded-xl text-text placeholder:text-text-muted/60 focus:outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all duration-200 resize-none cursor-text"
+          maxLength={MAX_CONTENT_LENGTH}
+          className={`w-full px-4 py-3 bg-background-light border rounded-xl text-text placeholder:text-text-muted/60 focus:outline-none focus:ring-2 transition-all duration-200 resize-none cursor-text ${
+            errors.content 
+              ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/20' 
+              : 'border-secondary/30 focus:border-primary/60 focus:ring-primary/20'
+          }`}
         />
         <div className="mt-2 flex items-center justify-between text-xs">
-          <span className="text-text-muted">Tối thiểu 5 từ hoặc có hình ảnh</span>
-          <span className="text-text-muted">{content.length}/1000</span>
+          {errors.content ? (
+            <span className="text-red-500">{errors.content}</span>
+          ) : (
+            <span className="text-text-muted">
+              Tối thiểu {MIN_CONTENT_WORDS} từ {selectedImages.length === 0 && imageFiles.length === 0 ? '' : 'hoặc có hình ảnh'}
+            </span>
+          )}
+          <span className={`text-right ${content.length > MAX_CONTENT_LENGTH ? 'text-red-500' : 'text-text-muted'}`}>
+            {content.length}/{MAX_CONTENT_LENGTH}
+          </span>
         </div>
       </div>
 
@@ -282,35 +474,44 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
         )}
 
         {/* Upload Button */}
-        {selectedImages.length < 5 && (
+        {selectedImages.length < MAX_IMAGES && (
           <label className="inline-flex items-center gap-2.5 px-5 py-3 bg-background-light border-2 border-dashed border-secondary/30 rounded-xl hover:bg-background hover:border-primary/50 hover:border-solid transition-all duration-200 cursor-pointer text-sm font-medium text-text group">
             <svg className="w-5 h-5 text-primary group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-            <span>Thêm ảnh ({selectedImages.length}/5)</span>
+            <span>Thêm ảnh ({selectedImages.length}/{MAX_IMAGES})</span>
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
+              accept={ALLOWED_IMAGE_TYPES.join(',')}
               multiple
               onChange={handleImageSelect}
               className="hidden"
-              disabled={selectedImages.length >= 5}
+              disabled={selectedImages.length >= MAX_IMAGES}
             />
           </label>
         )}
-        {selectedImages.length >= 5 && (
+        {selectedImages.length >= MAX_IMAGES && (
           <div className="px-4 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
-            <p className="text-xs text-yellow-600 dark:text-yellow-400 font-medium">Đã đạt giới hạn tối đa 5 ảnh</p>
+            <p className="text-xs text-yellow-600 dark:text-yellow-400 font-medium">Đã đạt giới hạn tối đa {MAX_IMAGES} ảnh</p>
           </div>
         )}
+        {errors.images && (
+          <div className="mt-2 px-4 py-2 bg-red-500/10 border border-red-500/20 rounded-xl">
+            <p className="text-xs text-red-500 font-medium">{errors.images}</p>
+          </div>
+        )}
+        <div className="mt-2 text-xs text-text-muted">
+          <p>• Chấp nhận: JPG, PNG, WEBP, GIF</p>
+          <p>• Kích thước tối đa: {(MAX_IMAGE_SIZE / 1024 / 1024).toFixed(0)}MB mỗi ảnh</p>
+        </div>
       </div>
 
       {/* Submit Buttons */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-4 border-t border-secondary/20">
         <button
           type="submit"
-          disabled={!content.trim() || submitting}
+          disabled={!content.trim() || submitting || Object.keys(errors).length > 0}
           className="flex-1 sm:flex-none px-6 py-3 bg-gradient-to-r from-primary to-primary-hover text-white rounded-xl hover:shadow-lg hover:shadow-primary/30 active:scale-[0.98] transition-all duration-200 font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none disabled:hover:scale-100 flex items-center justify-center gap-2"
         >
           {submitting ? (

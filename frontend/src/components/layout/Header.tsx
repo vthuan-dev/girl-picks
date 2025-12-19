@@ -204,13 +204,20 @@ export default function Header() {
               <div className="absolute inset-0 bg-primary/20 rounded-xl blur-lg group-hover:blur-xl transition-all opacity-0 group-hover:opacity-100" />
               <div className="relative w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 rounded-xl overflow-hidden shadow-lg shadow-primary/30 group-hover:shadow-xl group-hover:shadow-primary/40 transition-all bg-background-light">
                 <Image 
-                  src="https://gaigu1.net/images/logo/logo.png?v=0.0.1" 
+                  src="/images/logo/logo.png" 
                   alt="Girl Pick Logo" 
                   width={56}
                   height={56}
                   className="w-full h-full object-contain"
                   priority
-                  unoptimized
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    const parent = target.parentElement;
+                    if (parent) {
+                      parent.innerHTML = '<div class="w-full h-full flex items-center justify-center text-primary font-bold text-lg">GP</div>';
+                    }
+                  }}
                 />
               </div>
             </div>

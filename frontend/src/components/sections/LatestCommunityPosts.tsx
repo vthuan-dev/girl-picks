@@ -37,10 +37,15 @@ export default function LatestCommunityPosts({ limit = 6 }: LatestCommunityPosts
 
   useEffect(() => {
     if (data) {
-      setPosts((prev) => (page === 1 ? data.data : [...prev, ...data.data]));
+      console.log('[LatestCommunityPosts] Data received:', data);
+      setPosts((prev) => {
+        const newPosts = page === 1 ? data.data : [...prev, ...data.data];
+        console.log('[LatestCommunityPosts] Posts set:', newPosts.length);
+        return newPosts;
+      });
       setHasMore(data.data.length === pageSize);
     }
-  }, [data, page]);
+  }, [data, page, pageSize]);
 
   const handleLoadMore = () => {
     if (hasMore && !isFetching) {
@@ -74,8 +79,34 @@ export default function LatestCommunityPosts({ limit = 6 }: LatestCommunityPosts
     );
   }
 
-  if (error || posts.length === 0) {
-    return null;
+  // Show error message instead of returning null
+  if (error) {
+    console.error('[LatestCommunityPosts] Error:', error);
+    return (
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-text">Bài viết cộng đồng</h2>
+        </div>
+        <div className="text-center py-8 text-text-muted">
+          <p>Không thể tải bài viết. Vui lòng thử lại sau.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show empty state instead of returning null
+  if (!isLoading && posts.length === 0) {
+    console.log('[LatestCommunityPosts] No posts found');
+    return (
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-text">Bài viết cộng đồng</h2>
+        </div>
+        <div className="text-center py-8 text-text-muted">
+          <p>Chưa có bài viết nào.</p>
+        </div>
+      </div>
+    );
   }
 
   return (

@@ -15,7 +15,8 @@ export default function ClientLayout({
   // Không render Header/Footer cho admin routes, auth routes
   const isAdminRoute = pathname?.startsWith('/admin');
   const isAuthRoute = pathname?.startsWith('/auth');
-  const isCustomerRoute = pathname?.startsWith('/profile') || 
+  const isCustomerRoute = pathname === '/profile' ||
+                          pathname?.startsWith('/profile/') ||
                           pathname?.startsWith('/messages') || 
                           pathname?.startsWith('/search') ||
                           pathname?.startsWith('/client') ||

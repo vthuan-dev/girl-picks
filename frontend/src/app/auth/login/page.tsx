@@ -32,12 +32,20 @@ export default function LoginPage() {
               {/* Logo Container */}
               <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shadow-2xl shadow-primary/30 ring-2 ring-primary/20 bg-background-light flex items-center justify-center group-hover:ring-primary/40 transition-all">
                 <Image
-                  src="https://gaigu1.net/images/logo/logo.png?v=0.0.1"
+                  src="/images/logo/logo.png"
                   alt="Girl Pick Logo"
                   width={96}
                   height={96}
                   className="w-full h-full object-contain p-2"
-                  unoptimized
+                  priority
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    const parent = target.parentElement;
+                    if (parent) {
+                      parent.innerHTML = '<div class="w-full h-full flex items-center justify-center text-primary font-bold text-2xl">GP</div>';
+                    }
+                  }}
                 />
               </div>
             </div>
