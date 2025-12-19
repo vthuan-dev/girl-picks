@@ -235,78 +235,83 @@ export class AdminService {
     page?: number;
     limit?: number;
   }) {
-    const { status, search, page = 1, limit = 20 } = filters || {};
+    try {
+      const { status, search, page = 1, limit = 20 } = filters || {};
 
-    const where: Prisma.CommunityPostWhereInput = {};
+      const where: Prisma.CommunityPostWhereInput = {};
 
-    if (status) {
-      where.status = status;
-    }
+      if (status) {
+        where.status = status;
+      }
 
-    if (search) {
-      where.OR = [
-        { content: { contains: search } },
-        { title: { contains: search } },
-        {
-          author: {
-            fullName: { contains: search },
-          },
-        },
-      ];
-    }
-
-    const [posts, total] = await Promise.all([
-      this.prisma.communityPost.findMany({
-        where,
-        include: {
-          author: {
-            select: {
-              id: true,
-              fullName: true,
-              email: true,
-              avatarUrl: true,
-              role: true,
+      if (search) {
+        where.OR = [
+          { content: { contains: search } },
+          { title: { contains: search } },
+          {
+            author: {
+              fullName: { contains: search },
             },
           },
-          girl: {
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  fullName: true,
+        ];
+      }
+
+      const [posts, total] = await Promise.all([
+        this.prisma.communityPost.findMany({
+          where,
+          include: {
+            author: {
+              select: {
+                id: true,
+                fullName: true,
+                email: true,
+                avatarUrl: true,
+                role: true,
+              },
+            },
+            girl: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    fullName: true,
+                  },
                 },
               },
             },
-          },
-          approvedBy: {
-            select: {
-              id: true,
-              fullName: true,
+            approvedBy: {
+              select: {
+                id: true,
+                fullName: true,
+              },
+            },
+            _count: {
+              select: {
+                likes: true,
+                comments: true,
+              },
             },
           },
-          _count: {
-            select: {
-              likes: true,
-              comments: true,
-            },
-          },
-        },
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.communityPost.count({ where }),
-    ]);
+          skip: (page - 1) * limit,
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+        }),
+        this.prisma.communityPost.count({ where }),
+      ]);
 
-    return {
-      data: posts,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+      return {
+        data: posts,
+        meta: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
+      };
+    } catch (error) {
+      console.error('Error in getAllCommunityPosts:', error);
+      throw error;
+    }
   }
 
   async getPendingReviews(page = 1, limit = 20) {

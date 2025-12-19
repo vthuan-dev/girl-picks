@@ -83,18 +83,23 @@ export class AdminController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'List of community posts' })
-  getAllCommunityPosts(
+  async getAllCommunityPosts(
     @Query('status') status?: PostStatus,
     @Query('search') search?: string,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page?: number,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
   ) {
-    return this.adminService.getAllCommunityPosts({
-      status,
-      search,
-      page,
-      limit,
-    });
+    try {
+      return await this.adminService.getAllCommunityPosts({
+        status,
+        search,
+        page,
+        limit,
+      });
+    } catch (error) {
+      console.error('Error in getAllCommunityPosts controller:', error);
+      throw error;
+    }
   }
 
   @Get('pending/reviews')
