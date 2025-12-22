@@ -417,8 +417,9 @@ export default function AdminCommunityPostsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-4 align-top">
-                      <div className="text-text font-semibold line-clamp-1">{post.author?.fullName || 'Người dùng'}</div>
-                      <div className="text-xs text-text-muted line-clamp-1">{post.author?.email}</div>
+                      <div className="text-text font-semibold line-clamp-1">
+                        {post.author?.fullName || 'Người dùng'}
+                      </div>
                     </td>
                     <td className="px-4 py-4 align-top">
                       <span className={`px-3 py-1.5 rounded-lg text-xs font-bold ${getStatusColor(post.status)} whitespace-nowrap inline-block`}>
