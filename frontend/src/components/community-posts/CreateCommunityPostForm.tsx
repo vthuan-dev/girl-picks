@@ -32,7 +32,7 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
   const MAX_TITLE_LENGTH = 100;
   const MAX_CONTENT_LENGTH = 1000;
   const MIN_CONTENT_WORDS = 5;
-  const MAX_IMAGES = 5;
+  const MAX_IMAGES = 4;
   const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
   const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
 
@@ -128,6 +128,19 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
     }
   };
 
+  // Helper: update errors map, remove key if no error
+  const setFieldError = (key: keyof typeof errors, message?: string) => {
+    setErrors(prev => {
+      const next = { ...prev };
+      if (message) {
+        next[key] = message;
+      } else {
+        delete next[key];
+      }
+      return next;
+    });
+  };
+
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setTitle(value);
@@ -135,13 +148,9 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
     // Real-time validation
     if (value.trim().length > 0) {
       const error = validateTitle(value);
-      setErrors(prev => ({ ...prev, title: error }));
+      setFieldError('title', error);
     } else {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors.title;
-        return newErrors;
-      });
+      setFieldError('title', undefined);
     }
   };
 
@@ -152,7 +161,7 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
     // Real-time validation
     const hasImages = selectedImages.length > 0 || imageFiles.length > 0;
     const error = validateContent(value, hasImages);
-    setErrors(prev => ({ ...prev, content: error }));
+    setFieldError('content', error);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -328,6 +337,12 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
     setImageFiles(imageFiles.filter((_, i) => i !== index));
   };
 
+  const hasImages = selectedImages.length > 0 || imageFiles.length > 0;
+  const isContentValid = !validateContent(content, hasImages);
+  const isTitleValid = title.trim() ? !validateTitle(title) : true;
+  const isImagesValid = imageFiles.length <= MAX_IMAGES && !errors.images;
+  const canSubmit = !submitting && isContentValid && isTitleValid && isImagesValid;
+
   if (!isAuthenticated || !user) {
     return (
       <div className="p-6 bg-background rounded-xl border border-primary/20">
@@ -365,7 +380,7 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
           onBlur={() => {
             if (title.trim()) {
               const error = validateTitle(title);
-              setErrors(prev => ({ ...prev, title: error }));
+              setFieldError('title', error);
             }
           }}
           placeholder="Nhập tiêu đề bài viết..."
@@ -415,7 +430,7 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
           onBlur={() => {
             const hasImages = selectedImages.length > 0 || imageFiles.length > 0;
             const error = validateContent(content, hasImages);
-            setErrors(prev => ({ ...prev, content: error }));
+            setFieldError('content', error);
           }}
           placeholder="Chia sẻ suy nghĩ, trải nghiệm hoặc điều gì đó thú vị với cộng đồng..."
           rows={6}
@@ -443,7 +458,7 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
       {/* Image Upload */}
       <div>
         <label className="block text-sm font-semibold text-text mb-2.5">
-          Hình ảnh <span className="text-text-muted font-normal">(tùy chọn, tối đa 5 ảnh)</span>
+          Hình ảnh <span className="text-text-muted font-normal">(tùy chọn, tối đa 4 ảnh)</span>
         </label>
         
         {/* Image Preview Grid */}
@@ -493,7 +508,7 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
         )}
         {selectedImages.length >= MAX_IMAGES && (
           <div className="px-4 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
-            <p className="text-xs text-yellow-600 dark:text-yellow-400 font-medium">Đã đạt giới hạn tối đa {MAX_IMAGES} ảnh</p>
+            <p className="text-xs text-yellow-600 dark:text-yellow-400 font-medium">Đã đạt giới hạn tối đa {MAX_IMAGES} ảnh (4 ảnh)</p>
           </div>
         )}
         {errors.images && (
@@ -511,7 +526,7 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-4 border-t border-secondary/20">
         <button
           type="submit"
-          disabled={!content.trim() || submitting || Object.keys(errors).length > 0}
+          disabled={!canSubmit}
           className="flex-1 sm:flex-none px-6 py-3 bg-gradient-to-r from-primary to-primary-hover text-white rounded-xl hover:shadow-lg hover:shadow-primary/30 active:scale-[0.98] transition-all duration-200 font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none disabled:hover:scale-100 flex items-center justify-center gap-2"
         >
           {submitting ? (

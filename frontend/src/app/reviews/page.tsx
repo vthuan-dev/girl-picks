@@ -6,7 +6,6 @@ import dynamicImport from 'next/dynamic';
 const ReviewsPageClient = dynamicImport(
   () => import('@/components/pages/ReviewsPageClient'),
   {
-    ssr: false,
     loading: () => (
       <div className="max-w-4xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
         <div className="space-y-4">

@@ -3,8 +3,6 @@ const nextConfig = {
   // Enable standalone output for Docker (disabled for VPS deployment)
   // output: 'standalone',
   reactStrictMode: true,
-  // Optimize development performance
-  swcMinify: true,
   // Reduce compilation on navigation
   experimental: {
     // Optimize imports for faster compilation
@@ -24,74 +22,11 @@ const nextConfig = {
     // Number of pages that should be kept simultaneously without being disposed
     pagesBufferLength: 2,
   },
-  // Webpack optimizations for faster dev builds
-  webpack: (config, { dev, isServer }) => {
-    if (dev && !isServer) {
-      const path = require('path');
-      // Enable filesystem caching for faster rebuilds
-      config.cache = {
-        type: 'filesystem',
-        buildDependencies: {
-          config: [__filename],
-        },
-        // Cache more aggressively
-        maxMemoryGenerations: 1,
-        // Fix chunk loading issues - use absolute path
-        cacheDirectory: path.join(process.cwd(), '.next', 'cache', 'webpack'),
-        compression: 'gzip',
-      };
-      // Fix chunk loading errors - ensure chunks are properly named
-      config.output = {
-        ...config.output,
-        chunkLoadTimeout: 30000,
-        crossOriginLoading: 'anonymous',
-      };
-      // Optimize for development speed - reduce recompilation
-      config.optimization = {
-        ...config.optimization,
-        removeAvailableModules: false,
-        removeEmptyChunks: false,
-        // Minimize recompilation on navigation
-        moduleIds: 'deterministic',
-        chunkIds: 'deterministic',
-        splitChunks: {
-          chunks: 'all',
-          cacheGroups: {
-            default: false,
-            vendors: false,
-            // Only split large vendor chunks
-            vendor: {
-              name: 'vendor',
-              chunks: 'all',
-              test: /node_modules/,
-              minChunks: 2,
-              // Cache vendor chunks
-              reuseExistingChunk: true,
-            },
-          },
-        },
-      };
-      // Reduce watch options to prevent unnecessary recompilation
-      config.watchOptions = {
-        ...config.watchOptions,
-        ignored: [
-          '**/node_modules/**',
-          '**/.next/**',
-          '**/dist/**',
-          '**/build/**',
-        ],
-        aggregateTimeout: 300,
-        poll: false,
-      };
-    }
-    return config;
-  },
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
     NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3001',
   },
   images: {
-    domains: ['res.cloudinary.com', 'images.unsplash.com', 'gaigo1.net', 'gaigu1.net', 'upload.wikimedia.org'],
     remotePatterns: [
       {
         protocol: 'https',

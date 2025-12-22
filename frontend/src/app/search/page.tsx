@@ -134,11 +134,6 @@ export default function SearchPage() {
   return (
     <>
       <Header />
-      <div className="px-3 sm:px-4 lg:px-8 py-3">
-        <Link href="/" className="inline-flex items-center gap-2 text-primary font-semibold hover:text-primary-hover">
-          <span>Trang chủ</span>
-        </Link>
-      </div>
       <Suspense fallback={
         <div className="min-h-screen bg-background flex items-center justify-center">
           <div className="text-center">

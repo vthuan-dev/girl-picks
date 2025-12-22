@@ -8,26 +8,31 @@ import { communityPostsApi, type CommunityPost } from '@/modules/community-posts
 import CommunityPostCard from '@/components/community-posts/CommunityPostCard';
 import toast from 'react-hot-toast';
 
+const STATUS_TABS: Array<{ key: 'PENDING' | 'APPROVED' | 'REJECTED'; label: string }> = [
+  { key: 'PENDING', label: 'Chờ duyệt' },
+  { key: 'APPROVED', label: 'Đã duyệt' },
+  { key: 'REJECTED', label: 'Bị từ chối' },
+];
+
 export default function CommunityPostsPage() {
   const router = useRouter();
   const { isAuthenticated, user } = useAuthStore();
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<'PENDING' | 'APPROVED' | 'REJECTED'>('APPROVED');
 
   const loadPosts = async () => {
+    if (!user) return;
     setIsLoading(true);
     try {
-      const response = await communityPostsApi.getAll({
-        status: 'APPROVED',
-        page,
-        limit: 10,
-      });
-      setPosts((prev) => (page === 1 ? response.data : [...prev, ...response.data]));
-      setHasMore(response.data.length === 10);
+      const response = await communityPostsApi.getMyPosts(statusFilter);
+      // Phòng trường hợp API trả thêm bài khác, lọc lại theo author id
+      const mineOnly = Array.isArray(response)
+        ? response.filter((p) => p.author?.id === user.id)
+        : [];
+      setPosts(mineOnly);
     } catch (error: any) {
-      toast.error('Không thể tải danh sách bài viết');
+      toast.error('Không thể tải danh sách bài viết của bạn');
       setPosts([]);
     } finally {
       setIsLoading(false);
@@ -36,7 +41,19 @@ export default function CommunityPostsPage() {
 
   useEffect(() => {
     loadPosts();
-  }, [page]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, user?.id]);
+
+  const emptyCopy = (() => {
+    switch (statusFilter) {
+      case 'PENDING':
+        return 'Chưa có bài chờ duyệt';
+      case 'REJECTED':
+        return 'Chưa có bài bị từ chối';
+      default:
+        return 'Chưa có bài viết nào';
+    }
+  })();
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -45,7 +62,7 @@ export default function CommunityPostsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
           <div className="space-y-1">
             <h1 className="text-3xl font-bold text-text">Bài viết Cộng đồng</h1>
-            <p className="text-sm text-text-muted">Chia sẻ và khám phá những bài viết từ cộng đồng</p>
+            <p className="text-sm text-text-muted">Bài của bạn với trạng thái chờ duyệt / đã duyệt / từ chối</p>
           </div>
           {isAuthenticated && (
             <Link
@@ -61,8 +78,25 @@ export default function CommunityPostsPage() {
         </div>
       </div>
 
+      {/* Status filter */}
+      <div className="mb-6 flex flex-wrap gap-2">
+        {STATUS_TABS.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setStatusFilter(tab.key)}
+            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+              statusFilter === tab.key
+                ? 'bg-primary text-white shadow-lg shadow-primary/30'
+                : 'bg-background border border-secondary/40 text-text hover:border-primary/50 hover:text-primary'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       {/* Posts List */}
-      {isLoading && page === 1 ? (
+      {isLoading ? (
         <div className="bg-background-light rounded-xl border border-secondary/30 p-16 text-center">
           <div className="flex flex-col items-center justify-center gap-3">
             <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
@@ -76,8 +110,8 @@ export default function CommunityPostsPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold text-text mb-2">Chưa có bài viết nào</h3>
-          <p className="text-text-muted mb-6 text-sm">Hãy là người đầu tiên chia sẻ với cộng đồng</p>
+          <h3 className="text-lg font-semibold text-text mb-2">{emptyCopy}</h3>
+          <p className="text-text-muted mb-6 text-sm">Chưa có bài ở trạng thái này</p>
           {isAuthenticated && (
             <Link
               href="/community-posts/create"
@@ -86,37 +120,16 @@ export default function CommunityPostsPage() {
               <svg className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
               </svg>
-              <span>Đăng bài đầu tiên</span>
+              <span>Đăng bài</span>
             </Link>
           )}
         </div>
       ) : (
-        <>
-          <div className="space-y-5">
-            {posts.map((post) => (
-              <CommunityPostCard key={post.id} post={post} />
-            ))}
-          </div>
-
-          {hasMore && (
-            <div className="mt-8 text-center">
-              <button
-                onClick={() => setPage((p) => p + 1)}
-                disabled={isLoading}
-                className="px-6 py-3 bg-background-light border border-secondary/30 text-text rounded-lg hover:border-primary/50 hover:bg-background transition-all font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
-              >
-                {isLoading ? (
-                  <span className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                    Đang tải...
-                  </span>
-                ) : (
-                  'Tải thêm bài viết'
-                )}
-              </button>
-            </div>
-          )}
-        </>
+        <div className="space-y-5">
+          {posts.map((post) => (
+            <CommunityPostCard key={post.id} post={post} />
+          ))}
+        </div>
       )}
     </div>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Fragment } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth.store';
@@ -140,7 +140,8 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
   const [liking, setLiking] = useState(false);
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(post._count?.likes || 0);
-  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [isLightboxZoomed, setIsLightboxZoomed] = useState(false);
   const [comments, setComments] = useState<CommunityPostComment[]>([]);
   const [commentsCount, setCommentsCount] = useState(post._count?.comments || 0);
   const [loadingComments, setLoadingComments] = useState(false);
@@ -150,15 +151,20 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
   const girlUrl = post.girl
     ? getGirlDetailUrl(post.girl.id, post.girl.name || generateSlug(post.girl.id))
     : '#';
+  const statusTextMap: Record<string, string> = {
+    APPROVED: 'Đã duyệt',
+    PENDING: 'Chờ duyệt',
+    REJECTED: 'Bị từ chối',
+  };
   
   useEffect(() => {
-    if (lightboxImage) {
+    if (lightboxIndex !== null) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
     }
     return () => { document.body.style.overflow = ''; };
-  }, [lightboxImage]);
+  }, [lightboxIndex]);
 
   const fetchComments = useCallback(async () => {
     try {
@@ -198,6 +204,110 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
       month: '2-digit',
       year: 'numeric',
     });
+  };
+
+  const openLightbox = (index: number) => setLightboxIndex(index);
+  const closeLightbox = () => {
+    setLightboxIndex(null);
+    setIsLightboxZoomed(false);
+  };
+  const nextLightbox = () => {
+    if (lightboxIndex === null) return;
+    setLightboxIndex((lightboxIndex + 1) % post.images.length);
+    setIsLightboxZoomed(false);
+  };
+  const prevLightbox = () => {
+    if (lightboxIndex === null) return;
+    setLightboxIndex((lightboxIndex - 1 + post.images.length) % post.images.length);
+    setIsLightboxZoomed(false);
+  };
+
+  const renderImage = (src: string, idx: number, className = '') => (
+    <button
+      key={idx}
+      type="button"
+      onClick={() => openLightbox(idx)}
+      className={`relative w-full h-full overflow-hidden rounded-lg bg-background-light/80 border border-secondary/20 group ${className}`}
+    >
+      <Image
+        src={src}
+        alt={`Hình ${idx + 1}`}
+        fill
+        className="object-contain transition-transform duration-300 group-hover:scale-[1.02]"
+        sizes="(max-width: 768px) 100vw, 50vw"
+        onError={(e) => {
+          const target = e.target as HTMLImageElement;
+          target.src = '/images/logo/logo.png';
+        }}
+      />
+    </button>
+  );
+
+  const renderCollage = () => {
+    const imgs = post.images || [];
+    if (!imgs.length) return null;
+    const display = imgs.slice(0, 4);
+
+    if (display.length === 1) {
+      return (
+        <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-background-light border border-secondary/20">
+          {renderImage(display[0], 0)}
+        </div>
+      );
+    }
+
+    if (display.length === 2) {
+      return (
+        <div className="grid grid-cols-2 gap-2 rounded-xl overflow-hidden">
+          {display.map((img, idx) => (
+            <div key={idx} className="relative aspect-[4/5] bg-background-light border border-secondary/20 rounded-lg overflow-hidden">
+              {renderImage(img, idx)}
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    if (display.length === 3) {
+      return (
+        <div className="grid grid-cols-2 gap-2 rounded-xl overflow-hidden">
+          <div className="relative col-span-1 aspect-[3/4] md:aspect-[4/5] bg-background-light border border-secondary/20 rounded-lg overflow-hidden">
+            {renderImage(display[0], 0)}
+          </div>
+          <div className="flex flex-col gap-2">
+            <div className="relative flex-1 min-h-[140px] bg-background-light border border-secondary/20 rounded-lg overflow-hidden">
+              {renderImage(display[1], 1)}
+            </div>
+            <div className="relative flex-1 min-h-[140px] bg-background-light border border-secondary/20 rounded-lg overflow-hidden">
+              {renderImage(display[2], 2)}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // 4 hoặc hơn
+    return (
+      <div className="grid grid-cols-3 gap-2 rounded-xl overflow-hidden">
+        <div className="relative col-span-2 row-span-2 aspect-[3/4] md:aspect-[4/5] bg-background-light border border-secondary/20 rounded-lg overflow-hidden">
+          {renderImage(display[0], 0)}
+        </div>
+        <div className="relative aspect-[4/5] bg-background-light border border-secondary/20 rounded-lg overflow-hidden">
+          {renderImage(display[1], 1)}
+        </div>
+        <div className="relative aspect-[4/5] bg-background-light border border-secondary/20 rounded-lg overflow-hidden">
+          {renderImage(display[2], 2)}
+        </div>
+        <div className="relative aspect-[4/5] bg-background-light border border-secondary/20 rounded-lg overflow-hidden">
+          {renderImage(display[3], 3)}
+          {imgs.length > 4 && (
+            <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-semibold text-sm">
+              +{imgs.length - 4}
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
   // Load like status when component mounts
@@ -348,6 +458,66 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
   const images = post.images || [];
   const displayImages = images.slice(0, 4);
 
+  const renderLightbox = () => {
+    if (lightboxIndex === null) return null;
+    const currentImg = images[lightboxIndex];
+    return (
+      <div
+        className="fixed inset-0 z-[130] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+        onClick={closeLightbox}
+      >
+        <button
+          aria-label="Đóng"
+          onClick={(e) => {
+            e.stopPropagation();
+            closeLightbox();
+          }}
+          className="absolute top-4 right-4 z-[140] text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition"
+        >
+          ✕
+        </button>
+        <button
+          aria-label="Trước"
+          onClick={prevLightbox}
+          className="absolute left-4 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-3 transition"
+        >
+          ‹
+        </button>
+        <div
+          className="relative w-full h-full max-w-[95vw] max-h-[95vh] bg-black/50 rounded-xl overflow-hidden border border-white/10 shadow-2xl flex items-center justify-center"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div
+            className={`relative w-full h-full transition-transform duration-300 ease-out ${isLightboxZoomed ? 'scale-150 cursor-zoom-out' : 'scale-100 cursor-zoom-in'}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsLightboxZoomed((z) => !z);
+            }}
+          >
+            <Image
+              src={currentImg}
+              alt="Ảnh"
+              fill
+              className="object-contain"
+              sizes="100vw"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = '/images/logo/logo.png';
+              }}
+            />
+          </div>
+        </div>
+        <button
+          aria-label="Tiếp"
+          onClick={nextLightbox}
+          className="absolute right-4 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-3 transition"
+        >
+          ›
+        </button>
+      </div>
+    );
+  };
+
   return (
     <div className="border border-secondary/30 rounded-xl p-5 bg-background-light hover:border-secondary/40 transition-all">
       {/* Header */}
@@ -365,6 +535,19 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
             <span className="text-text-muted text-sm">• {formatDate(post.createdAt)}</span>
           </div>
         </div>
+        {post.status && (
+          <span
+            className={`text-xs font-semibold px-3 py-1 rounded-full border ${
+              post.status === 'APPROVED'
+                ? 'bg-green-500/10 text-green-400 border-green-500/30'
+                : post.status === 'PENDING'
+                ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30'
+                : 'bg-red-500/10 text-red-400 border-red-500/30'
+            }`}
+          >
+            {statusTextMap[post.status] || post.status}
+          </span>
+        )}
       </div>
 
       {/* Title (if exists) */}
@@ -403,29 +586,10 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
         </Link>
       )}
 
-      {/* Images grid */}
+      {/* Images collage */}
       {displayImages.length > 0 && (
-        <div className="grid grid-cols-2 gap-2 mt-2">
-          {displayImages.map((img, i) => (
-            <div 
-              key={i}
-              className="relative w-full aspect-square rounded-xl overflow-hidden bg-secondary/20 cursor-pointer group"
-              onClick={() => setLightboxImage(img)}
-            >
-              <Image
-                src={img}
-                alt={`Post image ${i + 1}`}
-                fill
-                className="object-cover group-hover:scale-105 transition-transform duration-300"
-                unoptimized
-              />
-              {i === 3 && images.length > 4 && (
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">+{images.length - 4}</span>
-                </div>
-              )}
-            </div>
-          ))}
+        <div className="mt-2">
+          <div className="max-h-[420px] overflow-hidden rounded-xl">{renderCollage()}</div>
         </div>
       )}
 
@@ -533,57 +697,7 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
         )}
       </div>
 
-      {/* Lightbox Modal */}
-      {lightboxImage && (
-        <div 
-          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center animate-in fade-in duration-200"
-          onClick={() => setLightboxImage(null)}
-        >
-          <button
-            onClick={() => setLightboxImage(null)}
-            className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors z-50"
-            aria-label="Đóng"
-          >
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-
-          <div 
-            className="relative w-full h-full max-w-4xl max-h-[90vh] mx-4 animate-in zoom-in-95 duration-300"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Image
-              src={lightboxImage}
-              alt="Post image"
-              fill
-              className="object-contain"
-              sizes="100vw"
-              priority
-              unoptimized
-            />
-          </div>
-
-          {post.images && post.images.length > 1 && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 p-2 bg-black/50 rounded-lg">
-              {post.images.map((img, i) => (
-                <button
-                  key={i}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setLightboxImage(img);
-                  }}
-                  className={`relative w-14 h-14 rounded overflow-hidden border-2 transition-all ${
-                    lightboxImage === img ? 'border-primary' : 'border-transparent hover:border-white/50'
-                  }`}
-                >
-                  <Image src={img} alt="" fill className="object-cover" unoptimized />
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      {renderLightbox()}
     </div>
   );
 }

@@ -327,214 +327,138 @@ export default function AdminCommunityPostsPage() {
         </div>
       </div>
 
-      {/* Posts List với improved cards */}
-      <div className="space-y-4">
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-background-light rounded-xl border border-secondary/30 p-6 animate-pulse">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 bg-secondary/30 rounded-full"></div>
-                  <div className="flex-1">
-                    <div className="h-4 bg-secondary/30 rounded w-3/4 mb-2"></div>
-                    <div className="h-3 bg-secondary/30 rounded w-1/2"></div>
-                  </div>
-                </div>
-                <div className="h-4 bg-secondary/30 rounded w-full mb-2"></div>
-                <div className="h-4 bg-secondary/30 rounded w-5/6"></div>
-              </div>
-            ))}
-          </div>
-        ) : filteredPosts.length === 0 ? (
-          <div className="bg-gradient-to-br from-background-light to-background rounded-xl border border-secondary/30 p-16 text-center">
-            <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center">
-              <svg className="w-10 h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <h3 className="text-xl font-bold text-text mb-2">Không có bài viết nào</h3>
-            <p className="text-text-muted">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {filteredPosts.map((post, index) => (
-              <div
-                key={post.id}
-                className="group relative bg-gradient-to-br from-background-light to-background rounded-xl border-2 border-secondary/30 p-6 hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 overflow-hidden"
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                {/* Decorative gradient */}
-                <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-primary/5 to-transparent rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                
-                <div className="relative z-10">
-                  {/* Header */}
-                  <div className="flex items-start justify-between gap-4 mb-4">
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="relative">
-                        {post.author?.avatarUrl ? (
-                          <img
-                            src={post.author.avatarUrl}
-                            alt={post.author.fullName}
-                            className="w-12 h-12 rounded-full border-2 border-primary/20 object-cover group-hover:border-primary/50 transition-colors"
-                          />
-                        ) : (
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 border-2 border-primary/20 flex items-center justify-center">
-                            <span className="text-primary font-bold text-lg">
-                              {post.author?.fullName?.charAt(0) || 'U'}
-                            </span>
-                          </div>
-                        )}
-                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-background-light"></div>
+      {/* Bảng danh sách bài viết */}
+      <div className="bg-gradient-to-br from-background-light to-background rounded-xl border border-secondary/30 shadow-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm">
+            <thead className="bg-background border-b border-secondary/30">
+              <tr className="text-left text-text-muted uppercase text-xs">
+                <th className="px-4 py-3">ID</th>
+                <th className="px-4 py-3">Tiêu đề / Nội dung</th>
+                <th className="px-4 py-3">Tác giả</th>
+                <th className="px-4 py-3">Trạng thái</th>
+                <th className="px-4 py-3 whitespace-nowrap">Ngày tạo</th>
+                <th className="px-4 py-3 text-right">Hành động</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-secondary/20">
+              {isLoading &&
+                [...Array(5)].map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td className="px-4 py-4">
+                      <div className="h-3 w-16 bg-secondary/30 rounded" />
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="h-3 w-40 bg-secondary/30 rounded mb-2" />
+                      <div className="h-3 w-24 bg-secondary/30 rounded" />
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="h-3 w-28 bg-secondary/30 rounded" />
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="h-3 w-16 bg-secondary/30 rounded" />
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="h-3 w-24 bg-secondary/30 rounded" />
+                    </td>
+                    <td className="px-4 py-4 text-right">
+                      <div className="h-3 w-20 bg-secondary/30 rounded ml-auto" />
+                    </td>
+                  </tr>
+                ))}
+
+              {!isLoading && filteredPosts.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center gap-3 text-text-muted">
+                      <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                        <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-text truncate">{post.author?.fullName || 'Người dùng'}</p>
-                        <p className="text-xs text-text-muted">
-                          {format(new Date(post.createdAt), 'HH:mm • dd/MM/yyyy', { locale: vi })}
-                        </p>
+                      <div>
+                        <p className="text-text font-semibold">Không có bài viết nào</p>
+                        <p className="text-sm text-text-muted">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
                       </div>
                     </div>
-                    <span className={`px-3 py-1.5 rounded-lg text-xs font-bold ${getStatusColor(post.status)} whitespace-nowrap`}>
-                      {getStatusText(post.status)}
-                    </span>
-                  </div>
+                  </td>
+                </tr>
+              )}
 
-                  {/* Girl tag */}
-                  {post.girl && (
-                    <div className="mb-3">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-400 rounded-lg text-xs font-semibold border border-purple-500/30">
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                        Về: {post.girl.name}
+              {!isLoading &&
+                filteredPosts.map((post, index) => (
+                  <tr key={post.id} className="hover:bg-background/60 transition-colors">
+                    <td className="px-4 py-4 align-top text-xs text-text-muted">
+                      <div className="font-semibold text-text">{index + 1 + (page - 1) * 20}</div>
+                      <div className="truncate max-w-[140px]">{post.id}</div>
+                    </td>
+                    <td className="px-4 py-4 align-top">
+                      <div className="flex flex-col gap-1">
+                        {post.title && <p className="text-text font-semibold line-clamp-1">{post.title}</p>}
+                        <p className="text-text-muted text-sm line-clamp-2">{post.content}</p>
+                        {post.images && post.images.length > 0 && (
+                          <div className="flex gap-2 mt-2">
+                            {post.images.slice(0, 3).map((image, idx) => (
+                              <button
+                                key={idx}
+                                className="w-10 h-10 rounded-lg overflow-hidden border border-secondary/30 hover:border-primary/50 transition-colors"
+                                onClick={() => openLightbox(post.images || [], image)}
+                              >
+                                <img src={image} alt={`img-${idx}`} className="w-full h-full object-cover" />
+                              </button>
+                            ))}
+                            {post.images.length > 3 && (
+                              <div className="w-10 h-10 rounded-lg border border-secondary/30 bg-background flex items-center justify-center text-xs text-text-muted">
+                                +{post.images.length - 3}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 align-top">
+                      <div className="text-text font-semibold line-clamp-1">{post.author?.fullName || 'Người dùng'}</div>
+                      <div className="text-xs text-text-muted line-clamp-1">{post.author?.email}</div>
+                    </td>
+                    <td className="px-4 py-4 align-top">
+                      <span className={`px-3 py-1.5 rounded-lg text-xs font-bold ${getStatusColor(post.status)} whitespace-nowrap inline-block`}>
+                        {getStatusText(post.status)}
                       </span>
-                    </div>
-                  )}
-
-                  {/* Title */}
-                  {post.title && (
-                    <h3 className="text-lg font-bold text-text mb-2 line-clamp-2 group-hover:text-primary transition-colors">
-                      {post.title}
-                    </h3>
-                  )}
-
-                  {/* Content */}
-                  <p className="text-text mb-4 line-clamp-3 leading-relaxed">{post.content}</p>
-
-                  {/* Images Grid */}
-                  {post.images && post.images.length > 0 && (
-                    <div className="mb-4">
-                      <div className={`grid gap-2 ${post.images.length === 1 ? 'grid-cols-1' : post.images.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
-                        {post.images.slice(0, 4).map((image, idx) => (
-                          <div
-                            key={idx}
-                            className="relative aspect-square rounded-lg overflow-hidden border-2 border-secondary/30 group/image cursor-pointer hover:border-primary/50 transition-all"
-                            onClick={() => openLightbox(post.images || [], image)}
-                          >
-                            <img
-                              src={image}
-                              alt={`Post image ${idx + 1}`}
-                              className="w-full h-full object-cover group-hover/image:scale-110 transition-transform duration-300"
-                            />
-                            <div className="absolute inset-0 bg-black/0 group-hover/image:bg-black/20 transition-colors flex items-center justify-center">
-                              <svg className="w-6 h-6 text-white opacity-0 group-hover/image:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m4-6v6m-6 4h.01M19 10h.01" />
-                              </svg>
-                            </div>
-                          </div>
-                        ))}
-                        {post.images.length > 4 && (
-                          <div className="relative aspect-square rounded-lg overflow-hidden border-2 border-secondary/30 bg-gradient-to-br from-background to-background-light flex items-center justify-center cursor-pointer hover:border-primary/50 transition-all">
-                            <div className="text-center">
-                              <p className="text-2xl font-bold text-primary">+{post.images.length - 4}</p>
-                              <p className="text-xs text-text-muted">ảnh khác</p>
-                            </div>
-                          </div>
+                    </td>
+                    <td className="px-4 py-4 align-top whitespace-nowrap text-sm text-text-muted">
+                      {format(new Date(post.createdAt), 'HH:mm • dd/MM/yyyy', { locale: vi })}
+                    </td>
+                    <td className="px-4 py-4 align-top">
+                      <div className="flex items-center gap-2 justify-end flex-wrap">
+                        <IconButton variant="default" title="Xem chi tiết" onClick={() => handleViewDetails(post.id)}>
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                        </IconButton>
+                        {post.status === 'PENDING' ? (
+                          <>
+                            <Button variant="success" size="sm" onClick={() => handleApprove(post.id)}>
+                              Duyệt
+                            </Button>
+                            <Button variant="danger" size="sm" onClick={() => handleRejectClick(post.id)}>
+                              Từ chối
+                            </Button>
+                          </>
+                        ) : (
+                          <IconButton variant="danger" title="Xóa" onClick={() => handleDelete(post.id)}>
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </IconButton>
                         )}
                       </div>
-                    </div>
-                  )}
-
-                  {/* Stats */}
-                  <div className="flex items-center gap-4 text-sm text-text-muted mb-4 pb-4 border-b border-secondary/20">
-                    {post._count && (
-                      <>
-                        {post._count.likes > 0 && (
-                          <span className="flex items-center gap-1.5">
-                            <svg className="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.834a1 1 0 001.8.6l2.7-3.6-2.7-3.6a1 1 0 00-1.8.6zM14 10.333v5.834a1 1 0 001.8.6l2.7-3.6-2.7-3.6a1 1 0 00-1.8.6z" />
-                            </svg>
-                            <span className="font-medium">{post._count.likes}</span>
-                          </span>
-                        )}
-                        {post._count.comments > 0 && (
-                          <span className="flex items-center gap-1.5">
-                            <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                            </svg>
-                            <span className="font-medium">{post._count.comments}</span>
-                          </span>
-                        )}
-                      </>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <IconButton 
-                      variant="default" 
-                      title="Xem chi tiết" 
-                      onClick={() => handleViewDetails(post.id)}
-                      className="flex-1 sm:flex-none"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                    </IconButton>
-                    {post.status === 'PENDING' && (
-                      <>
-                        <Button 
-                          variant="success" 
-                          size="sm" 
-                          onClick={() => handleApprove(post.id)}
-                          className="flex-1 sm:flex-none"
-                        >
-                          <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          Duyệt
-                        </Button>
-                        <Button 
-                          variant="danger" 
-                          size="sm" 
-                          onClick={() => handleRejectClick(post.id)}
-                          className="flex-1 sm:flex-none"
-                        >
-                          <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                          Từ chối
-                        </Button>
-                      </>
-                    )}
-                    {post.status !== 'PENDING' && (
-                      <IconButton 
-                        variant="danger" 
-                        title="Xóa" 
-                        onClick={() => handleDelete(post.id)}
-                        className="ml-auto"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </IconButton>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+                    </td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Pagination với improved design */}

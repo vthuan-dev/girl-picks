@@ -1,15 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/auth.store';
 import { UserRole } from '@/types/auth';
 import GirlsManagement from '@/components/staff/GirlsManagement';
 import PostsManagement from '@/components/staff/PostsManagement';
+import { usersApi } from '@/modules/users/api/users.api';
+import toast from 'react-hot-toast';
 
 export default function CustomerProfilePage() {
-  const { user } = useAuthStore();
+  const { user, updateUser } = useAuthStore();
   const [activeTab, setActiveTab] = useState<'profile' | 'girls' | 'posts'>('profile');
   const [isEditing, setIsEditing] = useState(false);
+  const [fullName, setFullName] = useState(user?.fullName || '');
+  const [phone, setPhone] = useState(user?.phone || '');
+  const [saving, setSaving] = useState(false);
 
   const isStaff = user?.role === UserRole.STAFF_UPLOAD;
   const isGirl = user?.role === UserRole.GIRL;
@@ -22,20 +27,59 @@ export default function CustomerProfilePage() {
     ] : []),
   ];
 
+  useEffect(() => {
+    setFullName(user?.fullName || '');
+    setPhone(user?.phone || '');
+  }, [user?.fullName, user?.phone]);
+
+  const handleToggleEdit = () => {
+    if (!isEditing) {
+      setFullName(user?.fullName || '');
+      setPhone(user?.phone || '');
+    }
+    setIsEditing((prev) => !prev);
+  };
+
+  const handleSave = async () => {
+    if (!user) return;
+    const trimmedName = fullName.trim();
+    const trimmedPhone = phone.trim();
+    if (!trimmedName) {
+      toast.error('Họ tên không được để trống');
+      return;
+    }
+    setSaving(true);
+    try {
+      await usersApi.updateProfile({
+        fullName: trimmedName,
+        phone: trimmedPhone || undefined,
+      });
+      updateUser({
+        fullName: trimmedName,
+        phone: trimmedPhone || undefined,
+      });
+      toast.success('Cập nhật hồ sơ thành công');
+      setIsEditing(false);
+    } catch (error: any) {
+      console.error('Update profile error:', error);
+      toast.error(error?.response?.data?.message || 'Không thể cập nhật hồ sơ');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-text mb-2">Profile của tôi</h1>
-          <p className="text-text-muted text-sm">
-            Quản lý thông tin cá nhân{isStaff ? ' và nội dung' : ''} của bạn
-          </p>
+          <h1 className="text-3xl font-bold text-text mb-1">Hồ sơ của tôi</h1>
+          <p className="text-text-muted text-sm">Quản lý thông tin cá nhân</p>
         </div>
         {activeTab === 'profile' && (
           <button
-            onClick={() => setIsEditing(!isEditing)}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all font-medium shadow-md hover:shadow-lg"
+            onClick={handleToggleEdit}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-background border border-secondary/40 text-text rounded-lg hover:border-primary/50 hover:text-primary transition-all"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isEditing ? "M6 18L18 6M6 6l12 12" : "M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"} />
@@ -70,190 +114,105 @@ export default function CustomerProfilePage() {
       {/* Profile Content */}
       {activeTab === 'profile' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-          {/* Left Column - Avatar & Quick Info */}
-          <div className="space-y-6">
-            {/* Avatar Card */}
-            <div className="bg-background-light rounded-xl border border-secondary/30 p-6 text-center">
-              <div className="relative inline-block mb-5">
-                <div className="w-24 h-24 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center mx-auto shadow-lg">
-                  <span className="text-3xl font-bold text-white">
-                    {user?.fullName?.charAt(0)?.toUpperCase() || 'U'}
-                  </span>
-                </div>
-                {isEditing && (
-                  <button className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform border-2 border-background-light">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </button>
-                )}
-              </div>
-              <h2 className="text-xl font-bold text-text mb-1">{user?.fullName || 'Người dùng'}</h2>
-              <p className="text-text-muted text-sm mb-4">{user?.email}</p>
-              
-              {/* Role Badge */}
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-lg">
-                <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-                <span className="text-sm font-medium text-text">
-                  {user?.role === UserRole.STAFF_UPLOAD ? 'Nhân viên' : user?.role === UserRole.GIRL ? 'Gái gọi' : 'Khách hàng'}
+          {/* Avatar & quick info */}
+          <div className="bg-background-light rounded-2xl border border-secondary/30 p-6 text-center shadow-lg shadow-black/10">
+            <div className="relative inline-block mb-4">
+              <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center mx-auto shadow-lg">
+                <span className="text-3xl font-bold text-white">
+                  {user?.fullName?.charAt(0)?.toUpperCase() || 'U'}
                 </span>
               </div>
-
-              {/* Status for Girl */}
-              {isGirl && (
-                <div className="mt-4 flex items-center justify-center gap-2">
-                  <div className="relative">
-                    <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse" />
-                    <div className="absolute inset-0 w-2.5 h-2.5 bg-green-500 rounded-full animate-ping opacity-75" />
-                  </div>
-                  <span className="text-sm text-green-500 font-medium">Đang hoạt động</span>
-                </div>
-              )}
             </div>
+            <h2 className="text-xl font-bold text-text mb-1">{user?.fullName || 'Người dùng'}</h2>
+            <p className="text-text-muted text-sm mb-3">{user?.email}</p>
 
-            {/* Stats for Girl */}
-            {isGirl && (
-              <div className="bg-background-light rounded-xl border border-secondary/30 p-5">
-                <h3 className="font-semibold text-text mb-4">Thống kê</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between py-2 border-b border-secondary/20 last:border-0">
-                    <span className="text-text-muted text-sm">Đánh giá</span>
-                    <div className="flex items-center gap-1.5">
-                      <svg className="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                      <span className="font-semibold text-text">4.8</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between py-2">
-                    <span className="text-text-muted text-sm">Thu nhập</span>
-                    <span className="font-semibold text-green-500">12.5M</span>
-                  </div>
-                </div>
-              </div>
-            )}
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full">
+              <span className="w-2.5 h-2.5 rounded-full bg-primary" />
+              <span className="text-sm font-semibold text-primary">
+                {user?.role === UserRole.STAFF_UPLOAD ? 'Nhân viên' : user?.role === UserRole.GIRL ? 'Gái gọi' : 'Khách hàng'}
+              </span>
+            </div>
           </div>
 
-          {/* Right Column - Details */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Info Card */}
-            <div className="bg-background-light rounded-xl border border-secondary/30 p-6">
-              <h3 className="text-lg font-semibold text-text mb-6">Thông tin cá nhân</h3>
-              <div className="space-y-5">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div>
-                    <label className="block text-xs font-semibold text-text-muted mb-2 uppercase tracking-wider">Họ tên</label>
-                  {isEditing ? (
-                      <input 
-                        type="text" 
-                        defaultValue={user?.fullName || ''} 
-                        className="w-full px-4 py-2.5 bg-background border border-secondary/40 rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" 
-                      />
-                  ) : (
-                      <p className="text-text font-medium text-base">{user?.fullName || 'Chưa cập nhật'}</p>
-                  )}
-                </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-text-muted mb-2 uppercase tracking-wider">Email</label>
-                    <p className="text-text text-base">{user?.email || 'N/A'}</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div>
-                    <label className="block text-xs font-semibold text-text-muted mb-2 uppercase tracking-wider">Số điện thoại</label>
-                  {isEditing ? (
-                      <input 
-                        type="tel" 
-                        defaultValue={user?.phone || ''} 
-                        className="w-full px-4 py-2.5 bg-background border border-secondary/40 rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" 
-                      />
-                  ) : (
-                      <p className="text-text text-base">{user?.phone || 'Chưa cập nhật'}</p>
-                  )}
-                </div>
-                {isGirl && (
-                  <>
-                    <div>
-                        <label className="block text-xs font-semibold text-text-muted mb-2 uppercase tracking-wider">Giá dịch vụ</label>
-                      {isEditing ? (
-                          <input 
-                            type="text" 
-                            placeholder="300K/giờ" 
-                            className="w-full px-4 py-2.5 bg-background border border-secondary/40 rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" 
-                          />
-                      ) : (
-                          <p className="text-primary font-semibold text-base">300K/giờ</p>
-                      )}
-                    </div>
-                    <div className="sm:col-span-2">
-                        <label className="block text-xs font-semibold text-text-muted mb-2 uppercase tracking-wider">Địa điểm</label>
-                      {isEditing ? (
-                          <select className="w-full px-4 py-2.5 bg-background border border-secondary/40 rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
-                          <option>Quận 1, Hồ Chí Minh</option>
-                          <option>Quận 2, Hồ Chí Minh</option>
-                          <option>Quận 3, Hồ Chí Minh</option>
-                        </select>
-                      ) : (
-                          <p className="text-text text-base">Quận 1, Hồ Chí Minh</p>
-                      )}
-                    </div>
-                  </>
+          {/* Form */}
+          <div className="lg:col-span-2 space-y-5 bg-background-light rounded-2xl border border-secondary/30 p-6 shadow-lg shadow-black/10">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold text-text">Thông tin cá nhân</h3>
+              <button
+                onClick={() => setIsEditing(!isEditing)}
+                className="text-sm text-primary hover:text-primary/80 inline-flex items-center gap-1"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isEditing ? "M6 18L18 6M6 6l12 12" : "M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"} />
+                </svg>
+                {isEditing ? 'Hủy' : 'Chỉnh sửa'}
+              </button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div className="space-y-2">
+                <label className="block text-xs font-semibold text-text-muted uppercase">Họ tên</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-background border border-secondary/40 rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  />
+                ) : (
+                  <p className="text-text font-medium text-base">{user?.fullName || 'Chưa cập nhật'}</p>
                 )}
-                </div>
               </div>
+              <div className="space-y-2">
+                <label className="block text-xs font-semibold text-text-muted uppercase">Email</label>
+                <p className="text-text text-base">{user?.email || 'N/A'}</p>
+              </div>
+            </div>
 
-              {/* Save Button */}
-              {isEditing && (
-                <div className="flex gap-3 pt-6 mt-6 border-t border-secondary/30">
-                  <button className="flex-1 px-5 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all font-medium shadow-md hover:shadow-lg">
-                    Lưu thay đổi
-                  </button>
-                  <button 
-                    onClick={() => setIsEditing(false)} 
-                    className="px-5 py-2.5 bg-background border border-secondary/40 rounded-lg text-text hover:bg-background-light transition-all font-medium"
-                  >
-                    Hủy
-                  </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div className="space-y-2">
+                <label className="block text-xs font-semibold text-text-muted uppercase">Số điện thoại</label>
+                {isEditing ? (
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-background border border-secondary/40 rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  />
+                ) : (
+                  <p className="text-text text-base">{user?.phone || 'Chưa cập nhật'}</p>
+                )}
+              </div>
+              {isGirl && (
+                <div className="space-y-2">
+                  <label className="block text-xs font-semibold text-text-muted uppercase">Giá dịch vụ</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      placeholder="300K/giờ"
+                      className="w-full px-4 py-2.5 bg-background border border-secondary/40 rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    />
+                  ) : (
+                    <p className="text-primary font-semibold text-base">300K/giờ</p>
+                  )}
                 </div>
               )}
             </div>
 
-            {/* Gallery for Girl */}
-            {isGirl && (
-              <div className="bg-background-light rounded-xl border border-secondary/30 p-6">
-                <div className="flex items-center justify-between mb-5">
-                  <h3 className="font-semibold text-text">Hình ảnh</h3>
-                  {isEditing && (
-                    <button className="text-sm text-primary hover:text-primary/80 flex items-center gap-1.5 font-medium">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                      </svg>
-                      Thêm ảnh
-                    </button>
-                  )}
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map((item) => (
-                    <div key={item} className="group relative aspect-square bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg border border-secondary/30 overflow-hidden hover:border-primary/40 transition-all">
-                      <div className="w-full h-full flex items-center justify-center">
-                        <svg className="w-8 h-8 text-primary/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                      {isEditing && (
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <button className="p-2 bg-red-500 rounded-lg hover:bg-red-600 transition-colors">
-                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+            {isEditing && (
+              <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                <button
+                  onClick={handleSave}
+                  disabled={saving || !fullName.trim()}
+                  className="flex-1 px-4 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-semibold"
+                >
+                  {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
+                </button>
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="px-4 py-2.5 bg-background border border-secondary/40 rounded-lg text-text hover:bg-background-light transition-all font-medium"
+                >
+                  Hủy
+                </button>
               </div>
             )}
           </div>

@@ -31,17 +31,9 @@ export default function LoginForm() {
     resolver: zodResolver(loginSchema),
   });
 
-  const getRedirectPath = (role: UserRole): string => {
-    switch (role) {
-      case UserRole.ADMIN:
-        return '/admin/dashboard';
-      case UserRole.GIRL:
-        return '/profile';
-      case UserRole.CUSTOMER:
-        return '/search';
-      default:
+  // Sau khi đăng nhập thành công, luôn đưa user về trang chủ
+  const getRedirectPath = (_role: UserRole): string => {
         return '/';
-    }
   };
 
   const onSubmit = async (data: LoginFormData) => {
