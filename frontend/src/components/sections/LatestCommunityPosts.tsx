@@ -114,15 +114,6 @@ export default function LatestCommunityPosts({ limit = 6 }: LatestCommunityPosts
       {/* Header */}
       <div className="flex items-center justify-between gap-3 mb-2">
         <h2 className="text-lg font-bold text-text whitespace-nowrap">Bài viết cộng đồng</h2>
-        <Link
-          href="/community-posts"
-          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-primary border border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 transition-all duration-200 shadow-sm hover:shadow-md whitespace-nowrap"
-        >
-          <span>Xem tất cả</span>
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </Link>
       </div>
       {isAuthenticated && user?.role === 'CUSTOMER' && (
         <div className="mb-4">
