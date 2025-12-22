@@ -77,6 +77,18 @@ export interface CommentsResponse {
   totalPages: number;
 }
 
+export type CommunityPostInteractionType = 'likes' | 'comments';
+
+export interface CommunityPostInteraction {
+  id: string;
+  postId: string;
+  postTitle: string;
+  girlName?: string | null;
+  previewImage?: string | null;
+  type: CommunityPostInteractionType;
+  createdAt: string;
+}
+
 export const communityPostsApi = {
   // Create community post
   create: async (data: CreateCommunityPostDto): Promise<CommunityPost> => {
@@ -300,6 +312,30 @@ export const communityPostsApi = {
       limit,
       totalPages: 0,
     };
+  },
+
+  // Get interactions (likes/comments) of current user
+  getMyInteractions: async (
+    type: CommunityPostInteractionType,
+  ): Promise<CommunityPostInteraction[]> => {
+    const response = await apiClient.get<any>(
+      `/community-posts/interactions/me?type=${type}`,
+    );
+    const responseData = response.data;
+
+    if (responseData?.success && Array.isArray(responseData.data)) {
+      return responseData.data;
+    }
+
+    if (Array.isArray(responseData)) {
+      return responseData;
+    }
+
+    if (responseData?.data && Array.isArray(responseData.data)) {
+      return responseData.data;
+    }
+
+    return [];
   },
 };
 

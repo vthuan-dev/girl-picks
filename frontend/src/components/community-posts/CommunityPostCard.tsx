@@ -286,25 +286,32 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
       );
     }
 
-    // 4 hoặc hơn
+    // 4 hoặc hơn: 1 ảnh lớn bên trái, 3 ảnh xếp dọc bên phải
+    const rightImages = imgs.slice(1, 4);
+    const extra = imgs.length - 4;
+
     return (
-      <div className="grid grid-cols-3 gap-2 rounded-xl overflow-hidden">
-        <div className="relative col-span-2 row-span-2 aspect-[3/4] md:aspect-[4/5] bg-background-light border border-secondary/20 rounded-lg overflow-hidden">
-          {renderImage(display[0], 0)}
+      <div className="flex gap-2 rounded-xl overflow-hidden">
+        <div className="relative flex-1 aspect-[3/4] md:aspect-[4/5] bg-background-light border border-secondary/20 rounded-lg overflow-hidden">
+          {renderImage(imgs[0], 0)}
         </div>
-        <div className="relative aspect-[4/5] bg-background-light border border-secondary/20 rounded-lg overflow-hidden">
-          {renderImage(display[1], 1)}
-        </div>
-        <div className="relative aspect-[4/5] bg-background-light border border-secondary/20 rounded-lg overflow-hidden">
-          {renderImage(display[2], 2)}
-        </div>
-        <div className="relative aspect-[4/5] bg-background-light border border-secondary/20 rounded-lg overflow-hidden">
-          {renderImage(display[3], 3)}
-          {imgs.length > 4 && (
-            <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-semibold text-sm">
-              +{imgs.length - 4}
-            </div>
-          )}
+        <div className="flex flex-col gap-2 w-1/3 min-h-[220px]">
+          {rightImages.map((img, idx) => {
+            const isLast = idx === rightImages.length - 1;
+            return (
+              <div
+                key={idx + 1}
+                className="relative flex-1 bg-background-light border border-secondary/20 rounded-lg overflow-hidden"
+              >
+                {renderImage(img, idx + 1)}
+                {isLast && extra > 0 && (
+                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-semibold text-sm">
+                    +{extra}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     );

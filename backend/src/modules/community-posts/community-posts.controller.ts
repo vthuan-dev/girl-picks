@@ -88,6 +88,27 @@ export class CommunityPostsController {
     return this.communityPostsService.findMyPosts(userId, status);
   }
 
+  @Get('interactions/me')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.GIRL, UserRole.CUSTOMER, UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get community post interactions (likes/comments) of current user',
+  })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    enum: ['likes', 'comments'],
+  })
+  getMyInteractions(
+    @CurrentUser('id') userId: string,
+    @Query('type') type?: 'likes' | 'comments',
+  ) {
+    const safeType: 'likes' | 'comments' =
+      type === 'comments' ? 'comments' : 'likes';
+    return this.communityPostsService.getUserInteractions(userId, safeType);
+  }
+
   @Get(':id')
   @Public()
   @ApiOperation({ summary: 'Get community post by ID (public)' })

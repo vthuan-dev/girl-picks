@@ -8,24 +8,6 @@ import { useState } from 'react';
 
 const menuItems = [
   {
-    title: 'Dashboard',
-    href: '/customer',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-      </svg>
-    ),
-  },
-  {
-    title: 'Tìm kiếm',
-    href: '/search',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-      </svg>
-    ),
-  },
-  {
     title: 'Yêu thích',
     href: '/favorites',
     icon: (
@@ -35,20 +17,21 @@ const menuItems = [
     ),
   },
   {
-    title: 'Đánh giá',
-    href: '/reviews',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-      </svg>
-    ),
-  },
-  {
     title: 'Bài đăng',
     href: '/posts',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Tương tác',
+    href: '/interactions',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 10c0-3.866-3.582-7-8-7S2 6.134 2 10c0 1.657.672 3.166 1.758 4.355L3 19l4.016-1.338A9.063 9.063 0 0010 18c4.418 0 8-3.134 8-7z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20v-2m0 0v-2m0 2h2m-2 0h-2" />
       </svg>
     ),
   },
@@ -125,7 +108,7 @@ export default function CustomerSidebar() {
           <nav className="flex-1 overflow-y-auto px-4 py-4">
             <div className="space-y-1">
               {menuItems.map((item) => {
-                const isActive = pathname === item.href || (item.href !== '/customer' && pathname?.startsWith(item.href));
+                const isActive = pathname === item.href || pathname?.startsWith(item.href);
                 return (
                   <Link
                     key={item.href}

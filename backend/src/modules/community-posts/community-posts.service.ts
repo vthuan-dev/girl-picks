@@ -474,6 +474,108 @@ export class CommunityPostsService {
     };
   }
 
+  /**
+   * Get interactions (likes or comments) of current user on community posts
+   */
+  async getUserInteractions(userId: string, type: 'likes' | 'comments' = 'likes') {
+    if (type === 'comments') {
+      const comments = await this.prisma.communityPostComment.findMany({
+        where: { userId },
+        include: {
+          post: {
+            include: {
+              girl: {
+                include: {
+                  user: {
+                    select: {
+                      id: true,
+                      fullName: true,
+                      avatarUrl: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      // Distinct by postId so mỗi bài xuất hiện 1 lần
+      const seen = new Set<string>();
+      return comments
+        .filter((c) => {
+          if (seen.has(c.postId)) return false;
+          seen.add(c.postId);
+          return true;
+        })
+        .map((c) => {
+          const post: any = c.post;
+          const images: string[] = Array.isArray(post.images) ? post.images : [];
+          const girlName =
+            post.girl?.name ||
+            post.girl?.user?.fullName ||
+            null;
+
+          return {
+            id: c.id,
+            postId: c.postId,
+            postTitle: post.title || post.content?.slice(0, 80) || 'Bài viết cộng đồng',
+            girlName,
+            previewImage: images[0] || null,
+            type: 'comments' as const,
+            createdAt: c.createdAt,
+          };
+        });
+    }
+
+    // Default: likes
+    const likes = await this.prisma.communityPostLike.findMany({
+      where: { userId },
+      include: {
+        post: {
+          include: {
+            girl: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    fullName: true,
+                    avatarUrl: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return likes.map((l) => {
+      const post: any = l.post;
+      const images: string[] = Array.isArray(post.images) ? post.images : [];
+      const girlName =
+        post.girl?.name ||
+        post.girl?.user?.fullName ||
+        null;
+
+      return {
+        id: l.id,
+        postId: l.postId,
+        postTitle: post.title || post.content?.slice(0, 80) || 'Bài viết cộng đồng',
+        girlName,
+        previewImage: images[0] || null,
+        type: 'likes' as const,
+        createdAt: l.createdAt,
+      };
+    });
+  }
+
   async addComment(
     postId: string,
     userId: string,
