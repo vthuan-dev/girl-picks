@@ -40,11 +40,11 @@ export default function LatestCommunityPosts({ limit = 6 }: LatestCommunityPosts
       console.log('[LatestCommunityPosts] Data received:', data);
       setPosts((prev) => {
         const combined = page === 1 ? data.data : [...prev, ...data.data];
-        // Sắp xếp theo thời gian tạo: bài tạo trước nằm trên (cũ nhất ở trên)
+        // Sắp xếp theo thời gian tạo: bài tạo mới nhất nằm trên (mới nhất ở trên cùng)
         const sorted = [...combined].sort(
-          (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
         );
-        console.log('[LatestCommunityPosts] Posts set (sorted oldest first):', sorted.length);
+        console.log('[LatestCommunityPosts] Posts set (sorted newest first):', sorted.length);
         return sorted;
       });
       setHasMore(data.data.length === pageSize);
