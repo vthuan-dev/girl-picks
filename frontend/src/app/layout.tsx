@@ -87,6 +87,7 @@ export const metadata: Metadata = {
 import ClientLayout from '@/components/layout/ClientLayout';
 import QueryProvider from '@/providers/QueryProvider';
 import PageViewTracker from '@/components/analytics/PageViewTracker';
+import { ChunkErrorHandler } from '@/components/common/ChunkErrorHandler';
 
 export default function RootLayout({
   children,
@@ -96,6 +97,7 @@ export default function RootLayout({
   return (
     <html lang="vi" suppressHydrationWarning>
       <body className={inter.className}>
+        <ChunkErrorHandler />
         <QueryProvider>
         <PageViewTracker />
         <StructuredData

@@ -142,19 +142,19 @@ export default function CustomerProfilePage() {
             <div className="bg-background-light rounded-xl border border-secondary/30 p-6">
               <h3 className="text-lg font-semibold text-text mb-6">Thông tin cá nhân</h3>
               <div className="space-y-5">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <div>
                     <label className="block text-xs font-semibold text-text-muted mb-2 uppercase tracking-wider">Họ tên</label>
-                    {isEditing ? (
+                  {isEditing ? (
                       <input 
                         type="text" 
                         defaultValue={user?.fullName || ''} 
                         className="w-full px-4 py-2.5 bg-background border border-secondary/40 rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" 
                       />
-                    ) : (
+                  ) : (
                       <p className="text-text font-medium text-base">{user?.fullName || 'Chưa cập nhật'}</p>
-                    )}
-                  </div>
+                  )}
+                </div>
                   <div>
                     <label className="block text-xs font-semibold text-text-muted mb-2 uppercase tracking-wider">Email</label>
                     <p className="text-text text-base">{user?.email || 'N/A'}</p>
@@ -163,44 +163,44 @@ export default function CustomerProfilePage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <div>
                     <label className="block text-xs font-semibold text-text-muted mb-2 uppercase tracking-wider">Số điện thoại</label>
-                    {isEditing ? (
+                  {isEditing ? (
                       <input 
                         type="tel" 
                         defaultValue={user?.phone || ''} 
                         className="w-full px-4 py-2.5 bg-background border border-secondary/40 rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" 
                       />
-                    ) : (
+                  ) : (
                       <p className="text-text text-base">{user?.phone || 'Chưa cập nhật'}</p>
-                    )}
-                  </div>
-                  {isGirl && (
-                    <>
-                      <div>
+                  )}
+                </div>
+                {isGirl && (
+                  <>
+                    <div>
                         <label className="block text-xs font-semibold text-text-muted mb-2 uppercase tracking-wider">Giá dịch vụ</label>
-                        {isEditing ? (
+                      {isEditing ? (
                           <input 
                             type="text" 
                             placeholder="300K/giờ" 
                             className="w-full px-4 py-2.5 bg-background border border-secondary/40 rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" 
                           />
-                        ) : (
+                      ) : (
                           <p className="text-primary font-semibold text-base">300K/giờ</p>
-                        )}
-                      </div>
-                      <div className="sm:col-span-2">
+                      )}
+                    </div>
+                    <div className="sm:col-span-2">
                         <label className="block text-xs font-semibold text-text-muted mb-2 uppercase tracking-wider">Địa điểm</label>
-                        {isEditing ? (
+                      {isEditing ? (
                           <select className="w-full px-4 py-2.5 bg-background border border-secondary/40 rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
-                            <option>Quận 1, Hồ Chí Minh</option>
-                            <option>Quận 2, Hồ Chí Minh</option>
-                            <option>Quận 3, Hồ Chí Minh</option>
-                          </select>
-                        ) : (
+                          <option>Quận 1, Hồ Chí Minh</option>
+                          <option>Quận 2, Hồ Chí Minh</option>
+                          <option>Quận 3, Hồ Chí Minh</option>
+                        </select>
+                      ) : (
                           <p className="text-text text-base">Quận 1, Hồ Chí Minh</p>
-                        )}
-                      </div>
-                    </>
-                  )}
+                      )}
+                    </div>
+                  </>
+                )}
                 </div>
               </div>
 

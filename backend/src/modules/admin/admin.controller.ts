@@ -12,6 +12,7 @@ import {
   Delete,
 } from '@nestjs/common';
 import { AdminService } from './admin.service';
+import { ReviewsService } from '../reviews/reviews.service';
 import { ProcessReportDto } from './dto/process-report.dto';
 import { CreateGirlDto } from './dto/create-girl.dto';
 import { UpdateGirlAdminDto } from './dto/update-girl-admin.dto';
@@ -43,7 +44,12 @@ import {
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(
+    private readonly adminService: AdminService,
+    private readonly reviewsService: ReviewsService,
+  ) {
+    console.log('[AdminController] Initialized with ReviewsService:', !!this.reviewsService);
+  }
 
   @Get('stats')
   @ApiOperation({ summary: 'Get dashboard statistics (Admin only)' })
@@ -74,6 +80,19 @@ export class AdminController {
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
   ) {
     return this.adminService.getPendingCommunityPosts(page, limit);
+  }
+
+  @Get('pending/review-comments')
+  @ApiOperation({ summary: 'Get pending review comments (Admin only)' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'List of pending review comments' })
+  getPendingReviewComments(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page?: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
+  ) {
+    console.log('[AdminController] getPendingReviewComments called with page:', page, 'limit:', limit);
+    return this.reviewsService.getPendingComments(page, limit);
   }
 
   @Get('community-posts')

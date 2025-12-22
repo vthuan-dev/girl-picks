@@ -212,9 +212,9 @@ export default function GirlInfoCard({ girl, tags }: GirlInfoCardProps) {
                   {item.value}
                 </a>
               ) : (
-                <div className={`font-semibold ${item.highlight ? 'text-primary text-lg' : 'text-text'}`}>
-                  {item.value}
-                </div>
+              <div className={`font-semibold ${item.highlight ? 'text-primary text-lg' : 'text-text'}`}>
+                {item.value}
+              </div>
               )}
             </div>
             {item.copyable && (

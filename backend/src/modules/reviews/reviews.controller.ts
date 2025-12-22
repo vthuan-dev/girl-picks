@@ -10,6 +10,7 @@ import {
   Query,
   ParseIntPipe,
   DefaultValuePipe,
+  Logger,
 } from '@nestjs/common';
 import { ReviewsService } from './reviews.service';
 import { CreateReviewDto } from './dto/create-review.dto';
@@ -32,6 +33,8 @@ import {
 @ApiTags('Reviews')
 @Controller('reviews')
 export class ReviewsController {
+  private readonly logger = new Logger(ReviewsController.name);
+  
   constructor(private readonly reviewsService: ReviewsService) {}
 
   @Post()
@@ -181,17 +184,31 @@ export class ReviewsController {
     return this.reviewsService.getLikeStatus(id, userId);
   }
 
-  @Post(':id/comments')
+  @Post('comments/:id/approve')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.CUSTOMER, UserRole.ADMIN)
+  @Roles(UserRole.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Add comment to a review' })
-  addComment(
+  @ApiOperation({ summary: 'Approve comment (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Comment approved' })
+  approveComment(
     @Param('id') id: string,
-    @CurrentUser('id') userId: string,
-    @Body() createReviewCommentDto: CreateReviewCommentDto,
+    @CurrentUser('id') adminId: string,
   ) {
-    return this.reviewsService.addComment(id, userId, createReviewCommentDto);
+    return this.reviewsService.approveComment(id, adminId);
+  }
+
+  @Post('comments/:id/reject')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Reject comment (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Comment rejected' })
+  rejectComment(
+    @Param('id') id: string,
+    @CurrentUser('id') adminId: string,
+    @Body('reason') reason?: string,
+  ) {
+    return this.reviewsService.rejectComment(id, adminId, reason);
   }
 
   @Get(':id/comments')

@@ -30,6 +30,12 @@ enum ReviewStatus {
   REJECTED
 }
 
+enum ReviewCommentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum VerificationStatus {
   PENDING
   VERIFIED
@@ -81,6 +87,8 @@ enum NotificationType {
   REVIEW_APPROVED
   REVIEW_REJECTED
   COMMENT_REPLY
+  COMMENT_APPROVED
+  COMMENT_REJECTED
   NEW_MESSAGE
   GIRL_PENDING_APPROVAL
   VERIFICATION_APPROVED
@@ -109,38 +117,39 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  girl             Girl?           @relation("GirlUser")
-  managedGirls     Girl[]          @relation("GirlManager") // Girls managed by this user
-  reviews          Review[]
-  sentMessages     Message[]       @relation("SentMessages")
-  receivedMessages Message[]       @relation("ReceivedMessages")
-  notifications    Notification[]
-  reports          Report[]        @relation("Reporter")
-  reportedBy       Report[]        @relation("ReportedUser")
-  blocks           Block[]         @relation("Blocker")
-  blockedBy        Block[]         @relation("Blocked")
-  favorites        Favorite[]
-  viewHistory      ViewHistory[]
-  reviewLikes      ReviewLike[]
-  reviewComments   ReviewComment[]
-  postLikes        PostLike[]
-  postComments     PostComment[]
-  posts            Post[]          @relation("PostAuthor")
-  bookings         Booking[]       @relation("Customer")
-  payments         Payment[]       @relation("Payments")
-  auditLogs        AuditLog[]
-  approvedPosts    Post[]          @relation("ApprovedBy")
-  approvedReviews  Review[]        @relation("ApprovedBy")
-  reviewedReports  Report[]        @relation("ReviewedBy")
-  albums           Album[]         @relation("AlbumAuthor")
-  managedChatSexGirls ChatSexGirl[] @relation("ChatSexGirlManager")
-  chatSexReviews   ChatSexReview[] @relation("ChatSexReviews")
-  movieReviews        MovieReview[]
-  movieReviewComments MovieReviewComment[]
-  communityPosts   CommunityPost[] @relation("CommunityPostAuthor")
-  communityPostLikes CommunityPostLike[]
-  communityPostComments CommunityPostComment[]
-  approvedCommunityPosts CommunityPost[] @relation("CommunityPostApprovedBy")
+  girl                   Girl?                  @relation("GirlUser")
+  managedGirls           Girl[]                 @relation("GirlManager") // Girls managed by this user
+  reviews                Review[]
+  sentMessages           Message[]              @relation("SentMessages")
+  receivedMessages       Message[]              @relation("ReceivedMessages")
+  notifications          Notification[]
+  reports                Report[]               @relation("Reporter")
+  reportedBy             Report[]               @relation("ReportedUser")
+  blocks                 Block[]                @relation("Blocker")
+  blockedBy              Block[]                @relation("Blocked")
+  favorites              Favorite[]
+  viewHistory            ViewHistory[]
+  reviewLikes            ReviewLike[]
+  reviewComments         ReviewComment[]
+  postLikes              PostLike[]
+  postComments           PostComment[]
+  posts                  Post[]                 @relation("PostAuthor")
+  bookings               Booking[]              @relation("Customer")
+  payments               Payment[]              @relation("Payments")
+  auditLogs              AuditLog[]
+  approvedPosts          Post[]                 @relation("ApprovedBy")
+  approvedReviews        Review[]               @relation("ApprovedBy")
+  approvedComments       ReviewComment[]        @relation("ApprovedComments")
+  reviewedReports        Report[]               @relation("ReviewedBy")
+  albums                 Album[]                @relation("AlbumAuthor")
+  managedChatSexGirls    ChatSexGirl[]          @relation("ChatSexGirlManager")
+  chatSexReviews         ChatSexReview[]        @relation("ChatSexReviews")
+  movieReviews           MovieReview[]
+  movieReviewComments    MovieReviewComment[]
+  communityPosts         CommunityPost[]        @relation("CommunityPostAuthor")
+  communityPostLikes     CommunityPostLike[]
+  communityPostComments  CommunityPostComment[]
+  approvedCommunityPosts CommunityPost[]        @relation("CommunityPostApprovedBy")
 
   @@map("users")
 }
@@ -183,10 +192,10 @@ model Girl {
   verificationRequestedAt DateTime?
   verificationVerifiedAt  DateTime?
   // Reverification & identity
-  idCardFrontUrl String?
-  idCardBackUrl  String?
-  selfieUrl      String?
-  needsReverify  Boolean @default(false)
+  idCardFrontUrl          String?
+  idCardBackUrl           String?
+  selfieUrl               String?
+  needsReverify           Boolean            @default(false)
 
   // Statistics
   viewCount     Int @default(0)
@@ -248,16 +257,16 @@ model Post {
   updatedAt    DateTime   @updatedAt
 
   // Video/Movie fields (for phim-sex)
-  videoUrl     String? // Main video URL
-  videoSources Json    @default("[]") // Array of {url, type, label, resolution} stored as JSON
-  duration     String? // Video duration (e.g., "10:30")
-  viewCount    Int     @default(0) // Number of views
-  rating       Float? // Rating (0-5)
-  categoryId   String? // Category ID (relation to Category)
+  videoUrl       String? // Main video URL
+  videoSources   Json    @default("[]") // Array of {url, type, label, resolution} stored as JSON
+  duration       String? // Video duration (e.g., "10:30")
+  viewCount      Int     @default(0) // Number of views
+  rating         Float? // Rating (0-5)
+  categoryId     String? // Category ID (relation to Category)
   legacyCategory String? @map("category") // Giữ cột cũ nếu còn tồn tại trong DB để tránh drop dữ liệu
-  tags         Json    @default("[]") // Array of tag strings stored as JSON
-  poster       String? // Poster/thumbnail URL
-  thumbnail    String? // Thumbnail URL
+  tags           Json    @default("[]") // Array of tag strings stored as JSON
+  poster         String? // Poster/thumbnail URL
+  thumbnail      String? // Thumbnail URL
 
   // Relations
   author     User          @relation("PostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
@@ -273,7 +282,7 @@ model Post {
 model Movie {
   id          String     @id @default(uuid())
   title       String
-  slug        String?   @unique
+  slug        String?    @unique
   description String?
   videoUrl    String
   poster      String?
@@ -286,8 +295,8 @@ model Movie {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
-  category    Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  reviews     MovieReview[]
+  category Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  reviews  MovieReview[]
 
   @@index([status, createdAt])
   @@map("movies")
@@ -395,41 +404,46 @@ model ReviewLike {
 }
 
 model ReviewComment {
-  id        String   @id @default(uuid())
-  reviewId  String
-  userId    String
-  content   String
-  parentId  String?
-  createdAt DateTime @default(now())
+  id             String              @id @default(uuid())
+  reviewId       String
+  userId         String
+  content        String
+  parentId       String?
+  status         ReviewCommentStatus @default(PENDING)
+  approvedById   String?
+  approvedAt     DateTime?
+  rejectedReason String?
+  createdAt      DateTime            @default(now())
 
-  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  review     Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  approvedBy User?  @relation("ApprovedComments", fields: [approvedById], references: [id], onDelete: SetNull)
+
   // Self-referencing relation for replies
-  parent   ReviewComment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies  ReviewComment[] @relation("CommentReplies")
+  parent  ReviewComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies ReviewComment[] @relation("CommentReplies")
 
   @@map("review_comments")
 }
 
 model CommunityPost {
-  id          String     @id @default(uuid())
-  authorId    String
-  girlId      String?    // Optional: if post is related to a specific girl
-  title       String?    // Optional title
-  content     String
-  images      Json       @default("[]") // Array of image URLs stored as JSON
-  status      PostStatus @default(PENDING)
+  id           String     @id @default(uuid())
+  authorId     String
+  girlId       String? // Optional: if post is related to a specific girl
+  title        String? // Optional title
+  content      String
+  images       Json       @default("[]") // Array of image URLs stored as JSON
+  status       PostStatus @default(PENDING)
   approvedById String?
   approvedAt   DateTime?
-  viewCount    Int       @default(0)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  viewCount    Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
   // Relations
-  author     User                    @relation("CommunityPostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
-  girl       Girl?                   @relation(fields: [girlId], references: [id], onDelete: SetNull)
-  approvedBy User?                   @relation("CommunityPostApprovedBy", fields: [approvedById], references: [id])
+  author     User                   @relation("CommunityPostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  girl       Girl?                  @relation(fields: [girlId], references: [id], onDelete: SetNull)
+  approvedBy User?                  @relation("CommunityPostApprovedBy", fields: [approvedById], references: [id])
   likes      CommunityPostLike[]
   comments   CommunityPostComment[]
 
@@ -457,12 +471,12 @@ model CommunityPostComment {
   postId    String
   userId    String
   content   String
-  parentId  String?  // For nested replies
+  parentId  String? // For nested replies
   createdAt DateTime @default(now())
 
-  post    CommunityPost        @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user    User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  parent  CommunityPostComment? @relation("CommunityCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  post    CommunityPost          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user    User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent  CommunityPostComment?  @relation("CommunityCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies CommunityPostComment[] @relation("CommunityCommentReplies")
 
   @@index([postId, parentId])
@@ -741,20 +755,20 @@ model PaymentHistory {
 }
 
 model Album {
-  id          String   @id @default(uuid())
-  title       String
-  description String?
-  coverUrl    String?
-  category    String?
+  id              String   @id @default(uuid())
+  title           String
+  description     String?
+  coverUrl        String?
+  category        String?
   albumCategoryId String?
-  tags        Json?
-  isPublic    Boolean  @default(true)
-  viewCount   Int      @default(0)
-  createdById String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  tags            Json?
+  isPublic        Boolean  @default(true)
+  viewCount       Int      @default(0)
+  createdById     String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  createdBy   User     @relation("AlbumAuthor", fields: [createdById], references: [id])
+  createdBy   User           @relation("AlbumAuthor", fields: [createdById], references: [id])
   categoryRef AlbumCategory? @relation(fields: [albumCategoryId], references: [id], onDelete: SetNull)
   images      AlbumImage[]
 
@@ -770,22 +784,22 @@ model AlbumImage {
   sortOrder Int      @default(0) @map("order")
   createdAt DateTime @default(now())
 
-  album     Album    @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  album Album @relation(fields: [albumId], references: [id], onDelete: Cascade)
 
   @@map("album_images")
 }
 
 model AlbumCategory {
-  id        String   @id @default(uuid())
-  name      String   @unique
-  slug      String?  @unique
+  id          String   @id @default(uuid())
+  name        String   @unique
+  slug        String?  @unique
   description String?
-  order     Int      @default(0)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  albums    Album[]
+  albums Album[]
 
   @@map("album_categories")
 }
@@ -815,7 +829,7 @@ model Category {
   updatedAt   DateTime @updatedAt
 
   // Relations
-  posts Post[]
+  posts  Post[]
   movies Movie[]
 
   @@map("categories")
@@ -840,63 +854,63 @@ model PageView {
 }
 
 model ChatSexGirl {
-  id          String   @id @default(uuid())
-  managedById String?  // Admin/Staff who created this (not a user account)
-  
+  id          String  @id @default(uuid())
+  managedById String? // Admin/Staff who created this (not a user account)
+
   // Basic Info
-  name        String
-  slug        String?  @unique // URL-friendly slug for SEO
-  title       String?  // Title from crawler
-  age         Int?
-  birthYear   Int?     // Năm sinh
-  height      String?  // Chiều cao (e.g., "158cm")
-  weight      String?  // Cân nặng (e.g., "47kg")
-  bio         String?  // Description
-  phone       String?  // Phone number
-  zalo        String?  // Zalo ID
-  telegram    String?  // Telegram ID
-  
+  name      String
+  slug      String? @unique // URL-friendly slug for SEO
+  title     String? // Title from crawler
+  age       Int?
+  birthYear Int? // Năm sinh
+  height    String? // Chiều cao (e.g., "158cm")
+  weight    String? // Cân nặng (e.g., "47kg")
+  bio       String? // Description
+  phone     String? // Phone number
+  zalo      String? // Zalo ID
+  telegram  String? // Telegram ID
+
   // Location
-  location    String?
-  province    String?
-  address     String?
-  
+  location String?
+  province String?
+  address  String?
+
   // Pricing & Services
-  price       String?  // e.g., "15", "500k"
-  price15min  String?  // Giá 15 phút (e.g., "200K")
-  paymentInfo String?  // Thông tin thanh toán (e.g., "Teckcombank 9022")
-  services    Json     @default("[]") // Array of service strings
+  price        String? // e.g., "15", "500k"
+  price15min   String? // Giá 15 phút (e.g., "200K")
+  paymentInfo  String? // Thông tin thanh toán (e.g., "Teckcombank 9022")
+  services     Json    @default("[]") // Array of service strings
   workingHours String? // e.g., "24/7", "9h-2h tối"
-  instruction String?  // Hướng dẫn
-  
+  instruction  String? // Hướng dẫn
+
   // Media
-  images      Json     @default("[]") // Array of image URLs
-  videos      Json?    // Array of video URLs (multiple qualities) - nullable, no default
-  coverImage  String?  // First image as cover
-  
+  images     Json    @default("[]") // Array of image URLs
+  videos     Json? // Array of video URLs (multiple qualities) - nullable, no default
+  coverImage String? // First image as cover
+
   // Status & Flags
-  isVerified  Boolean  @default(false)
-  isFeatured  Boolean  @default(false)
-  isActive    Boolean  @default(true)
-  isAvailable Boolean  @default(true)
-  
+  isVerified  Boolean @default(false)
+  isFeatured  Boolean @default(false)
+  isActive    Boolean @default(true)
+  isAvailable Boolean @default(true)
+
   // Statistics
-  viewCount   Int      @default(0)
-  rating      Float?   // Rating if available
-  
+  viewCount Int    @default(0)
+  rating    Float? // Rating if available
+
   // Metadata
-  tags        Json     @default("[]") // Array of tag strings
-  sourceUrl   String?  @db.Text // Original URL from crawler (can be long)
-  crawledAt   DateTime? // When data was crawled
-  
+  tags      Json      @default("[]") // Array of tag strings
+  sourceUrl String?   @db.Text // Original URL from crawler (can be long)
+  crawledAt DateTime? // When data was crawled
+
   // Timestamps
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relations
-  managedBy   User?    @relation("ChatSexGirlManager", fields: [managedById], references: [id], onDelete: SetNull)
-  reviews     ChatSexReview[]
-  
+  managedBy User?           @relation("ChatSexGirlManager", fields: [managedById], references: [id], onDelete: SetNull)
+  reviews   ChatSexReview[]
+
   @@index([isActive, isFeatured])
   @@index([province, isActive])
   @@index([isActive, viewCount])
@@ -904,31 +918,31 @@ model ChatSexGirl {
 }
 
 model ChatSexReview {
-  id        String   @id @default(uuid())
-  girlId    String   @map("girl_id")
-  userId    String?  @map("user_id")
-  
+  id     String  @id @default(uuid())
+  girlId String  @map("girl_id")
+  userId String? @map("user_id")
+
   // Review content
-  rating    Int      // 1-5 stars
-  comment   String?  @db.Text
-  
+  rating  Int // 1-5 stars
+  comment String? @db.Text
+
   // User info (for anonymous reviews)
-  userName  String?  @map("user_name")
-  
+  userName String? @map("user_name")
+
   // Status
   isApproved Boolean @default(true) @map("is_approved") // Auto-approve for now
   isActive   Boolean @default(true) @map("is_active")
-  
+
   // Timestamps
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  
+
   // Relations
-  girl      ChatSexGirl @relation(fields: [girlId], references: [id], onDelete: Cascade)
-  user      User?       @relation("ChatSexReviews", fields: [userId], references: [id], onDelete: SetNull)
-  
-  @@map("chat_sex_reviews")
+  girl ChatSexGirl @relation(fields: [girlId], references: [id], onDelete: Cascade)
+  user User?       @relation("ChatSexReviews", fields: [userId], references: [id], onDelete: SetNull)
+
   @@index([girlId])
   @@index([userId])
   @@index([isApproved, isActive])
+  @@map("chat_sex_reviews")
 }

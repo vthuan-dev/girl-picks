@@ -17,9 +17,17 @@ const nextConfig = {
       'lodash',
     ],
   },
+  // Fix chunk loading errors
+  onDemandEntries: {
+    // Period (in ms) where the server will keep pages in the buffer
+    maxInactiveAge: 25 * 1000,
+    // Number of pages that should be kept simultaneously without being disposed
+    pagesBufferLength: 2,
+  },
   // Webpack optimizations for faster dev builds
   webpack: (config, { dev, isServer }) => {
     if (dev && !isServer) {
+      const path = require('path');
       // Enable filesystem caching for faster rebuilds
       config.cache = {
         type: 'filesystem',
@@ -28,6 +36,15 @@ const nextConfig = {
         },
         // Cache more aggressively
         maxMemoryGenerations: 1,
+        // Fix chunk loading issues - use absolute path
+        cacheDirectory: path.join(process.cwd(), '.next', 'cache', 'webpack'),
+        compression: 'gzip',
+      };
+      // Fix chunk loading errors - ensure chunks are properly named
+      config.output = {
+        ...config.output,
+        chunkLoadTimeout: 30000,
+        crossOriginLoading: 'anonymous',
       };
       // Optimize for development speed - reduce recompilation
       config.optimization = {
@@ -54,8 +71,6 @@ const nextConfig = {
           },
         },
       };
-      // Faster source maps in dev
-      config.devtool = 'eval-cheap-module-source-map';
       // Reduce watch options to prevent unnecessary recompilation
       config.watchOptions = {
         ...config.watchOptions,

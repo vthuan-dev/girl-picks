@@ -381,15 +381,27 @@ function ReviewCard({
       if (parentId) {
         setReplyText(prev => ({ ...prev, [parentId]: '' }));
         setReplyingTo(null);
+        // Only add to comments if approved, otherwise show pending message
+        if (newComment.status === 'APPROVED') {
         setComments(prevComments => addReplyToComment(prevComments, parentId, newComment));
         setCommentsCount(prev => prev + 1);
+        } else {
+          toast.success('Phản hồi của bạn đang chờ duyệt');
+        }
       } else {
         setComment('');
+        // Only add to comments if approved, otherwise show pending message
+        if (newComment.status === 'APPROVED') {
         setComments(prevComments => [newComment, ...prevComments]);
         setCommentsCount(prev => prev + 1);
+        } else {
+          toast.success('Bình luận của bạn đang chờ duyệt');
+        }
       }
       
+      if (newComment.status === 'APPROVED') {
       toast.success(parentId ? 'Đã gửi phản hồi' : 'Đã gửi bình luận');
+      }
     } catch (error: any) {
       console.error('Error adding comment:', error);
       toast.error('Không thể gửi bình luận');
@@ -570,7 +582,8 @@ function ReviewCard({
             
             {/* Comment Input */}
             {isAuthenticated && (
-              <div className="flex gap-2 mt-4">
+              <div className="mt-4 space-y-2">
+                <div className="flex gap-2">
                 <input
                   type="text"
                   value={comment}
@@ -591,6 +604,10 @@ function ReviewCard({
                 >
                   {submitting ? '...' : 'Gửi'}
                 </button>
+                </div>
+                <p className="text-xs text-text-muted italic">
+                  Bình luận của bạn sẽ được kiểm duyệt trước khi hiển thị
+                </p>
               </div>
             )}
           </div>

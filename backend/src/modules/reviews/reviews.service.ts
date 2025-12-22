@@ -10,7 +10,7 @@ import {
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
-import { Prisma, ReviewStatus, UserRole, NotificationType } from '@prisma/client';
+import { Prisma, ReviewStatus, ReviewCommentStatus, UserRole, NotificationType } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { GirlsService } from '../girls/girls.service';
 import { CreateReviewCommentDto } from './dto/create-review-comment.dto';
@@ -678,27 +678,28 @@ export class ReviewsService {
         const commentId = randomUUID();
         const now = new Date();
         
-        // Insert comment bằng raw SQL (không include parent_id)
+        // Insert comment bằng raw SQL với status PENDING
         await this.prisma.$executeRaw`
-          INSERT INTO review_comments (id, reviewId, userId, content, createdAt)
-          VALUES (${commentId}, ${reviewId}, ${userId}, ${createReviewCommentDto.content}, ${now})
+          INSERT INTO review_comments (id, reviewId, userId, content, status, createdAt)
+          VALUES (${commentId}, ${reviewId}, ${userId}, ${createReviewCommentDto.content}, 'PENDING', ${now})
         `;
         
         // Lấy comment vừa tạo với user info
         const newComment = await this.prisma.$queryRaw<any[]>`
-          SELECT 
-            rc.id,
-            rc.reviewId,
-            rc.userId,
-            rc.content,
-            rc.createdAt,
-            u.id as user_id,
-            u.fullName,
-            u.avatarUrl
-          FROM review_comments rc
-          INNER JOIN users u ON rc.userId = u.id
-          WHERE rc.id = ${commentId}
-          LIMIT 1
+              SELECT 
+                rc.id,
+                rc.reviewId,
+                rc.userId,
+                rc.content,
+                rc.status,
+                rc.createdAt,
+                u.id as user_id,
+                u.fullName,
+                u.avatarUrl
+              FROM review_comments rc
+              INNER JOIN users u ON rc.userId = u.id
+              WHERE rc.id = ${commentId}
+              LIMIT 1
         `;
         
         if (newComment && newComment.length > 0) {
@@ -708,6 +709,7 @@ export class ReviewsService {
             reviewId: comment.reviewId,
             userId: comment.userId,
             content: comment.content,
+            status: comment.status || 'PENDING',
             createdAt: comment.createdAt,
             user: {
               id: comment.user_id,
@@ -731,6 +733,7 @@ export class ReviewsService {
       reviewId,
       userId,
       content: createReviewCommentDto.content,
+      status: ReviewCommentStatus.PENDING,
     };
     
     // Chỉ thêm parentId nếu có giá trị và không phải empty string
@@ -772,16 +775,16 @@ export class ReviewsService {
           const commentId = randomUUID();
           const now = new Date();
           
-          // Insert comment bằng raw SQL
+          // Insert comment bằng raw SQL với status PENDING
           if (createReviewCommentDto.parentId && createReviewCommentDto.parentId.trim() !== '') {
             await this.prisma.$executeRaw`
-              INSERT INTO review_comments (id, reviewId, userId, content, parent_id, createdAt)
-              VALUES (${commentId}, ${reviewId}, ${userId}, ${createReviewCommentDto.content}, ${createReviewCommentDto.parentId}, ${now})
+              INSERT INTO review_comments (id, reviewId, userId, content, parent_id, status, createdAt)
+              VALUES (${commentId}, ${reviewId}, ${userId}, ${createReviewCommentDto.content}, ${createReviewCommentDto.parentId}, 'PENDING', ${now})
             `;
           } else {
             await this.prisma.$executeRaw`
-              INSERT INTO review_comments (id, reviewId, userId, content, createdAt)
-              VALUES (${commentId}, ${reviewId}, ${userId}, ${createReviewCommentDto.content}, ${now})
+              INSERT INTO review_comments (id, reviewId, userId, content, status, createdAt)
+              VALUES (${commentId}, ${reviewId}, ${userId}, ${createReviewCommentDto.content}, 'PENDING', ${now})
             `;
           }
           
@@ -792,6 +795,7 @@ export class ReviewsService {
               rc.reviewId,
               rc.userId,
               rc.content,
+              rc.status,
               rc.createdAt,
               u.id as user_id,
               u.fullName,
@@ -805,17 +809,18 @@ export class ReviewsService {
           if (newComment && newComment.length > 0) {
             const comment = newComment[0];
             return {
-              id: comment.id,
-              reviewId: comment.reviewId,
-              userId: comment.userId,
-              content: comment.content,
-              createdAt: comment.createdAt,
-              user: {
-                id: comment.user_id,
-                fullName: comment.fullName,
-                avatarUrl: comment.avatarUrl,
-              },
-            };
+            id: comment.id,
+            reviewId: comment.reviewId,
+            userId: comment.userId,
+            content: comment.content,
+            status: comment.status || 'PENDING',
+            createdAt: comment.createdAt,
+            user: {
+              id: comment.user_id,
+              fullName: comment.fullName,
+              avatarUrl: comment.avatarUrl,
+            },
+          };
           }
           
           throw new InternalServerErrorException('Failed to create comment');
@@ -861,13 +866,14 @@ export class ReviewsService {
                 rc.reviewId,
                 rc.userId,
                 rc.content,
+                rc.status,
                 rc.createdAt,
                 u.id as user_id,
                 u.fullName,
                 u.avatarUrl
               FROM review_comments rc
               INNER JOIN users u ON rc.userId = u.id
-              WHERE rc.reviewId = ${reviewId}
+              WHERE rc.reviewId = ${reviewId} AND rc.status = 'APPROVED'
               ORDER BY rc.createdAt DESC
               LIMIT ${safeLimit}
               OFFSET ${(safePage - 1) * safeLimit}
@@ -875,7 +881,7 @@ export class ReviewsService {
             this.prisma.$queryRaw<[{ count: bigint }]>`
               SELECT COUNT(*) as count
               FROM review_comments
-              WHERE reviewId = ${reviewId}
+              WHERE reviewId = ${reviewId} AND status = 'APPROVED'
             `,
           ]);
           
@@ -884,6 +890,7 @@ export class ReviewsService {
             reviewId: row.reviewId,
             userId: row.userId,
             content: row.content,
+            status: row.status || 'APPROVED',
             createdAt: row.createdAt,
             user: {
               id: row.user_id,
@@ -906,7 +913,11 @@ export class ReviewsService {
       } else {
         // Nếu có cột parent_id, thử dùng Prisma Client, nếu lỗi thì fallback về raw SQL
         try {
-          const whereClause: any = { reviewId, parentId: null };
+          const whereClause: any = { 
+            reviewId, 
+            parentId: null,
+            status: ReviewCommentStatus.APPROVED 
+          };
           
           [comments, total] = await Promise.all([
             this.prisma.reviewComment.findMany({
@@ -921,6 +932,9 @@ export class ReviewsService {
                 },
                 replies: {
                   take: 10, // Limit số replies được load để tránh query quá lớn
+                  where: {
+                    status: ReviewCommentStatus.APPROVED,
+                  },
                   include: {
                     user: {
                       select: {
@@ -931,6 +945,9 @@ export class ReviewsService {
                     },
                     replies: {
                       take: 5, // Limit số replies của replies
+                      where: {
+                        status: ReviewCommentStatus.APPROVED,
+                      },
                       include: {
                         user: {
                           select: {
@@ -986,13 +1003,14 @@ export class ReviewsService {
                   rc.reviewId,
                   rc.userId,
                   rc.content,
+                  rc.status,
                   rc.createdAt,
                   u.id as user_id,
                   u.fullName,
                   u.avatarUrl
                 FROM review_comments rc
                 INNER JOIN users u ON rc.userId = u.id
-                WHERE rc.reviewId = ${reviewId}
+                WHERE rc.reviewId = ${reviewId} AND rc.status = 'APPROVED'
                 ORDER BY rc.createdAt DESC
                 LIMIT ${safeLimit}
                 OFFSET ${(safePage - 1) * safeLimit}
@@ -1000,7 +1018,7 @@ export class ReviewsService {
               this.prisma.$queryRaw<[{ count: bigint }]>`
                 SELECT COUNT(*) as count
                 FROM review_comments
-                WHERE reviewId = ${reviewId}
+                WHERE reviewId = ${reviewId} AND status = 'APPROVED'
               `,
             ]);
             
@@ -1009,6 +1027,7 @@ export class ReviewsService {
               reviewId: row.reviewId,
               userId: row.userId,
               content: row.content,
+              status: row.status || 'APPROVED',
               createdAt: row.createdAt,
               user: {
                 id: row.user_id,
@@ -1049,5 +1068,195 @@ export class ReviewsService {
         error instanceof Error ? error.message : 'Failed to fetch comments'
       );
     }
+  }
+
+  async approveComment(commentId: string, adminId: string) {
+    const comment = await this.prisma.reviewComment.findUnique({
+      where: { id: commentId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+          },
+        },
+        review: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+      },
+    });
+
+    if (!comment) {
+      throw new NotFoundException('Comment not found');
+    }
+
+    if (comment.status !== ReviewCommentStatus.PENDING) {
+      throw new BadRequestException('Can only approve pending comments');
+    }
+
+    const updated = await this.prisma.reviewComment.update({
+      where: { id: commentId },
+      data: {
+        status: ReviewCommentStatus.APPROVED,
+        approvedById: adminId,
+        approvedAt: new Date(),
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            avatarUrl: true,
+          },
+        },
+        review: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+      },
+    });
+
+    // Send notification to comment author
+    try {
+      await this.notificationsService.create(
+        comment.userId,
+        NotificationType.COMMENT_APPROVED,
+        'Bình luận của bạn đã được duyệt',
+        { commentId, reviewId: comment.reviewId },
+      );
+    } catch (error) {
+      console.error('Failed to send comment approved notification:', error);
+    }
+
+    return updated;
+  }
+
+  async rejectComment(commentId: string, adminId: string, reason?: string) {
+    const comment = await this.prisma.reviewComment.findUnique({
+      where: { id: commentId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+          },
+        },
+        review: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+      },
+    });
+
+    if (!comment) {
+      throw new NotFoundException('Comment not found');
+    }
+
+    if (comment.status !== ReviewCommentStatus.PENDING) {
+      throw new BadRequestException('Can only reject pending comments');
+    }
+
+    const updated = await this.prisma.reviewComment.update({
+      where: { id: commentId },
+      data: {
+        status: ReviewCommentStatus.REJECTED,
+        approvedById: adminId,
+        approvedAt: new Date(),
+        rejectedReason: reason || null,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            avatarUrl: true,
+          },
+        },
+        review: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+      },
+    });
+
+    // Send notification to comment author
+    try {
+      await this.notificationsService.create(
+        comment.userId,
+        NotificationType.COMMENT_REJECTED,
+        reason 
+          ? `Bình luận của bạn đã bị từ chối: ${reason}`
+          : 'Bình luận của bạn đã bị từ chối',
+        { commentId, reviewId: comment.reviewId, reason },
+      );
+    } catch (error) {
+      console.error('Failed to send comment rejected notification:', error);
+    }
+
+    return updated;
+  }
+
+  async getPendingComments(page = 1, limit = 20) {
+    const safeLimit = Math.min(Math.max(limit || 20, 1), 50);
+    const safePage = Math.max(page || 1, 1);
+
+    const whereClause = {
+      status: ReviewCommentStatus.PENDING,
+    };
+
+    const [comments, total] = await Promise.all([
+      this.prisma.reviewComment.findMany({
+        where: whereClause,
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              avatarUrl: true,
+              email: true,
+            },
+          },
+          review: {
+            select: {
+              id: true,
+              title: true,
+              content: true,
+              customer: {
+                select: {
+                  id: true,
+                  fullName: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (safePage - 1) * safeLimit,
+        take: safeLimit,
+      }),
+      this.prisma.reviewComment.count({
+        where: whereClause,
+      }),
+    ]);
+
+    return {
+      success: true,
+      data: comments,
+      meta: {
+        total,
+        page: safePage,
+        limit: safeLimit,
+        totalPages: Math.ceil(total / safeLimit),
+      },
+    };
   }
 }

@@ -28,6 +28,7 @@ export interface Review {
 export interface ReviewComment {
   id: string;
   content: string;
+  status?: 'PENDING' | 'APPROVED' | 'REJECTED';
   createdAt: string;
   parentId?: string | null;
   user: {
@@ -38,6 +39,15 @@ export interface ReviewComment {
   replies?: ReviewComment[];
   _count?: {
     replies: number;
+  };
+  review?: {
+    id: string;
+    title?: string;
+    content?: string;
+    customer?: {
+      id: string;
+      fullName: string;
+    };
   };
 }
 
@@ -148,6 +158,58 @@ export const reviewsApi = {
       return {
         data: Array.isArray(responseData.data) ? responseData.data : [],
         total: responseData.meta?.total ?? Array.isArray(responseData.data) ? responseData.data.length : 0,
+      };
+    }
+    
+    if (Array.isArray(responseData)) {
+      return { data: responseData, total: responseData.length };
+    }
+    
+    return { data: [], total: 0 };
+  },
+
+  // Approve comment (Admin only)
+  approveComment: async (commentId: string): Promise<ReviewComment> => {
+    const response = await apiClient.post<any>(`/reviews/comments/${commentId}/approve`);
+    const responseData = response.data;
+    
+    if (responseData.success && responseData.data) {
+      return responseData.data;
+    }
+    
+    if (responseData.id) {
+      return responseData;
+    }
+    
+    throw new Error('Định dạng phản hồi từ server không hợp lệ');
+  },
+
+  // Reject comment (Admin only)
+  rejectComment: async (commentId: string, reason?: string): Promise<ReviewComment> => {
+    const response = await apiClient.post<any>(`/reviews/comments/${commentId}/reject`, { reason });
+    const responseData = response.data;
+    
+    if (responseData.success && responseData.data) {
+      return responseData.data;
+    }
+    
+    if (responseData.id) {
+      return responseData;
+    }
+    
+    throw new Error('Định dạng phản hồi từ server không hợp lệ');
+  },
+
+  // Get pending comments (Admin only)
+  getPendingComments: async (page = 1, limit = 20): Promise<{ data: ReviewComment[]; total: number; meta?: any }> => {
+    const response = await apiClient.get<any>(`/admin/pending/review-comments?page=${page}&limit=${limit}`);
+    const responseData = response.data;
+    
+    if (responseData.success && responseData.data) {
+      return {
+        data: Array.isArray(responseData.data) ? responseData.data : [],
+        total: responseData.meta?.total ?? Array.isArray(responseData.data) ? responseData.data.length : 0,
+        meta: responseData.meta,
       };
     }
     

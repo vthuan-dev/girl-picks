@@ -12,7 +12,7 @@ interface LatestCommunityPostsProps {
 }
 
 export default function LatestCommunityPosts({ limit = 6 }: LatestCommunityPostsProps) {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const pageSize = 10;
   const [page, setPage] = useState(1);
   const [posts, setPosts] = useState<CommunityPost[]>([]);
@@ -112,28 +112,31 @@ export default function LatestCommunityPosts({ limit = 6 }: LatestCommunityPosts
   return (
     <div className="mb-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
-        <h2 className="text-lg font-bold text-text">Bài viết cộng đồng</h2>
-        <div className="flex items-center gap-3">
-          {isAuthenticated && (
-            <Link
-              href="/community-posts/create"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary to-primary-hover text-white rounded-xl hover:shadow-lg hover:shadow-primary/30 active:scale-95 transition-all duration-200 font-medium cursor-pointer text-sm"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              <span>Đăng bài</span>
-            </Link>
-          )}
-          <Link 
-            href="/community-posts" 
-            className="text-sm text-primary hover:text-primary-hover transition-colors duration-200 cursor-pointer"
+      <div className="flex items-center justify-between gap-3 mb-2">
+        <h2 className="text-lg font-bold text-text whitespace-nowrap">Bài viết cộng đồng</h2>
+        <Link
+          href="/community-posts"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-primary border border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 transition-all duration-200 shadow-sm hover:shadow-md whitespace-nowrap"
+        >
+          <span>Xem tất cả</span>
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
+      </div>
+      {isAuthenticated && user?.role === 'CUSTOMER' && (
+        <div className="mb-4">
+          <Link
+            href="/community-posts/create"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary to-primary-hover text-white rounded-xl hover:shadow-lg hover:shadow-primary/30 active:scale-95 transition-all duration-200 font-medium cursor-pointer text-sm border border-white/10 shadow-primary/30"
           >
-            Xem tất cả
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Đăng bài</span>
           </Link>
         </div>
-      </div>
+      )}
 
       {/* Posts List */}
       <div className="space-y-3">
