@@ -17,8 +17,8 @@ export default function CustomerLayout({
         <CustomerSidebar />
         
         {/* Main Content */}
-        <main className="lg:ml-[260px] min-h-screen">
-          <div className="p-4 sm:p-6 lg:p-8">
+        <main className="lg:ml-[260px] min-h-screen bg-background">
+          <div className="p-6 lg:p-8 max-w-7xl mx-auto">
             {children}
           </div>
         </main>

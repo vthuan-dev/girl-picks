@@ -76,7 +76,7 @@ const nextConfig = {
     NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3001',
   },
   images: {
-    domains: ['res.cloudinary.com', 'images.unsplash.com', 'gaigo1.net', 'gaigu1.net'],
+    domains: ['res.cloudinary.com', 'images.unsplash.com', 'gaigo1.net', 'gaigu1.net', 'upload.wikimedia.org'],
     remotePatterns: [
       {
         protocol: 'https',
@@ -105,6 +105,10 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'upload.wikimedia.org',
       },
     ],
     formats: ['image/avif', 'image/webp'],

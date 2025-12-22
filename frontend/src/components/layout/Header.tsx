@@ -189,11 +189,13 @@ export default function Header() {
           isScrolled 
             ? 'border-secondary/30 shadow-xl shadow-black/30' 
             : 'border-secondary/20 shadow-lg shadow-black/20'
-        }`}
+        } ${isMenuOpen ? 'shadow-2xl' : ''}`}
       >
         <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8">
         {/* Main Header Bar */}
-        <div className="flex items-center justify-between h-14 sm:h-16 lg:h-18 gap-2 sm:gap-4">
+        <div className={`flex items-center justify-between gap-2 sm:gap-4 transition-all duration-300 ${
+          isMenuOpen ? 'h-14' : 'h-14 sm:h-16 lg:h-18'
+        }`}>
           {/* Logo Section */}
           <Link 
             href="/" 
@@ -453,146 +455,173 @@ export default function Header() {
 
         {/* Mobile Search & Menu */}
         {isMenuOpen && (
-          <div className="lg:hidden py-4 border-t border-secondary/20 space-y-4 animate-fadeIn">
-            {/* Mobile Search */}
-            <form onSubmit={handleSearch} role="search" aria-label="Tìm kiếm mobile">
-              <div className="relative group">
-                {/* Glow effect on focus */}
-                <div className="absolute inset-0 bg-primary/10 rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300" />
-                
-                {/* Main search container */}
-                <div className="relative flex items-center bg-background-light/90 backdrop-blur-md border border-secondary/40 rounded-2xl shadow-lg shadow-black/10 focus-within:border-primary/60 focus-within:bg-background-light focus-within:shadow-xl focus-within:shadow-primary/20 transition-all duration-300">
-                  <label htmlFor="mobile-search" className="sr-only">Tìm kiếm</label>
-                  
-                  {/* Search icon on left */}
-                  <div className="pl-4 pr-2 flex-shrink-0">
-                    <svg 
-                      className="w-5 h-5 text-text-muted group-focus-within:text-primary transition-colors duration-200" 
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24" 
-                      aria-hidden="true"
-                    >
-                      <path 
-                        strokeLinecap="round" 
-                        strokeLinejoin="round" 
-                        strokeWidth={2} 
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
+          <>
+            {/* Backdrop Overlay - chỉ che phần dưới header, không che header */}
+            <div 
+              className="fixed top-14 sm:top-16 left-0 right-0 bottom-0 bg-transparent z-[60] lg:hidden"
+              onClick={() => setIsMenuOpen(false)}
+              aria-hidden="true"
+            />
+            
+            {/* Mobile Menu Content */}
+            <div className="lg:hidden border-t border-secondary/20 bg-background animate-slideDown relative z-[70] shadow-2xl">
+              <div className="px-3 sm:px-4 py-5 space-y-5 max-h-[calc(100vh-4rem)] overflow-y-auto bg-background">
+                {/* Mobile Search */}
+                <form onSubmit={handleSearch} role="search" aria-label="Tìm kiếm mobile" className="w-full">
+                  <div className="relative group">
+                    {/* Glow effect on focus */}
+                    <div className="absolute inset-0 bg-primary/10 rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300" />
+                    
+                    {/* Main search container */}
+                    <div className="relative flex items-center bg-background-light/90 backdrop-blur-md border border-secondary/40 rounded-2xl shadow-lg shadow-black/10 focus-within:border-primary/60 focus-within:bg-background-light focus-within:shadow-xl focus-within:shadow-primary/20 transition-all duration-300">
+                      <label htmlFor="mobile-search" className="sr-only">Tìm kiếm</label>
+                      
+                      {/* Search icon on left */}
+                      <div className="pl-4 pr-2 flex-shrink-0">
+                        <svg 
+                          className="w-5 h-5 text-text-muted group-focus-within:text-primary transition-colors duration-200" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24" 
+                          aria-hidden="true"
+                        >
+                          <path 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            strokeWidth={2} 
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
+                          />
+                        </svg>
+                      </div>
+                      
+                      {/* Search input */}
+                      <input
+                        id="mobile-search"
+                        type="search"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Tìm kiếm gái gọi, địa điểm..."
+                        className="flex-1 px-3 py-3.5 bg-transparent text-text placeholder:text-text-muted/60 focus:outline-none text-sm transition-colors"
+                        aria-label="Tìm kiếm gái gọi, địa điểm"
                       />
-                    </svg>
+                      
+                      {/* Search button with icon */}
+                      <button
+                        type="submit"
+                        className={`mr-2 p-3 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background group/btn ${
+                          searchQuery.trim()
+                            ? 'bg-gradient-to-r from-primary via-primary to-primary-hover text-white hover:shadow-xl hover:shadow-primary/40 active:scale-95 cursor-pointer'
+                            : 'bg-secondary/20 text-text-muted/50 cursor-not-allowed opacity-60'
+                        }`}
+                        aria-label="Tìm kiếm"
+                        disabled={!searchQuery.trim()}
+                      >
+                        <svg 
+                          className={`w-5 h-5 transition-transform duration-200 ${
+                            searchQuery.trim() ? 'group-hover/btn:scale-110' : ''
+                          }`}
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                        >
+                          <path 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            strokeWidth={2.5} 
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
+                          />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
-                  
-                  {/* Search input */}
-                  <input
-                    id="mobile-search"
-                    type="search"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Tìm kiếm gái gọi, địa điểm..."
-                    className="flex-1 px-3 py-3 bg-transparent text-text placeholder:text-text-muted/60 focus:outline-none text-sm transition-colors"
-                    aria-label="Tìm kiếm gái gọi, địa điểm"
-                  />
-                  
-                  {/* Search button with icon */}
-                  <button
-                    type="submit"
-                    className={`mr-2 p-3 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background group/btn ${
-                      searchQuery.trim()
-                        ? 'bg-gradient-to-r from-primary via-primary to-primary-hover text-white hover:shadow-xl hover:shadow-primary/40 active:scale-95 cursor-pointer'
-                        : 'bg-secondary/20 text-text-muted/50 cursor-not-allowed opacity-60'
-                    }`}
-                    aria-label="Tìm kiếm"
-                    disabled={!searchQuery.trim()}
-                  >
-                    <svg 
-                      className={`w-5 h-5 transition-transform duration-200 ${
-                        searchQuery.trim() ? 'group-hover/btn:scale-110' : ''
-                      }`}
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
-                      aria-hidden="true"
+                </form>
+
+                {/* Mobile Navigation */}
+                <nav className="flex flex-col gap-2" aria-label="Mobile navigation">
+                  {navItems.map((item, index) => {
+                    const isActive = pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href));
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setIsMenuOpen(false)}
+                        className={`
+                          relative flex items-center gap-3 px-4 py-3.5 rounded-xl text-base font-medium transition-all duration-200 cursor-pointer
+                          ${isActive
+                            ? 'text-primary bg-primary/10 border-2 border-primary/30 shadow-md shadow-primary/10'
+                            : 'text-text hover:text-primary hover:bg-background-light/80 border-2 border-transparent hover:border-secondary/30'
+                          }
+                        `}
+                        style={{ animationDelay: `${index * 50}ms` }}
+                      >
+                        {isActive && (
+                          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r-full" aria-hidden="true" />
+                        )}
+                        <span className="flex-1">{item.label}</span>
+                        {isActive && (
+                          <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </nav>
+
+                {/* Mobile Auth Section */}
+                {isAuthenticated ? (
+                  <div className="pt-4 border-t border-secondary/30 space-y-2.5">
+                    <div className="px-2 pb-2">
+                      <p className="text-xs font-semibold text-text-muted uppercase tracking-wider">Tài khoản</p>
+                    </div>
+                    <Link
+                      href={getRoleDashboardPath()}
+                      onClick={() => setIsMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-base font-medium text-text hover:text-primary hover:bg-background-light/80 border-2 border-transparent hover:border-secondary/30 transition-all duration-200 cursor-pointer"
                     >
-                      <path 
-                        strokeLinecap="round" 
-                        strokeLinejoin="round" 
-                        strokeWidth={2.5} 
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
-                      />
-                    </svg>
-                  </button>
-                </div>
+                      <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                      </svg>
+                      <span>Dashboard</span>
+                    </Link>
+                    <button
+                      onClick={() => {
+                        handleLogout();
+                        setIsMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-base font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 border-2 border-transparent hover:border-red-500/20 transition-all duration-200 cursor-pointer"
+                    >
+                      <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      <span>Đăng xuất</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="pt-4 border-t border-secondary/30 space-y-2.5">
+                    <div className="px-2 pb-2">
+                      <p className="text-xs font-semibold text-text-muted uppercase tracking-wider">Đăng nhập</p>
+                    </div>
+                    <Link
+                      href="/auth/login"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="block px-4 py-3.5 rounded-xl text-base font-medium text-text hover:text-primary hover:bg-background-light/80 border-2 border-transparent hover:border-secondary/30 transition-all duration-200 text-center cursor-pointer"
+                    >
+                      Đăng nhập
+                    </Link>
+                    <Link
+                      href="/auth/register"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="block px-4 py-3.5 rounded-xl text-base font-medium bg-gradient-to-r from-primary to-primary-hover text-white hover:shadow-lg hover:shadow-primary/30 active:scale-95 transition-all text-center cursor-pointer border-2 border-transparent"
+                    >
+                      Đăng ký
+                    </Link>
+                  </div>
+                )}
               </div>
-            </form>
-
-            {/* Mobile Navigation */}
-            <nav className="flex flex-col gap-1.5">
-              {navItems.map((item) => {
-                const isActive = pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href));
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setIsMenuOpen(false)}
-                    className={`
-                      px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer
-                      ${isActive
-                        ? 'text-primary bg-primary/10 border border-primary/20 shadow-sm shadow-primary/10'
-                        : 'text-text hover:text-primary hover:bg-background-light border border-transparent hover:border-secondary/30'
-                      }
-                    `}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </nav>
-
-            {/* Mobile Auth Section */}
-            {isAuthenticated ? (
-              <div className="pt-4 border-t border-secondary/20 space-y-2">
-                <Link
-                  href={getRoleDashboardPath()}
-                  onClick={() => setIsMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-text hover:text-primary hover:bg-background-light border border-transparent hover:border-secondary/30 transition-all duration-200 cursor-pointer"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                  </svg>
-                  Dashboard
-                </Link>
-                <button
-                  onClick={() => {
-                    handleLogout();
-                    setIsMenuOpen(false);
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all duration-200 cursor-pointer"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                  Đăng xuất
-                </button>
-              </div>
-            ) : (
-              <div className="pt-4 border-t border-secondary/20 space-y-2">
-                <Link
-                  href="/auth/login"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="block px-4 py-3 rounded-xl text-sm font-medium text-text hover:text-primary hover:bg-background-light border border-transparent hover:border-secondary/30 transition-all duration-200 text-center cursor-pointer"
-                >
-                  Đăng nhập
-                </Link>
-                <Link
-                  href="/auth/register"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="block px-4 py-3 rounded-xl text-sm font-medium bg-gradient-to-r from-primary to-primary-hover text-white hover:shadow-lg hover:shadow-primary/30 active:scale-95 transition-all text-center cursor-pointer"
-                >
-                  Đăng ký
-                </Link>
-              </div>
-            )}
-          </div>
+            </div>
+          </>
         )}
       </div>
     </header>

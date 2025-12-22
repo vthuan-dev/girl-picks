@@ -17,6 +17,7 @@ export default function ChatSexDetailClient({ id }: ChatSexDetailClientProps) {
   const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showVideo, setShowVideo] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     fetchGirl();
@@ -84,6 +85,13 @@ export default function ChatSexDetailClient({ id }: ChatSexDetailClientProps) {
       }
     }
   }
+  // Filter out obviously invalid/sprite thumbnails from crawler
+  images = images.filter(
+    (url) =>
+      typeof url === 'string' &&
+      url.trim().length > 0 &&
+      !/sprite\.(jpg|jpeg|png)$/i.test(url),
+  );
 
   // Parse videos
   let videos: any[] = [];
@@ -141,6 +149,56 @@ export default function ChatSexDetailClient({ id }: ChatSexDetailClientProps) {
       .trim();
   };
 
+  // Clean instruction: hide any lines containing "ad:@..."
+  const cleanInstruction = (instruction: string) => {
+    if (!instruction) return instruction;
+
+    return instruction
+      .split('\n')
+      .filter((line) => !/ad:@/i.test(line))
+      .join('\n')
+      .trim();
+  };
+
+  // Clean bio/description: remove crawler placeholders like "descriptions off", "selectedDescriptions"
+  const cleanBio = (bio: string) => {
+    if (!bio) return bio;
+
+    let cleaned = bio
+      .replace(/descriptions?\s*off/gi, '')
+      .replace(/selectedDescriptions/gi, '')
+      .trim();
+
+    // If after cleaning it's too short or meaningless, treat as empty
+    if (!cleaned || cleaned.length < 3) {
+      return '';
+    }
+
+    return cleaned;
+  };
+
+  const handleOpenZalo = () => {
+    if (!girl.zalo) return;
+
+    const raw = String(girl.zalo).trim();
+
+    // Nếu đã là link đầy đủ thì dùng luôn
+    if (/^https?:\/\//i.test(raw)) {
+      window.open(raw, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    // Chuẩn hóa ID: bỏ "@" và prefix không cần thiết
+    const cleanedId = raw
+      .replace(/^@/, '')
+      .replace(/^zalo\.me\//i, '')
+      .replace(/^https?:\/\/zalo\.me\//i, '')
+      .trim();
+
+    const url = `https://zalo.me/${cleanedId}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Breadcrumb */}
@@ -181,17 +239,8 @@ export default function ChatSexDetailClient({ id }: ChatSexDetailClientProps) {
 
             {/* Video/Image Section */}
             <div className="col-md-12 pd-0 desk-photo mb-3">
-              <div className="flex gap-2 mb-2">
-                <button
-                  onClick={() => setShowVideo(false)}
-                  className={`px-4 py-2 rounded ${!showVideo
-                    ? 'bg-primary text-white'
-                    : 'bg-background-light text-text-muted hover:bg-secondary/30'
-                    } transition-colors`}
-                >
-                  Click xem ảnh
-                </button>
-                {videos.length > 0 && (
+              {videos.length > 0 && (
+                <div className="flex gap-2 mb-2">
                   <button
                     onClick={() => setShowVideo(true)}
                     className={`px-4 py-2 rounded ${showVideo
@@ -201,8 +250,8 @@ export default function ChatSexDetailClient({ id }: ChatSexDetailClientProps) {
                   >
                     Click xem video
                   </button>
-                )}
-              </div>
+                </div>
+              )}
 
               {/* Main Display Area */}
               <div className="col-md-12 pd-0 desk-video pl-vid">
@@ -228,12 +277,13 @@ export default function ChatSexDetailClient({ id }: ChatSexDetailClientProps) {
                   ) : (
                     <div className="relative w-full h-full">
                       <Image
-                        src={currentImage}
+                        src={imageError ? '/images/placeholder.jpg' : currentImage}
                         alt={girl.name}
                         fill
                         className="object-cover"
                         priority
                         unoptimized
+                        onError={() => setImageError(true)}
                       />
                       {images.length > 1 && (
                         <>
@@ -468,13 +518,15 @@ export default function ChatSexDetailClient({ id }: ChatSexDetailClientProps) {
                   )}
 
                   {/* Hướng dẫn */}
-                  {girl.instruction && (
+                  {girl.instruction && cleanInstruction(girl.instruction) && (
                     <div className="grid grid-cols-4 gap-4 py-2">
                       <div className="col-span-1">
                         <p className="text-text-muted text-sm">Hướng dẫn</p>
                       </div>
                       <div className="col-span-3">
-                        <p className="text-text font-medium">{girl.instruction}</p>
+                        <p className="text-text font-medium">
+                          {cleanInstruction(girl.instruction)}
+                        </p>
                       </div>
                     </div>
                   )}
@@ -483,11 +535,11 @@ export default function ChatSexDetailClient({ id }: ChatSexDetailClientProps) {
             </div>
 
             {/* Description */}
-            {girl.bio && (
+            {girl.bio && cleanBio(girl.bio) && (
               <div className="mt-4 bg-background-light rounded-lg p-6 border border-secondary/30">
                 <h3 className="text-lg font-bold text-text mb-3">Mô tả</h3>
                 <p className="text-text-muted leading-relaxed whitespace-pre-line">
-                  {girl.bio}
+                  {cleanBio(girl.bio)}
                 </p>
               </div>
             )}
@@ -522,30 +574,30 @@ export default function ChatSexDetailClient({ id }: ChatSexDetailClientProps) {
                         d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
                       />
                     </svg>
-                    Gọi ngay
+                    <span className="text-base font-semibold tracking-wide">
+                      {girl.phone}
+                    </span>
                   </a>
-                  <p className="text-sm text-text-muted text-center">
-                    {girl.phone}
-                  </p>
                 </div>
               )}
 
               {/* Zalo */}
               {girl.zalo && (
                 <button
-                  onClick={() => {
-                    window.open(`https://zalo.me/${girl.zalo}`, '_blank');
-                  }}
-                  className="w-full px-6 py-3 bg-blue-500/10 text-blue-400 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-blue-500/20 transition-all border border-blue-500/30"
+                  onClick={handleOpenZalo}
+                  className="w-full px-6 py-3 bg-blue-500/10 text-blue-400 rounded-xl font-semibold flex items-center justify-center hover:bg-blue-500/20 transition-all border border-blue-500/30"
+                  aria-label={`Chat Zalo: ${girl.zalo}`}
                 >
-                  <svg
-                    className="w-5 h-5"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />
-                  </svg>
-                  Chat Zalo
+                  <div className="relative w-10 h-10 flex items-center justify-center">
+                    <Image
+                      src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Icon_of_Zalo.svg/2048px-Icon_of_Zalo.svg.png"
+                      alt="Zalo"
+                      width={40}
+                      height={40}
+                      className="w-full h-full object-contain"
+                      unoptimized
+                    />
+                  </div>
                 </button>
               )}
 
@@ -582,9 +634,14 @@ export default function ChatSexDetailClient({ id }: ChatSexDetailClientProps) {
                     </div>
                   </div>
                 )}
-                <div className="flex items-center justify-between">
-                  <span className="text-text-muted text-sm">Lượt xem</span>
-                  <span className="text-text font-semibold">
+                <div className="flex items-center justify-between rounded-lg bg-background-light/60 px-3 py-2 border border-secondary/30">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-semibold">
+                      👁
+                    </span>
+                    <span className="text-text-muted text-sm">Lượt xem</span>
+                  </div>
+                  <span className="text-text font-semibold tabular-nums">
                     {girl.viewCount.toLocaleString('vi-VN')}
                   </span>
                 </div>

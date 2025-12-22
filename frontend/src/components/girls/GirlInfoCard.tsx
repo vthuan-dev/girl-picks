@@ -204,9 +204,18 @@ export default function GirlInfoCard({ girl, tags }: GirlInfoCardProps) {
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-xs text-text-muted mb-1">{item.label}</div>
-              <div className={`font-semibold ${item.highlight ? 'text-primary text-lg' : 'text-text'}`}>
-                {item.value}
-              </div>
+              {item.label === 'Số điện thoại' && girl.phone ? (
+                <a
+                  href={`tel:${girl.phone}`}
+                  className="font-semibold text-primary text-lg hover:underline cursor-pointer"
+                >
+                  {item.value}
+                </a>
+              ) : (
+                <div className={`font-semibold ${item.highlight ? 'text-primary text-lg' : 'text-text'}`}>
+                  {item.value}
+                </div>
+              )}
             </div>
             {item.copyable && (
               <button

@@ -7,6 +7,15 @@ import { useState } from 'react';
 
 const menuItems = [
   {
+    title: 'Dashboard',
+    href: '/customer',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+      </svg>
+    ),
+  },
+  {
     title: 'Tìm kiếm',
     href: '/search',
     icon: (
@@ -15,7 +24,6 @@ const menuItems = [
       </svg>
     ),
   },
-
   {
     title: 'Yêu thích',
     href: '/favorites',
@@ -52,6 +60,15 @@ const menuItems = [
       </svg>
     ),
   },
+  {
+    title: 'Profile',
+    href: '/customer/profile',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+      </svg>
+    ),
+  },
 ];
 
 export default function CustomerSidebar() {
@@ -85,8 +102,8 @@ export default function CustomerSidebar() {
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-background-light to-background z-40
-          border-r border-secondary/20 shadow-xl shadow-black/10
+          fixed top-0 left-0 h-full w-[260px] bg-background-light z-40
+          border-r border-secondary/30 shadow-2xl
           transform transition-transform duration-300 ease-in-out
           ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
           lg:translate-x-0
@@ -94,63 +111,42 @@ export default function CustomerSidebar() {
       >
         <div className="flex flex-col h-full">
           {/* Logo & Brand */}
-          <div className="p-5 border-b border-secondary/20">
+          <div className="p-6 border-b border-secondary/20">
             <Link href="/" className="flex items-center gap-3 group">
-              <div className="w-11 h-11 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg shadow-primary/30 group-hover:shadow-primary/50 transition-all">
-                <span className="text-white font-bold text-lg">CU</span>
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-md group-hover:shadow-lg transition-all">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
               </div>
               <div>
-                <h1 className="font-bold text-text group-hover:text-primary transition-colors">Customer</h1>
-                <p className="text-xs text-text-muted">Tìm gái gọi</p>
+                <h1 className="font-bold text-lg text-text group-hover:text-primary transition-colors">Cummo</h1>
               </div>
             </Link>
           </div>
 
-          {/* User Profile Card */}
-          <div className="p-4">
-            <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-4 border border-primary/20">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg">
-                  <span className="text-white font-bold text-lg">
-                    {user?.fullName?.charAt(0)?.toUpperCase() || 'N'}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-text truncate">
-                    {user?.fullName || 'Người dùng'}
-                  </p>
-                  <p className="text-xs text-text-muted truncate">
-                    {user?.email || 'email@example.com'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Navigation Menu */}
-          <nav className="flex-1 overflow-y-auto px-3 py-2">
+          <nav className="flex-1 overflow-y-auto px-4 py-4">
             <div className="space-y-1">
               {menuItems.map((item) => {
-                const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
+                const isActive = pathname === item.href || (item.href !== '/customer' && pathname?.startsWith(item.href));
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
                     onClick={() => setIsMobileOpen(false)}
                     className={`
-                      flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
+                      flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group
                       ${
                         isActive
-                          ? 'bg-primary text-white shadow-lg shadow-primary/30'
-                          : 'text-text-muted hover:bg-primary/10 hover:text-primary'
+                          ? 'bg-primary/10 text-primary border-l-2 border-primary'
+                          : 'text-text-muted hover:text-text hover:bg-background border-l-2 border-transparent'
                       }
                     `}
                   >
-                    <span className={isActive ? 'text-white' : ''}>{item.icon}</span>
-                    <span className="font-medium">{item.title}</span>
-                    {isActive && (
-                      <span className="ml-auto w-1.5 h-1.5 rounded-full bg-white"></span>
-                    )}
+                    <span className={`flex-shrink-0 ${isActive ? 'text-primary' : 'text-text-muted group-hover:text-text'}`}>
+                      {item.icon}
+                    </span>
+                    <span className="font-medium text-sm">{item.title}</span>
                   </Link>
                 );
               })}
@@ -159,15 +155,34 @@ export default function CustomerSidebar() {
 
           {/* Bottom Section */}
           <div className="p-4 border-t border-secondary/20 space-y-2">
+            {/* User Info */}
+            <div className="px-3 py-2 mb-2">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center flex-shrink-0">
+                  <span className="text-white font-semibold text-xs">
+                    {user?.fullName?.charAt(0)?.toUpperCase() || 'U'}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-text truncate">
+                    {user?.fullName || 'Người dùng'}
+                  </p>
+                  <p className="text-xs text-text-muted truncate">
+                    {user?.role === 'CUSTOMER' ? 'Khách hàng' : user?.role || 'User'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {/* Đăng xuất */}
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-text-muted hover:bg-red-500/10 hover:text-red-500 transition-all duration-200"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-muted hover:bg-red-500/10 hover:text-red-500 transition-all duration-200 group"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
-              <span className="font-medium">Đăng xuất</span>
+              <span className="font-medium text-sm">Đăng xuất</span>
             </button>
           </div>
         </div>

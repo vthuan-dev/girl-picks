@@ -349,31 +349,31 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
   const displayImages = images.slice(0, 4);
 
   return (
-    <div className="border border-secondary/20 rounded-xl p-3 md:p-4 bg-background-light/60 md:max-w-4xl md:mx-auto">
+    <div className="border border-secondary/30 rounded-xl p-5 bg-background-light hover:border-secondary/40 transition-all">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-3">
-        <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center flex-shrink-0 shadow-md">
           <span className="text-white font-bold text-sm">
             {post.author?.fullName?.charAt(0)?.toUpperCase() || 'N'}
           </span>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-semibold text-text text-sm md:text-base truncate">
+            <span className="font-semibold text-text text-base truncate">
               {post.author?.fullName || 'Ẩn danh'}
             </span>
-            <span className="text-text-muted text-xs md:text-sm">• {formatDate(post.createdAt)}</span>
+            <span className="text-text-muted text-sm">• {formatDate(post.createdAt)}</span>
           </div>
         </div>
       </div>
 
       {/* Title (if exists) */}
       {post.title && (
-        <h3 className="text-text font-semibold text-base md:text-lg mb-2">{post.title}</h3>
+        <h3 className="text-text font-semibold text-lg mb-3">{post.title}</h3>
       )}
 
       {/* Content */}
-      <p className="text-text text-sm md:text-base mb-2 leading-relaxed">{post.content}</p>
+      <p className="text-text text-base mb-3 leading-relaxed whitespace-pre-wrap">{post.content}</p>
 
       {/* Girl Tag */}
       {post.girl && (
@@ -430,7 +430,7 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
       )}
 
       {/* Stats */}
-      <div className="flex items-center gap-5 mt-4 text-base md:text-lg text-text-muted">
+      <div className="flex items-center gap-6 mt-4 pt-4 border-t border-secondary/20">
         <button 
           type="button"
           onClick={(e) => { 
@@ -439,18 +439,18 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
             handleLike(); 
           }}
           disabled={liking}
-          className={`flex items-center gap-1.5 hover:text-primary transition-colors ${liked ? 'text-primary' : ''} ${liking ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all ${liked ? 'text-primary bg-primary/10' : 'text-text-muted hover:text-primary hover:bg-background'} ${liking ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
         >
-          <svg className="w-6 h-6" fill={liked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5" fill={liked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
           </svg>
-          {likesCount}
+          <span className="font-medium text-sm">{likesCount}</span>
         </button>
-        <div className="flex items-center gap-1.5 text-text-muted">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-text-muted">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
           </svg>
-          {commentsCount}
+          <span className="font-medium text-sm">{commentsCount}</span>
         </div>
         <button
           type="button"
@@ -459,10 +459,10 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
             e.preventDefault();
             handleShare();
           }}
-          className="flex items-center gap-1.5 hover:text-primary transition-colors"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-text-muted hover:text-primary hover:bg-background transition-all cursor-pointer"
           title="Chia sẻ"
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
           </svg>
         </button>
@@ -471,9 +471,12 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
       {/* Comments Section */}
       <div className="mt-4 space-y-3 border-t border-secondary/20 pt-4">
         {loadingComments ? (
-          <div className="text-center py-4 text-text-muted text-sm">Đang tải bình luận...</div>
+          <div className="flex items-center justify-center gap-2 py-6 text-text-muted text-sm">
+            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <span>Đang tải bình luận...</span>
+          </div>
         ) : comments.length > 0 ? (
-          <div className="space-y-3 max-h-96 overflow-y-auto">
+          <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
             {comments.map((cmt) => (
               <CommentItem
                 key={cmt.id}
@@ -492,7 +495,7 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
             ))}
           </div>
         ) : (
-          <div className="text-center py-2 text-text-muted text-sm">Chưa có bình luận nào</div>
+          <div className="text-center py-4 text-text-muted text-sm">Chưa có bình luận nào</div>
         )}
 
         {/* Comment Input */}
@@ -503,20 +506,27 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               placeholder="Viết bình luận..."
-              className="flex-1 px-3 py-2 bg-background border border-secondary/30 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-primary/50"
+              className="flex-1 px-4 py-2.5 bg-background border border-secondary/30 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               onKeyDown={(e) => e.key === 'Enter' && handleComment()}
             />
             <button
               onClick={() => handleComment()}
               disabled={submitting || !comment.trim()}
-              className="px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors font-medium"
+              className="px-5 py-2.5 bg-primary text-white text-sm rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium shadow-sm hover:shadow-md"
             >
-              {submitting ? '...' : 'Gửi'}
+              {submitting ? (
+                <span className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Gửi...
+                </span>
+              ) : (
+                'Gửi'
+              )}
             </button>
           </div>
         ) : (
           <div className="pt-2">
-            <Link href="/auth/login" className="text-sm text-primary hover:underline">
+            <Link href="/auth/login" className="text-sm text-primary hover:text-primary/80 hover:underline transition-colors font-medium">
               Đăng nhập để bình luận
             </Link>
           </div>
