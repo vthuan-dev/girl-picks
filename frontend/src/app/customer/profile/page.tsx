@@ -118,19 +118,19 @@ export default function CustomerProfilePage() {
           <div className="bg-background-light rounded-2xl border border-secondary/30 p-6 text-center shadow-lg shadow-black/10">
             <div className="relative inline-block mb-4">
               <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center mx-auto shadow-lg">
-                <span className="text-3xl font-bold text-white">
-                  {user?.fullName?.charAt(0)?.toUpperCase() || 'U'}
-                </span>
+                  <span className="text-3xl font-bold text-white">
+                    {user?.fullName?.charAt(0)?.toUpperCase() || 'U'}
+                  </span>
+                </div>
               </div>
-            </div>
-            <h2 className="text-xl font-bold text-text mb-1">{user?.fullName || 'Người dùng'}</h2>
+              <h2 className="text-xl font-bold text-text mb-1">{user?.fullName || 'Người dùng'}</h2>
             <p className="text-text-muted text-sm mb-3">{user?.email}</p>
-
+              
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full">
               <span className="w-2.5 h-2.5 rounded-full bg-primary" />
               <span className="text-sm font-semibold text-primary">
-                {user?.role === UserRole.STAFF_UPLOAD ? 'Nhân viên' : user?.role === UserRole.GIRL ? 'Gái gọi' : 'Khách hàng'}
-              </span>
+                  {user?.role === UserRole.STAFF_UPLOAD ? 'Nhân viên' : user?.role === UserRole.GIRL ? 'Gái gọi' : 'Khách hàng'}
+                </span>
             </div>
           </div>
 
@@ -148,57 +148,57 @@ export default function CustomerProfilePage() {
                 {isEditing ? 'Hủy' : 'Chỉnh sửa'}
               </button>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div className="space-y-2">
                 <label className="block text-xs font-semibold text-text-muted uppercase">Họ tên</label>
-                {isEditing ? (
-                  <input
-                    type="text"
+                  {isEditing ? (
+                      <input 
+                        type="text" 
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     className="w-full px-4 py-2.5 bg-background border border-secondary/40 rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                  />
-                ) : (
-                  <p className="text-text font-medium text-base">{user?.fullName || 'Chưa cập nhật'}</p>
-                )}
-              </div>
+                      />
+                  ) : (
+                      <p className="text-text font-medium text-base">{user?.fullName || 'Chưa cập nhật'}</p>
+                  )}
+                </div>
               <div className="space-y-2">
                 <label className="block text-xs font-semibold text-text-muted uppercase">Email</label>
-                <p className="text-text text-base">{user?.email || 'N/A'}</p>
-              </div>
-            </div>
+                    <p className="text-text text-base">{user?.email || 'N/A'}</p>
+                  </div>
+                </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div className="space-y-2">
                 <label className="block text-xs font-semibold text-text-muted uppercase">Số điện thoại</label>
-                {isEditing ? (
-                  <input
-                    type="tel"
+                  {isEditing ? (
+                      <input 
+                        type="tel" 
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     className="w-full px-4 py-2.5 bg-background border border-secondary/40 rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                  />
-                ) : (
-                  <p className="text-text text-base">{user?.phone || 'Chưa cập nhật'}</p>
-                )}
-              </div>
-              {isGirl && (
-                <div className="space-y-2">
-                  <label className="block text-xs font-semibold text-text-muted uppercase">Giá dịch vụ</label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      placeholder="300K/giờ"
-                      className="w-full px-4 py-2.5 bg-background border border-secondary/40 rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                    />
+                      />
                   ) : (
-                    <p className="text-primary font-semibold text-base">300K/giờ</p>
+                      <p className="text-text text-base">{user?.phone || 'Chưa cập nhật'}</p>
                   )}
                 </div>
+                {isGirl && (
+                <div className="space-y-2">
+                  <label className="block text-xs font-semibold text-text-muted uppercase">Giá dịch vụ</label>
+                      {isEditing ? (
+                          <input 
+                            type="text" 
+                            placeholder="300K/giờ" 
+                      className="w-full px-4 py-2.5 bg-background border border-secondary/40 rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                          />
+                      ) : (
+                          <p className="text-primary font-semibold text-base">300K/giờ</p>
+                      )}
+                    </div>
               )}
-            </div>
+              </div>
 
-            {isEditing && (
+              {isEditing && (
               <div className="flex flex-col sm:flex-row gap-3 pt-4">
                 <button
                   onClick={handleSave}
@@ -206,13 +206,13 @@ export default function CustomerProfilePage() {
                   className="flex-1 px-4 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-semibold"
                 >
                   {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
-                </button>
-                <button
-                  onClick={() => setIsEditing(false)}
+                  </button>
+                  <button 
+                    onClick={() => setIsEditing(false)} 
                   className="px-4 py-2.5 bg-background border border-secondary/40 rounded-lg text-text hover:bg-background-light transition-all font-medium"
-                >
-                  Hủy
-                </button>
+                  >
+                    Hủy
+                  </button>
               </div>
             )}
           </div>

@@ -26,11 +26,8 @@ export default function CommunityPostsPage() {
     setIsLoading(true);
     try {
       const response = await communityPostsApi.getMyPosts(statusFilter);
-      // Phòng trường hợp API trả thêm bài khác, lọc lại theo author id
-      const mineOnly = Array.isArray(response)
-        ? response.filter((p) => p.author?.id === user.id)
-        : [];
-      setPosts(mineOnly);
+      // API /community-posts/me đã trả sẵn bài của chính user
+      setPosts(Array.isArray(response) ? response : []);
     } catch (error: any) {
       toast.error('Không thể tải danh sách bài viết của bạn');
       setPosts([]);
