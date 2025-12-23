@@ -98,10 +98,11 @@ export default function BottomNavigation() {
                 <div className="max-w-7xl mx-auto px-2">
                     <div className="flex items-center justify-around h-20">
                         {navItems.map((item) => {
-                            const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
+                            const isButton = 'isButton' in item && item.isButton;
+                            const isActive = !isButton && (pathname === item.href || pathname?.startsWith(item.href + '/'));
 
                             // Render button for CSKH, link for others
-                            if (item.isButton) {
+                            if (isButton) {
                                 return (
                                     <button
                                         key={item.label}
