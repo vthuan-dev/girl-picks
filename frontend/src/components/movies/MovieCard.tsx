@@ -27,16 +27,16 @@ export default function MovieCard({ movie }: MovieCardProps) {
         <div className="relative w-full aspect-video overflow-hidden bg-secondary/20">
           <Image
             src={thumbnailUrl}
-            alt={movie.title}
+            alt={movie.title || 'Phim'}
             fill
             className="object-cover group-hover:scale-110 transition-transform duration-500"
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
             unoptimized
           />
-          
+
           {/* Gradient Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          
+
           {/* Play Button Overlay */}
           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
             <div className="w-16 h-16 bg-primary/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-xl">
@@ -67,14 +67,14 @@ export default function MovieCard({ movie }: MovieCardProps) {
             </div>
           )}
         </div>
-        
+
         {/* Card Footer - Information */}
         <div className="p-3 sm:p-4 bg-background-light">
           {/* Title */}
           <h3 className="text-sm sm:text-base font-bold text-text group-hover:text-primary transition-colors line-clamp-2 mb-2 min-h-[3rem]">
             {movie.title}
           </h3>
-          
+
           {/* Category & Info Row */}
           <div className="flex items-center justify-between gap-2 pt-2 border-t border-secondary/20">
             {movie.category && (
@@ -84,7 +84,7 @@ export default function MovieCard({ movie }: MovieCardProps) {
                 </span>
               </div>
             )}
-            
+
             {movie.rating && (
               <div className="flex items-center gap-1">
                 <span className="text-yellow-400 text-xs">★</span>

@@ -20,23 +20,23 @@ export default function RelatedGirls({ currentGirlId, districtId }: RelatedGirls
       try {
         setLoading(true);
         console.log('[RelatedGirls] Fetching with districtId:', districtId, 'currentGirlId:', currentGirlId);
-        
+
         const response = await girlsApi.getGirls({
           limit: 10,
           ...(districtId && { districtId }),
         });
-        
+
         console.log('[RelatedGirls] Full response:', response);
-        
+
         // API returns PaginatedResponse<Girl> = { data: Girl[], meta: {...} }
         const girlsList: Girl[] = response?.data || [];
-        
+
         console.log('[RelatedGirls] Extracted girls list:', girlsList.length, 'girls');
-        
+
         // Filter out current girl
         const relatedGirls = girlsList.filter((girl: Girl) => girl && girl.id && girl.id !== currentGirlId);
         console.log('[RelatedGirls] Filtered related girls:', relatedGirls.length);
-        
+
         setGirls(relatedGirls.slice(0, 8)); // Show max 8
       } catch (error) {
         console.error('Failed to fetch related girls:', error);
@@ -168,12 +168,12 @@ export default function RelatedGirls({ currentGirlId, districtId }: RelatedGirls
   }
 
   return (
-  <div className="bg-background-light rounded-2xl p-4 sm:p-6 border border-secondary/30 shadow-lg">
+    <div className="bg-background-light rounded-2xl p-4 sm:p-6 border border-secondary/30 shadow-lg">
       <h2 className="text-xl font-bold text-text mb-4 flex items-center gap-2">
         <div className="w-1 h-6 bg-primary rounded-full"></div>
         Gái gọi liên quan
       </h2>
-      
+
       {/* Grid layout: gái liên quan sắp xếp từ trái sang phải */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
         {girls.map((girl) => {
@@ -193,7 +193,7 @@ export default function RelatedGirls({ currentGirlId, districtId }: RelatedGirls
             }
             return 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=600&fit=crop';
           })();
-          
+
           return (
             <Link
               key={girl.id}
@@ -204,7 +204,7 @@ export default function RelatedGirls({ currentGirlId, districtId }: RelatedGirls
               <div className="relative w-full h-40 sm:h-44 rounded-t-xl overflow-hidden bg-secondary/20">
                 <Image
                   src={resolvedImage}
-                  alt={girl.fullName}
+                  alt={girl.fullName || 'Gái gọi'}
                   fill
                   className="object-cover group-hover:scale-110 transition-transform duration-300"
                   sizes="96px"
@@ -224,7 +224,7 @@ export default function RelatedGirls({ currentGirlId, districtId }: RelatedGirls
                 <h3 className="font-semibold text-text group-hover:text-primary transition-colors line-clamp-2 mb-1 text-xs leading-tight sm:text-sm">
                   {girl.fullName}
                 </h3>
-                
+
                 {/* Location */}
                 {girl.district && (
                   <div className="flex items-center gap-1 text-xs text-text-muted mb-2">
@@ -258,20 +258,19 @@ export default function RelatedGirls({ currentGirlId, districtId }: RelatedGirls
                         const filled = i < Math.floor(rating);
                         const halfFilled = i === Math.floor(rating) && rating % 1 >= 0.5;
                         return (
-                        <svg
-                          key={i}
-                          className={`w-3 h-3 ${
-                              filled
+                          <svg
+                            key={i}
+                            className={`w-3 h-3 ${filled
                                 ? 'text-yellow-400 fill-current'
                                 : halfFilled
-                                ? 'text-yellow-400 fill-current opacity-50'
-                              : 'text-secondary/30'
-                          }`}
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
+                                  ? 'text-yellow-400 fill-current opacity-50'
+                                  : 'text-secondary/30'
+                              }`}
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
                         );
                       })}
                     </div>

@@ -79,8 +79,8 @@ export default function LatestPosts() {
           <div className="w-1 h-5 bg-primary rounded-full"></div>
           <h2 className="text-lg font-bold text-text">Bài viết mới nhất</h2>
         </div>
-        <Link 
-          href="/posts" 
+        <Link
+          href="/posts"
           className="text-sm text-primary hover:text-primary-hover transition-colors flex items-center gap-1"
         >
           Xem tất cả
@@ -89,7 +89,7 @@ export default function LatestPosts() {
           </svg>
         </Link>
       </div>
-      
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {posts.map((post) => (
           <PostCard key={post.id} post={post} />
@@ -115,10 +115,10 @@ function createSlug(title: string): string {
 
 function PostCard({ post }: { post: Post }) {
   const imageUrl = post.images?.[0] || post.girl?.images?.[0] || '/placeholder-post.jpg';
-  const girlUrl = post.girl?.slug 
+  const girlUrl = post.girl?.slug
     ? `/girls/${post.girl.id}/${post.girl.slug}`
     : `/girls/${post.girl?.id}`;
-  
+
   // Create SEO-friendly URL
   const postSlug = createSlug(post.title);
   const postUrl = `/posts/${post.id}/${postSlug}`;
@@ -129,7 +129,7 @@ function PostCard({ post }: { post: Post }) {
       <Link href={postUrl} className="block relative aspect-video overflow-hidden">
         <Image
           src={imageUrl}
-          alt={post.title}
+          alt={post.title || 'Bài viết'}
           fill
           className="object-cover group-hover:scale-105 transition-transform duration-300"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
@@ -137,7 +137,7 @@ function PostCard({ post }: { post: Post }) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
       </Link>
-      
+
       {/* Content */}
       <div className="p-4">
         {/* Title */}
@@ -146,7 +146,7 @@ function PostCard({ post }: { post: Post }) {
             {post.title}
           </h3>
         </Link>
-        
+
         {/* Author/Girl Info */}
         <div className="flex items-center gap-2 mb-3">
           {post.author ? (
@@ -155,7 +155,7 @@ function PostCard({ post }: { post: Post }) {
                 {post.author.avatarUrl ? (
                   <Image
                     src={post.author.avatarUrl}
-                    alt={post.author.fullName}
+                    alt={post.author.fullName || 'Tác giả'}
                     width={28}
                     height={28}
                     className="object-cover w-full h-full"
@@ -184,7 +184,7 @@ function PostCard({ post }: { post: Post }) {
                 {post.girl.images?.[0] && (
                   <Image
                     src={post.girl.images[0]}
-                    alt={post.girl.name}
+                    alt={post.girl.name || 'Gái gọi'}
                     width={28}
                     height={28}
                     className="object-cover w-full h-full"
@@ -198,7 +198,7 @@ function PostCard({ post }: { post: Post }) {
             </Link>
           ) : null}
         </div>
-        
+
         {/* Stats */}
         <div className="flex items-center gap-3 text-xs text-text-muted">
           {(post.viewCount !== undefined || post.viewCount === 0) && (
