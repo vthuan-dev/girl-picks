@@ -41,6 +41,10 @@ import { join } from 'path';
     ServeStaticModule.forRoot(
       {
         rootPath: join(process.cwd(), 'uploads'),
+        serveRoot: '/public/uploads',
+      },
+      {
+        rootPath: join(process.cwd(), 'uploads'),
         serveRoot: '/uploads',
       }
     ),
