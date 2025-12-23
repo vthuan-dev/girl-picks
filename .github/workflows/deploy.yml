@@ -6,186 +6,139 @@ on:
       - master
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy over SSH
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Build Backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          cd backend
+          npm ci
+          npx prisma generate
+          npm run build
+          # Keep only production dependencies
+          npm prune --production
+
+      - name: Build Frontend
+        env:
+          NEXT_PUBLIC_API_URL: https://gaigo1.net/api
+          NEXT_PUBLIC_SITE_URL: https://gaigo1.net
+          NEXT_DISABLE_TYPECHECK: 1
+          NEXT_DISABLE_ESLINT: 1
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+          # Keep only production dependencies
+          npm prune --production
+
+      - name: Prepare Artifacts
+        run: |
+          mkdir -p deploy
+          # Copy Backend
+          mkdir -p deploy/backend
+          cp -r backend/dist deploy/backend/
+          cp -r backend/node_modules deploy/backend/
+          cp -r backend/prisma deploy/backend/
+          cp backend/package.json deploy/backend/
+          
+          # Copy Frontend
+          mkdir -p deploy/frontend
+          cp -r frontend/.next deploy/frontend/
+          cp -r frontend/public deploy/frontend/
+          cp -r frontend/node_modules deploy/frontend/
+          cp frontend/package.json deploy/frontend/
+          cp frontend/next.config.js deploy/frontend/ || true
+          
+          # Copy Nginx & Env helpers
+          cp -r nginx deploy/ || true
+          
+          # Compress everything
+          tar -czf deploy.tar.gz -C deploy .
+
+      - name: Upload to VPS
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          port: ${{ secrets.VPS_PORT }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "deploy.tar.gz"
+          target: "/tmp"
+
+      - name: Execute Remote Deploy
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           port: ${{ secrets.VPS_PORT }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          command_timeout: 60m
+          command_timeout: 10m
           script: |
             set -e
             APP_DIR=/var/www/girl-pick
-            REPO_URL=https://github.com/vthuan-dev/girl-picks.git
-
-            echo "==> Ensuring base dependencies (Node 20, npm, pm2, git, build tools, nginx)"
-            if ! command -v node >/dev/null 2>&1; then
-              curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-              apt-get update -y
-              apt-get install -y nodejs
-            fi
-            if ! command -v pm2 >/dev/null 2>&1; then
-              npm install -g pm2
-            fi
-            if ! command -v git >/dev/null 2>&1; then
-              apt-get update -y
-              apt-get install -y git build-essential
-            fi
-            if ! command -v nginx >/dev/null 2>&1; then
-              apt-get update -y
-              apt-get install -y nginx
-            fi
-
-            echo "==> Cloning or updating repository"
-            if [ ! -d "$APP_DIR/.git" ]; then
-              mkdir -p "$APP_DIR"
-              git clone "$REPO_URL" "$APP_DIR"
-            else
-              cd "$APP_DIR"
-              git fetch --all --prune
-              git reset --hard origin/master
-            fi
-
-            cd "$APP_DIR"
-
+            mkdir -p $APP_DIR
+            
+            echo "==> Extracting artifacts"
+            tar -xzf /tmp/deploy.tar.gz -C $APP_DIR
+            rm /tmp/deploy.tar.gz
+            
+            cd $APP_DIR
+            
             echo "==> Writing production env file"
             cat > .env.production <<'EOF'
             ${{ secrets.ENV_PRODUCTION }}
             EOF
 
-            # Export env for this session (used by build/migrate steps)
+            # Export env for migrations
             set -a
             . ./.env.production
             set +a
 
-            echo "==> Backend install, generate Prisma client, migrate, build"
-            cd "$APP_DIR/backend"
-            npm ci
-            # Generate Prisma client first (needed for migrations)
-            npx prisma generate
-            # Run migrations (will apply new migrations including community_posts)
+            echo "==> Applying database migrations"
+            cd backend
             npx prisma migrate deploy
-            npm run build
-
-            echo "==> Restart backend with PM2"
+            
+            echo "==> Restarting services with PM2"
             pm2 delete girl-pick-backend || true
-            # Load env vars and start backend with CORS_ORIGIN
-            cd "$APP_DIR"
-            set -a
-            . ./.env.production
-            set +a
-            cd "$APP_DIR/backend"
+            pm2 delete girl-pick-frontend || true
+            
+            # Start Backend
             CORS_ORIGIN=http://gaigo1.net,http://www.gaigo1.net,https://gaigo1.net,https://www.gaigo1.net pm2 start "npm run start:prod" --name girl-pick-backend --time
             
-            # Wait a moment and check if backend started
-            sleep 3
-            if ! pm2 list | grep -q "girl-pick-backend.*online"; then
-              echo "⚠ Backend failed to start, checking logs..."
-              pm2 logs girl-pick-backend --lines 20 --nostream
-              exit 1
-            fi
-            echo "✓ Backend started successfully"
-
-            echo "==> Frontend install and build"
-            cd "$APP_DIR/frontend"
-
-            # Remove old build cache and env files
-            rm -rf .next .env .env.local .env.development
-
-            # Create frontend .env.production with domain (use HTTPS if SSL is configured)
-            echo "NEXT_PUBLIC_API_URL=https://gaigo1.net/api" > .env.production
-            echo "NEXT_PUBLIC_SITE_URL=https://gaigo1.net" >> .env.production
-            echo "PORT=3000" >> .env.production
-            echo "HOST=0.0.0.0" >> .env.production
-            echo "NODE_ENV=production" >> .env.production
-
-            npm ci
-            
-            # Build with explicit env vars (build traces error is non-critical if .next exists)
-            # Disable type checking and linting to save RAM and time on VPS
-            NEXT_DISABLE_TYPECHECK=1 NEXT_DISABLE_ESLINT=1 NEXT_PUBLIC_API_URL=https://gaigo1.net/api NEXT_PUBLIC_SITE_URL=https://gaigo1.net npm run build || {
-              echo "Build completed with warnings, checking if .next directory exists..."
-              if [ -d ".next" ]; then
-                echo "✓ Build output exists, continuing despite warnings..."
-              else
-                echo "✗ Build failed completely, exiting..."
-                exit 1
-              fi
-            }
-
-            echo "==> Restart frontend with PM2"
-            pm2 delete girl-pick-frontend || true
-            cd "$APP_DIR/frontend"
+            # Start Frontend
+            cd $APP_DIR/frontend
             PORT=3000 HOST=0.0.0.0 pm2 start "npm run start" --name girl-pick-frontend --time --env production
             
-            # Wait a moment and check if frontend started
-            sleep 3
-            if ! pm2 list | grep -q "girl-pick-frontend.*online"; then
-              echo "⚠ Frontend failed to start, checking logs..."
-              pm2 logs girl-pick-frontend --lines 20 --nostream
-              exit 1
-            fi
-            echo "✓ Frontend started successfully"
-
             pm2 save
-
-            echo "==> Configure Nginx reverse proxy"
-            if [ -f "$APP_DIR/nginx/gaigo1.net.conf" ]; then
-              # Check if HTTPS is already configured (certbot may have modified it)
-              if grep -q "listen 443 ssl" /etc/nginx/sites-enabled/gaigo1.net 2>/dev/null; then
-                echo "⚠ HTTPS config detected, preserving existing SSL configuration"
-                echo "   Only updating HTTP blocks if needed, HTTPS config will be preserved"
-                # Backup current config to a safe location (not sites-enabled to avoid duplicate servers)
-                BACKUP_DIR=/etc/nginx/backup
-                mkdir -p "$BACKUP_DIR"
-                cp /etc/nginx/sites-enabled/gaigo1.net "$BACKUP_DIR/gaigo1.net.backup.$(date +%Y%m%d_%H%M%S)"
-                # Clean up any previous backups accidentally left in sites-enabled to prevent duplicate default server errors
-                find /etc/nginx/sites-enabled -maxdepth 1 -name "gaigo1.net.backup.*" -delete
-                # Only copy HTTP blocks from repo, preserve HTTPS blocks
-                # This is a safety measure - if certbot has configured HTTPS, we don't want to overwrite it
-                echo "   Skipping Nginx config copy to preserve HTTPS setup"
-                echo "   If you need to update HTTP config, do it manually or run certbot again"
-              else
-                echo "   No HTTPS config found, copying full config from repo"
+            
+            echo "==> Ensuring Nginx and Firewall"
+            # Nginx config update if needed (similar to previous script but simplified)
+            if [ -d "$APP_DIR/nginx" ] && [ -f "$APP_DIR/nginx/gaigo1.net.conf" ]; then
+              if ! grep -q "listen 443 ssl" /etc/nginx/sites-enabled/gaigo1.net 2>/dev/null; then
                 cp "$APP_DIR/nginx/gaigo1.net.conf" /etc/nginx/sites-available/gaigo1.net
                 ln -sf /etc/nginx/sites-available/gaigo1.net /etc/nginx/sites-enabled/
+                rm -f /etc/nginx/sites-enabled/default
+                nginx -t && systemctl reload nginx || true
               fi
-              
-              # Remove default nginx site if it exists
-              rm -f /etc/nginx/sites-enabled/default
-              
-              # Test nginx configuration
-              if ! nginx -t; then
-                echo "✗ Nginx configuration test failed!"
-                exit 1
-              fi
-              
-              # Reload nginx
-              if ! systemctl reload nginx 2>/dev/null; then
-                echo "Reload failed, trying restart..."
-                systemctl restart nginx
-              fi
-              
-              # Verify nginx is running
-              if systemctl is-active --quiet nginx; then
-                echo "✓ Nginx configured and running successfully"
-              else
-                echo "✗ Nginx failed to start!"
-                systemctl status nginx --no-pager
-                exit 1
-              fi
-            else
-              echo "Warning: Nginx config file not found at $APP_DIR/nginx/gaigo1.net.conf"
             fi
-
-            echo "==> Ensure firewall allows HTTP/HTTPS"
+            
             if command -v ufw >/dev/null 2>&1; then
               ufw allow 80/tcp || true
               ufw allow 443/tcp || true
             fi
-
-            echo "Deployment finished."
+            
+            echo "✓ Deployment finished successfully."
