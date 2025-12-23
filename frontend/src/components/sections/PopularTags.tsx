@@ -79,9 +79,9 @@ export default function PopularTags({
 
   return (
     <aside className="w-full lg:w-64 flex-shrink-0">
-      <div className="bg-background-light rounded-xl border border-secondary/30 p-4 lg:p-5 sticky top-20 shadow-lg shadow-black/10">
-        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-secondary/30">
-          <div className="w-1 h-6 bg-primary rounded-full"></div>
+      <div className="bg-gradient-to-br from-background-light/90 via-background/90 to-background-light/80 rounded-2xl border border-secondary/20 p-4 lg:p-5 sticky top-20 shadow-xl shadow-black/20 backdrop-blur">
+        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-secondary/20">
+          <div className="w-2 h-6 bg-gradient-to-b from-primary to-accent rounded-full shadow-primary/30 shadow-sm"></div>
           <h2 className="text-lg font-bold text-text">
             Tags phổ biến
           </h2>
@@ -123,18 +123,18 @@ export default function PopularTags({
               key={index}
               onClick={() => handleTagClick(tag.name)}
               className={`
-                group relative w-full flex items-center justify-between px-3 py-2.5 rounded-lg
-                transition-all duration-300 text-left cursor-pointer overflow-hidden
+                group relative w-full flex items-center justify-between px-3 py-2.5 rounded-xl
+                transition-all duration-200 text-left cursor-pointer overflow-hidden
                 ${
                   selectedTag === tag.name
-                    ? 'bg-gradient-to-r from-primary/20 to-primary/10 text-primary border-2 border-primary/60 shadow-lg shadow-primary/20 transform scale-[1.02]'
-                    : 'bg-background hover:bg-background-light border border-secondary/20 hover:border-primary/40 text-text-muted hover:text-text hover:shadow-md hover:shadow-primary/5'
+                    ? 'bg-gradient-to-r from-primary/20 via-primary/15 to-primary/5 text-primary border border-primary/50 shadow-lg shadow-primary/20'
+                    : 'bg-background hover:bg-background-light/80 border border-secondary/20 hover:border-primary/40 text-text-muted hover:text-text hover:shadow-md hover:shadow-primary/10'
                 }
               `}
             >
               {/* Gradient overlay on hover */}
               {!selectedTag || selectedTag !== tag.name ? (
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/0 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/0 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
               ) : null}
               
               <div className="relative flex items-center gap-2.5 flex-1 min-w-0">
@@ -143,10 +143,10 @@ export default function PopularTags({
               </div>
               
               <span className={`
-                relative text-xs font-bold ml-2 flex-shrink-0 px-2 py-0.5 rounded-md transition-all duration-300
+                relative text-xs font-semibold ml-2 flex-shrink-0 px-2.5 py-1 rounded-full transition-all duration-200
                 ${
                   selectedTag === tag.name
-                    ? 'bg-primary/30 text-primary'
+                    ? 'bg-primary text-white shadow-sm shadow-primary/30'
                     : 'bg-secondary/20 text-text-muted group-hover:bg-primary/10 group-hover:text-primary'
                 }
               `}>
