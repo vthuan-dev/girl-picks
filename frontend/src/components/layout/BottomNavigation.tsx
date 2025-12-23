@@ -11,10 +11,11 @@ export default function BottomNavigation() {
     const { user } = useAuthStore();
     const [isCSKHPopupOpen, setIsCSKHPopupOpen] = useState(false);
 
-    const navItems = [
+    const baseNavItems = [
         {
             href: user ? '/' : '/auth/login',
             label: user ? 'Trang chủ' : 'Đăng ký',
+            key: 'home',
             icon: (
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     {user ? (
@@ -28,6 +29,7 @@ export default function BottomNavigation() {
         {
             href: '/girls',
             label: 'Gái gọi',
+            key: 'girls',
             icon: (
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -37,6 +39,7 @@ export default function BottomNavigation() {
         {
             href: '/phim-sex',
             label: 'Phim sex',
+            key: 'phim-sex',
             icon: (
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -46,24 +49,48 @@ export default function BottomNavigation() {
         {
             href: '/chat-sex',
             label: 'Chat sex',
+            key: 'chat-sex',
             icon: (
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
             ),
         },
-        {
-            href: '/support',
-            label: 'CSKH',
-            isButton: true, // Mark this as a button instead of link
-            onClick: () => setIsCSKHPopupOpen(true),
-            icon: (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-            ),
-        },
     ];
+
+    const anhSexItem = {
+        href: '/anh-sex',
+        label: 'Ảnh sex',
+        key: 'anh-sex',
+        icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+        ),
+    };
+
+    const supportItem = {
+        href: '/support',
+        label: 'CSKH',
+        isButton: true, // Mark this as a button instead of link
+        onClick: () => setIsCSKHPopupOpen(true),
+        icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+        ),
+    };
+
+    const replaceableHrefs = baseNavItems.map((item) => item.href);
+    const isReplaceableActive = replaceableHrefs.some((href) => pathname === href || pathname?.startsWith(href + '/'));
+
+    const navItems = (() => {
+        if (isReplaceableActive) {
+            const filtered = baseNavItems.filter((item) => !(pathname === item.href || pathname?.startsWith(item.href + '/')));
+            return [...filtered, anhSexItem, supportItem];
+        }
+        return [...baseNavItems, anhSexItem, supportItem];
+    })();
 
     return (
         <>

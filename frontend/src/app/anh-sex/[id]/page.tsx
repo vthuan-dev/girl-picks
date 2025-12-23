@@ -34,8 +34,12 @@ export default function AlbumDetailPage() {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gaigo1.net';
 
   const images = album?.images || [];
+  const [isLightboxVisible, setIsLightboxVisible] = useState(false);
 
-  const closeLightbox = () => setLightboxIndex(null);
+  const closeLightbox = () => {
+    setIsLightboxVisible(false);
+    setTimeout(() => setLightboxIndex(null), 180);
+  };
   const showPrev = () => {
     if (lightboxIndex === null) return;
     setLightboxIndex((prev) => (prev! - 1 + images.length) % images.length);
@@ -66,10 +70,10 @@ export default function AlbumDetailPage() {
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="bg-background-light border border-secondary/30 rounded-lg overflow-hidden animate-pulse">
-              <div className="w-full aspect-[4/5] bg-secondary/30"></div>
+            <div key={i} className="bg-background-light border border-secondary/20 rounded-md overflow-hidden animate-pulse">
+              <div className="w-full aspect-square bg-secondary/30"></div>
             </div>
           ))}
         </div>
@@ -83,12 +87,15 @@ export default function AlbumDetailPage() {
             <p className="text-xs text-text-muted">{images.length} ảnh</p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
             {images.map((img, idx) => (
               <button
                 key={img.id}
-                onClick={() => setLightboxIndex(idx)}
-                className="group bg-background-light border border-secondary/30 rounded-lg overflow-hidden hover:border-primary/60 hover:shadow-lg hover:shadow-primary/10 transition-all"
+                onClick={() => {
+                  setLightboxIndex(idx);
+                  setIsLightboxVisible(true);
+                }}
+                className="group bg-background-light border border-secondary/20 rounded-md overflow-hidden hover:border-primary/50 hover:shadow-md hover:shadow-primary/10 transition-all"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={img.url} alt={img.caption || album.title} className="w-full h-full object-cover" />
@@ -99,7 +106,7 @@ export default function AlbumDetailPage() {
       )}
 
       {lightboxIndex !== null && images[lightboxIndex] && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center">
+        <div className={`fixed inset-0 z-50 bg-black/80 flex items-center justify-center transition-opacity duration-200 ${isLightboxVisible ? 'opacity-100' : 'opacity-0'}`}>
           <button
             onClick={closeLightbox}
             className="absolute top-4 right-4 text-white text-2xl px-3 py-2 bg-black/40 rounded-full hover:bg-black/60"
@@ -112,7 +119,7 @@ export default function AlbumDetailPage() {
           >
             ‹
           </button>
-          <div className="max-w-5xl max-h-[80vh] mx-4">
+          <div className={`max-w-5xl max-h-[80vh] mx-4 transform transition-transform duration-200 ${isLightboxVisible ? 'scale-100' : 'scale-95'}`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={images[lightboxIndex].url}

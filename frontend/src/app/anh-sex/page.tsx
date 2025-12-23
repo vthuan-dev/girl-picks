@@ -25,7 +25,8 @@ export default function AnhSexPage() {
         limit: itemsPerPage,
       });
       setAlbums(data.data || []);
-      setTotal(data.total || 0);
+      const totalCount = typeof data.total === 'number' ? data.total : (data.data?.length ?? 0);
+      setTotal(totalCount);
     } catch (error) {
       console.error('Failed to fetch albums:', error);
       setAlbums([]);
@@ -68,9 +69,9 @@ export default function AnhSexPage() {
 
         {/* Albums Grid */}
         {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="bg-background-light border border-secondary/30 rounded-lg overflow-hidden animate-pulse">
+              <div key={i} className="bg-background-light border border-secondary/25 rounded-md overflow-hidden animate-pulse">
                 <div className="w-full aspect-[4/5] bg-secondary/30"></div>
                 <div className="p-3 space-y-2">
                   <div className="h-4 bg-secondary/30 rounded w-3/4"></div>
@@ -86,12 +87,12 @@ export default function AnhSexPage() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
               {albums.map((album) => (
                 <Link
                   key={album.id}
                   href={`/anh-sex/${album.id}`}
-                  className="group bg-background-light border border-secondary/40 rounded-xl overflow-hidden hover:border-primary/60 hover:shadow-lg hover:shadow-primary/10 transition-all"
+                  className="group bg-background-light border border-secondary/30 rounded-lg overflow-hidden hover:border-primary/50 hover:shadow-md hover:shadow-primary/10 transition-all"
                 >
                   <div className="relative w-full aspect-[4/5] bg-background">
                     {album.coverUrl ? (
@@ -110,9 +111,6 @@ export default function AnhSexPage() {
                   </div>
                   <div className="p-3 space-y-1">
                     <p className="text-sm font-semibold text-text line-clamp-2">{album.title}</p>
-                    {album.category && (
-                      <p className="text-xs text-text-muted">{album.category}</p>
-                    )}
                   </div>
                 </Link>
               ))}

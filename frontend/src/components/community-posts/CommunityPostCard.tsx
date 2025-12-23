@@ -227,14 +227,14 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
       key={idx}
       type="button"
       onClick={() => openLightbox(idx)}
-      className={`relative w-full h-full overflow-hidden rounded-lg bg-background-light/80 border border-secondary/20 group ${className}`}
+      className={`relative w-full h-full overflow-hidden bg-background-light/80 border border-secondary/20 group ${className}`}
     >
       <Image
         src={src}
         alt={`Hình ${idx + 1}`}
         fill
-        className="object-contain transition-transform duration-300 group-hover:scale-[1.02]"
-        sizes="(max-width: 768px) 100vw, 50vw"
+        className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+        sizes="(max-width: 768px) 100vw, 70vw"
         onError={(e) => {
           const target = e.target as HTMLImageElement;
           target.src = '/images/logo/logo.png';
@@ -250,7 +250,7 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
 
     if (display.length === 1) {
       return (
-        <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-background-light border border-secondary/20">
+        <div className="relative aspect-[3/4] md:aspect-[4/5] min-h-[420px] md:min-h-[520px] overflow-hidden bg-background-light border border-secondary/20">
           {renderImage(display[0], 0)}
         </div>
       );
@@ -258,9 +258,9 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
 
     if (display.length === 2) {
       return (
-        <div className="grid grid-cols-2 gap-2 rounded-xl overflow-hidden">
+        <div className="grid grid-cols-2 gap-0.5 overflow-hidden">
           {display.map((img, idx) => (
-            <div key={idx} className="relative aspect-[4/5] bg-background-light border border-secondary/20 rounded-lg overflow-hidden">
+            <div key={idx} className="relative aspect-[4/5] min-h-[260px] bg-background-light border border-secondary/20 overflow-hidden">
               {renderImage(img, idx)}
             </div>
           ))}
@@ -270,15 +270,15 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
 
     if (display.length === 3) {
       return (
-        <div className="grid grid-cols-2 gap-2 rounded-xl overflow-hidden">
-          <div className="relative col-span-1 aspect-[3/4] md:aspect-[4/5] bg-background-light border border-secondary/20 rounded-lg overflow-hidden">
+        <div className="grid grid-cols-2 gap-0.5 overflow-hidden">
+          <div className="relative col-span-1 aspect-[3/4] md:aspect-[4/5] min-h-[380px] bg-background-light border border-secondary/20 overflow-hidden">
             {renderImage(display[0], 0)}
           </div>
-          <div className="flex flex-col gap-2">
-            <div className="relative flex-1 min-h-[140px] bg-background-light border border-secondary/20 rounded-lg overflow-hidden">
+          <div className="flex flex-col gap-0.5">
+            <div className="relative flex-1 min-h-[190px] bg-background-light border border-secondary/20 overflow-hidden">
               {renderImage(display[1], 1)}
             </div>
-            <div className="relative flex-1 min-h-[140px] bg-background-light border border-secondary/20 rounded-lg overflow-hidden">
+            <div className="relative flex-1 min-h-[190px] bg-background-light border border-secondary/20 overflow-hidden">
               {renderImage(display[2], 2)}
             </div>
           </div>
@@ -291,17 +291,17 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
     const extra = imgs.length - 4;
 
     return (
-      <div className="flex gap-2 rounded-xl overflow-hidden">
-        <div className="relative flex-1 aspect-[3/4] md:aspect-[4/5] bg-background-light border border-secondary/20 rounded-lg overflow-hidden">
+      <div className="flex gap-0.5 overflow-hidden">
+        <div className="relative flex-[2.2] min-h-[420px] md:min-h-[520px] aspect-[3/4] md:aspect-[4/5] bg-background-light border border-secondary/20 overflow-hidden">
           {renderImage(imgs[0], 0)}
         </div>
-        <div className="flex flex-col gap-2 w-1/3 min-h-[220px]">
+        <div className="flex flex-col gap-0.5 flex-1 min-h-[380px]">
           {rightImages.map((img, idx) => {
             const isLast = idx === rightImages.length - 1;
             return (
               <div
                 key={idx + 1}
-                className="relative flex-1 bg-background-light border border-secondary/20 rounded-lg overflow-hidden"
+                className="relative flex-1 min-h-[124px] bg-background-light border border-secondary/20 overflow-hidden"
               >
                 {renderImage(img, idx + 1)}
                 {isLast && extra > 0 && (
@@ -569,9 +569,9 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
       {post.girl && (
         <Link 
           href={girlUrl}
-          className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/30 rounded-lg hover:bg-primary/20 hover:border-primary/50 transition-all duration-200 mb-3 group cursor-pointer"
+          className="inline-flex items-center max-w-full gap-2 px-2.5 py-1 rounded-md transition-all duration-200 mb-3 group cursor-pointer text-primary hover:text-primary-hover"
         >
-          <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+          <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center flex-shrink-0 shadow-sm">
             {post.girl.user?.avatarUrl ? (
               <img 
                 src={post.girl.user.avatarUrl} 
@@ -584,7 +584,7 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
               </span>
             )}
           </div>
-          <span className="text-sm font-medium text-primary group-hover:text-primary-hover">
+          <span className="text-sm font-medium truncate group-hover:text-primary-hover">
             {post.girl.name || post.girl.user?.fullName || 'Gái gọi'}
           </span>
           <svg className="w-4 h-4 text-primary/60 group-hover:text-primary transition-transform duration-200 group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -595,8 +595,8 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
 
       {/* Images collage */}
       {displayImages.length > 0 && (
-        <div className="mt-2">
-          <div className="max-h-[420px] overflow-hidden rounded-xl">{renderCollage()}</div>
+        <div className="mt-2 rounded-2xl overflow-hidden">
+          {renderCollage()}
         </div>
       )}
 
