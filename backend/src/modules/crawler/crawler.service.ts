@@ -8,7 +8,7 @@ export class CrawlerService {
   constructor(
     private prisma: PrismaService,
     private uploadService: UploadService,
-  ) {}
+  ) { }
 
   async saveGirl(data: {
     name: string;
@@ -37,7 +37,7 @@ export class CrawlerService {
             folder: 'girl-pick/girls',
             publicIdPrefix: `girl-${data.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`,
           });
-          finalImages = uploadResult.data.map((item) => item.cloudinaryUrl);
+          finalImages = uploadResult.data.map((item) => item.url);
           console.log(`✅ Uploaded ${uploadResult.total} images to Cloudinary for ${data.name}`);
         } catch (uploadError) {
           console.error('⚠️ Failed to upload images to Cloudinary, using original URLs:', uploadError);
