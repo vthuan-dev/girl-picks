@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/auth.store';
 import toast from 'react-hot-toast';
 import { communityPostsApi } from '@/modules/community-posts/api/community-posts.api';
 import GirlSearchSelect from './GirlSearchSelect';
+import apiClient from '@/lib/api/client';
 
 interface CreateCommunityPostFormProps {
   onSuccess?: () => void;
@@ -59,7 +60,7 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
     if (trimmed.length > MAX_CONTENT_LENGTH) {
       return `Nội dung không được vượt quá ${MAX_CONTENT_LENGTH} ký tự`;
     }
-    
+
     const wordCount = trimmed.split(/\s+/).filter(word => word.length > 0).length;
     if (wordCount < MIN_CONTENT_WORDS && !hasImages) {
       return `Nội dung phải có ít nhất ${MIN_CONTENT_WORDS} từ hoặc có hình ảnh`;
@@ -87,44 +88,47 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
   };
 
   const uploadImage = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append('file', file);
+    // Convert File to Base64 string as backend expects JSON with URL/Base64
+    const base64String = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
 
     try {
-      const response = await fetch('/api/upload/image', {
-        method: 'POST',
-        body: formData,
+      const response = await apiClient.post('/upload/image', {
+        url: base64String,
+        folder: 'girl-pick/posts',
       });
 
-      if (!response.ok) {
-        let errorMessage = 'Không thể tải ảnh lên';
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorData.message || errorMessage;
-          
-          if (response.status === 403) {
-            errorMessage = 'Bạn không có quyền upload ảnh. Vui lòng đăng nhập lại.';
-          } else if (response.status === 413) {
-            errorMessage = 'File quá lớn. Vui lòng chọn file nhỏ hơn 5MB.';
-          } else if (response.status === 400) {
-            errorMessage = errorData.error || 'File không hợp lệ. Vui lòng chọn file ảnh.';
-          }
-        } catch (parseError) {
-          errorMessage = response.statusText || errorMessage;
+      const responseData = response.data;
+      const data = responseData.success ? responseData.data : responseData;
+
+      if (!data?.cloudinaryUrl) {
+        throw new Error('Phản hồi từ server không chứa URL ảnh');
+      }
+      return data.cloudinaryUrl;
+    } catch (error: any) {
+      console.error('Upload error details:', error.response?.data || error.message);
+      let errorMessage = 'Không thể tải ảnh lên';
+
+      if (error.response) {
+        const errorData = error.response.data;
+        errorMessage = errorData.message || errorData.error || errorMessage;
+
+        if (error.response.status === 401) {
+          errorMessage = 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.';
+        } else if (error.response.status === 403) {
+          errorMessage = 'Bạn không có quyền upload ảnh.';
+        } else if (error.response.status === 413) {
+          errorMessage = 'File quá lớn. Vui lòng chọn file nhỏ hơn 5MB.';
         }
-        throw new Error(errorMessage);
+      } else {
+        errorMessage = error.message || errorMessage;
       }
 
-      const data = await response.json();
-      if (!data.url) {
-        throw new Error('Phản hồi từ server không hợp lệ');
-      }
-      return data.url;
-    } catch (error: any) {
-      if (error.message) {
-        throw error;
-      }
-      throw new Error(error.message || 'Không thể tải ảnh lên. Vui lòng thử lại.');
+      throw new Error(errorMessage);
     }
   };
 
@@ -144,7 +148,7 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setTitle(value);
-    
+
     // Real-time validation
     if (value.trim().length > 0) {
       const error = validateTitle(value);
@@ -157,7 +161,7 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     setContent(value);
-    
+
     // Real-time validation
     const hasImages = selectedImages.length > 0 || imageFiles.length > 0;
     const error = validateContent(value, hasImages);
@@ -167,22 +171,22 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!requireAuth()) return;
-    
+
     // Validate all fields
     const hasImages = selectedImages.length > 0 || imageFiles.length > 0;
     const titleError = title.trim() ? validateTitle(title) : undefined;
     const contentError = validateContent(content, hasImages);
-    const imagesError = imageFiles.length > MAX_IMAGES 
-      ? `Chỉ được upload tối đa ${MAX_IMAGES} ảnh` 
+    const imagesError = imageFiles.length > MAX_IMAGES
+      ? `Chỉ được upload tối đa ${MAX_IMAGES} ảnh`
       : undefined;
-    
+
     const newErrors: typeof errors = {};
     if (titleError) newErrors.title = titleError;
     if (contentError) newErrors.content = contentError;
     if (imagesError) newErrors.images = imagesError;
-    
+
     setErrors(newErrors);
-    
+
     // Check if there are any errors
     if (Object.keys(newErrors).length > 0) {
       toast.error('Vui lòng kiểm tra lại thông tin đã nhập');
@@ -194,16 +198,16 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
 
       // Upload images to server
       const imageUrls: string[] = [];
-      
+
       // Upload local files
       for (let i = 0; i < imageFiles.length; i++) {
         const file = imageFiles[i];
         const previewUrl = selectedImages[i];
-        
+
         try {
           const uploadedUrl = await uploadImage(file);
           imageUrls.push(uploadedUrl);
-          
+
           // Clean up object URL after successful upload
           if (previewUrl && previewUrl.startsWith('blob:')) {
             URL.revokeObjectURL(previewUrl);
@@ -213,13 +217,13 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
           toast.error(`Không thể upload ảnh: ${file.name}`);
         }
       }
-      
+
       // Add any manually entered URLs from selectedImages (if they're full URLs)
       selectedImages.forEach((url, index) => {
         if (index < imageFiles.length && url.startsWith('blob:')) {
           return;
         }
-        
+
         if (url.startsWith('http://') || url.startsWith('https://')) {
           imageUrls.push(url);
         } else if (url.startsWith('/')) {
@@ -238,7 +242,7 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
       await communityPostsApi.create(postData);
 
       toast.success('Bài viết của bạn đã được gửi và đang chờ duyệt!');
-    
+
       // Reset form
       setContent('');
       setTitle('');
@@ -246,7 +250,7 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
       setSelectedImages([]);
       setImageFiles([]);
       setErrors({});
-      
+
       if (onSuccess) {
         onSuccess();
       }
@@ -332,7 +336,7 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
     if (selectedImages[index]?.startsWith('blob:')) {
       URL.revokeObjectURL(selectedImages[index]);
     }
-    
+
     setSelectedImages(selectedImages.filter((_, i) => i !== index));
     setImageFiles(imageFiles.filter((_, i) => i !== index));
   };
@@ -385,11 +389,10 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
           }}
           placeholder="Nhập tiêu đề bài viết..."
           maxLength={MAX_TITLE_LENGTH}
-          className={`w-full px-4 py-3 bg-background-light border rounded-xl text-text placeholder:text-text-muted/60 focus:outline-none focus:ring-2 transition-all duration-200 cursor-text ${
-            errors.title 
-              ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/20' 
+          className={`w-full px-4 py-3 bg-background-light border rounded-xl text-text placeholder:text-text-muted/60 focus:outline-none focus:ring-2 transition-all duration-200 cursor-text ${errors.title
+              ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/20'
               : 'border-secondary/30 focus:border-primary/60 focus:ring-primary/20'
-          }`}
+            }`}
         />
         <div className="mt-2 flex items-center justify-between text-xs">
           {errors.title ? (
@@ -435,11 +438,10 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
           placeholder="Chia sẻ suy nghĩ, trải nghiệm hoặc điều gì đó thú vị với cộng đồng..."
           rows={6}
           maxLength={MAX_CONTENT_LENGTH}
-          className={`w-full px-4 py-3 bg-background-light border rounded-xl text-text placeholder:text-text-muted/60 focus:outline-none focus:ring-2 transition-all duration-200 resize-none cursor-text ${
-            errors.content 
-              ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/20' 
+          className={`w-full px-4 py-3 bg-background-light border rounded-xl text-text placeholder:text-text-muted/60 focus:outline-none focus:ring-2 transition-all duration-200 resize-none cursor-text ${errors.content
+              ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/20'
               : 'border-secondary/30 focus:border-primary/60 focus:ring-primary/20'
-          }`}
+            }`}
         />
         <div className="mt-2 flex items-center justify-between text-xs">
           {errors.content ? (
@@ -460,7 +462,7 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
         <label className="block text-sm font-semibold text-text mb-2.5">
           Hình ảnh <span className="text-text-muted font-normal">(tùy chọn, tối đa 4 ảnh)</span>
         </label>
-        
+
         {/* Image Preview Grid */}
         {selectedImages.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-4">
