@@ -37,8 +37,8 @@ export class CrawlerService {
             folder: 'girl-pick/girls',
             publicIdPrefix: `girl-${data.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`,
           });
-          finalImages = uploadResult.data.map((item) => item.url);
-          console.log(`✅ Uploaded ${uploadResult.total} images to Cloudinary for ${data.name}`);
+          finalImages = uploadResult.map((item) => item.url);
+          console.log(`✅ Uploaded ${uploadResult.length} images for ${data.name}`);
         } catch (uploadError) {
           console.error('⚠️ Failed to upload images to Cloudinary, using original URLs:', uploadError);
           // Fallback to original URLs if upload fails

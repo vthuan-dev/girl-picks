@@ -60,13 +60,10 @@ export class UploadService {
       const relativeUrl = `/public/uploads/${folder}/${filename}`;
 
       return {
-        success: true,
-        data: {
-          originalUrl: dto.url.substring(0, 100) + '...',
-          url: relativeUrl, // URL để Frontend sử dụng
-          path: filePath,
-          filename: filename,
-        },
+        originalUrl: dto.url.substring(0, 100) + '...',
+        url: relativeUrl, // URL để Frontend sử dụng
+        path: filePath,
+        filename: filename,
       };
     } catch (error: any) {
       throw new BadRequestException(
@@ -83,11 +80,7 @@ export class UploadService {
       dto.urls.map((url) => this.uploadImageFromUrl({ url, folder: dto.folder })),
     );
 
-    return {
-      success: true,
-      data: results.map((r) => r.data),
-      total: results.length,
-    };
+    return results;
   }
 
   /**
