@@ -16,7 +16,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           port: ${{ secrets.VPS_PORT }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          command_timeout: 30m
+          command_timeout: 60m
           script: |
             set -e
             APP_DIR=/var/www/girl-pick
@@ -106,7 +106,8 @@ jobs:
             npm ci
             
             # Build with explicit env vars (build traces error is non-critical if .next exists)
-            NEXT_PUBLIC_API_URL=https://gaigo1.net/api NEXT_PUBLIC_SITE_URL=https://gaigo1.net npm run build || {
+            # Disable type checking and linting to save RAM and time on VPS
+            NEXT_DISABLE_TYPECHECK=1 NEXT_DISABLE_ESLINT=1 NEXT_PUBLIC_API_URL=https://gaigo1.net/api NEXT_PUBLIC_SITE_URL=https://gaigo1.net npm run build || {
               echo "Build completed with warnings, checking if .next directory exists..."
               if [ -d ".next" ]; then
                 echo "✓ Build output exists, continuing despite warnings..."
