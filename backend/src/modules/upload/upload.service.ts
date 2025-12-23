@@ -19,7 +19,7 @@ export interface UploadMultipleImagesDto {
 
 @Injectable()
 export class UploadService {
-  private readonly uploadPath = join(process.cwd(), 'public', 'uploads');
+  private readonly uploadPath = join(process.cwd(), 'uploads');
 
   constructor() {
     // Đảm bảo thư mục uploads tồn tại
@@ -38,7 +38,9 @@ export class UploadService {
 
     try {
       const folder = dto.folder || 'posts';
-      const fullFolderPath = join(this.uploadPath, folder);
+      // Tách folder theo dấu / và ghép lại bằng join để an toàn trên mọi OS
+      const folderParts = folder.split('/');
+      const fullFolderPath = join(this.uploadPath, ...folderParts);
 
       if (!existsSync(fullFolderPath)) {
         mkdirSync(fullFolderPath, { recursive: true });
@@ -74,7 +76,7 @@ export class UploadService {
       // Lưu file
       writeFileSync(filePath, buffer);
 
-      const relativeUrl = `/api/public/uploads/${folder}/${filename}`;
+      const relativeUrl = `/api/uploads/${folder}/${filename}`;
 
       return {
         originalUrl: dto.url.substring(0, 100) + '...',
