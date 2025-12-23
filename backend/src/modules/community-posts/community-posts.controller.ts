@@ -35,7 +35,7 @@ import {
 @ApiTags('Community Posts')
 @Controller('community-posts')
 export class CommunityPostsController {
-  constructor(private readonly communityPostsService: CommunityPostsService) {}
+  constructor(private readonly communityPostsService: CommunityPostsService) { }
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -129,6 +129,18 @@ export class CommunityPostsController {
     @Body() updatePostDto: UpdateCommunityPostDto,
   ) {
     return this.communityPostsService.update(id, userId, updatePostDto);
+  }
+
+  @Patch(':id/admin')
+  @UseGuards(JwtAuthGuard, ContentManagerGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update community post as Admin (any status)' })
+  @ApiResponse({ status: 200, description: 'Community post updated by admin' })
+  updateAsAdmin(
+    @Param('id') id: string,
+    @Body() updatePostDto: UpdateCommunityPostDto,
+  ) {
+    return this.communityPostsService.updateAsAdmin(id, updatePostDto);
   }
 
   @Delete(':id')
