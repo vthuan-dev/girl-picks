@@ -206,6 +206,7 @@ export default function ReviewSection({ girlId, girlName }: ReviewSectionProps) 
                                         <img
                                             src={img}
                                             alt={`Preview ${index + 1}`}
+                                            referrerPolicy="no-referrer"
                                             className="w-full h-24 object-cover rounded-lg"
                                         />
                                         <button
