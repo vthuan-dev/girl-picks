@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { reviewsApi, type Review as ApiReview, type ReviewComment } from '@/modules/reviews/api/reviews.api';
 import ExpandableText from '@/components/common/ExpandableText';
+import { getFullImageUrl } from '@/lib/utils/image';
 
 interface Review {
   id: string;
@@ -55,7 +56,7 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
   const [submitting, setSubmitting] = useState(false);
   const [loadingLikes, setLoadingLikes] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  
+
   // Comment states
   const [reviewComments, setReviewComments] = useState<Record<string, ReviewComment[]>>({});
   const [showCommentForms, setShowCommentForms] = useState<Record<string, boolean>>({});
@@ -96,7 +97,7 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
     try {
       setLoading(true);
       const apiReviews = await reviewsApi.getByGirlId(girlId);
-      
+
       // Transform API reviews to component format
       const transformedReviews: Review[] = await Promise.all(
         apiReviews.map(async (apiReview) => {
@@ -164,7 +165,7 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
 
   const handleToggleCommentForm = (reviewId: string) => {
     if (!requireAuth()) return;
-    
+
     setShowCommentForms((prev) => ({
       ...prev,
       [reviewId]: !prev[reviewId],
@@ -178,7 +179,7 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
 
   const handleSubmitComment = async (reviewId: string) => {
     if (!requireAuth()) return;
-    
+
     const content = commentContents[reviewId]?.trim();
     if (!content) {
       toast.error('Vui lòng nhập nội dung bình luận');
@@ -188,7 +189,7 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
     try {
       setSubmittingComments((prev) => new Set(prev).add(reviewId));
       const newComment = await reviewsApi.addComment(reviewId, { content });
-      
+
       // Add comment to state
       setReviewComments((prev) => ({
         ...prev,
@@ -309,17 +310,17 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
     formData.append('file', file);
 
     try {
-    const response = await fetch('/api/upload/review', {
-      method: 'POST',
-      body: formData,
-    });
+      const response = await fetch('/api/upload/review', {
+        method: 'POST',
+        body: formData,
+      });
 
-    if (!response.ok) {
+      if (!response.ok) {
         let errorMessage = 'Không thể tải ảnh lên';
         try {
           const errorData = await response.json();
           errorMessage = errorData.error || errorData.message || errorMessage;
-          
+
           // Handle specific error codes
           if (response.status === 403) {
             errorMessage = 'Bạn không có quyền upload ảnh. Vui lòng đăng nhập lại.';
@@ -333,13 +334,13 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
           errorMessage = response.statusText || errorMessage;
         }
         throw new Error(errorMessage);
-    }
+      }
 
-    const data = await response.json();
+      const data = await response.json();
       if (!data.url) {
         throw new Error('Phản hồi từ server không hợp lệ');
       }
-    return data.url;
+      return data.url;
     } catch (error: any) {
       // Re-throw with better error message
       if (error.message) {
@@ -360,18 +361,18 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
       toast.error('Vui lòng nhập nội dung đánh giá');
       return;
     }
-    
+
     // Validation: Prevent creating reviews with very short text (1-2 words) without images
     // This ensures comments stay as comments, not become reviews
     const trimmedComment = comment.trim();
     const wordCount = trimmedComment.split(/\s+/).filter(word => word.length > 0).length;
     const hasImages = selectedImages.length > 0 || imageFiles.length > 0;
-    
+
     if (wordCount <= 2 && !hasImages) {
       toast.error('Vui lòng nhập nội dung đánh giá đầy đủ hơn hoặc thêm hình ảnh. Bình luận ngắn nên được thêm vào phần bình luận của review, không phải tạo review mới.');
       return;
     }
-    
+
     if (wordCount < 5 && !hasImages) {
       toast.error('Vui lòng nhập nội dung đánh giá chi tiết hơn (ít nhất 5 từ) hoặc thêm hình ảnh.');
       return;
@@ -382,16 +383,16 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
 
       // Upload images to server
       const imageUrls: string[] = [];
-      
+
       // Upload local files
       for (let i = 0; i < imageFiles.length; i++) {
         const file = imageFiles[i];
         const previewUrl = selectedImages[i];
-        
+
         try {
           const uploadedUrl = await uploadImage(file);
           imageUrls.push(uploadedUrl);
-          
+
           // Clean up object URL after successful upload
           if (previewUrl && previewUrl.startsWith('blob:')) {
             URL.revokeObjectURL(previewUrl);
@@ -401,7 +402,7 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
           toast.error(`Không thể upload ảnh: ${file.name}`);
         }
       }
-      
+
       // Add any manually entered URLs from selectedImages (if they're full URLs)
       // Skip blob URLs as they're already being uploaded above
       selectedImages.forEach((url, index) => {
@@ -409,7 +410,7 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
         if (index < imageFiles.length && url.startsWith('blob:')) {
           return;
         }
-        
+
         if (url.startsWith('http://') || url.startsWith('https://')) {
           imageUrls.push(url);
         } else if (url.startsWith('/')) {
@@ -430,15 +431,15 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
       await reviewsApi.create(reviewData);
 
       toast.success('Đánh giá của bạn đã được gửi và đang chờ duyệt!');
-    
-    // Reset form
-    setRating(0);
-    setComment('');
+
+      // Reset form
+      setRating(0);
+      setComment('');
       setTitle('');
-    setSelectedImages([]);
-    setImageFiles([]);
-    setShowReviewForm(false);
-    
+      setSelectedImages([]);
+      setImageFiles([]);
+      setShowReviewForm(false);
+
       // Reload reviews
       await loadReviews();
     } catch (error: any) {
@@ -456,16 +457,16 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
     try {
       setLoadingLikes((prev) => new Set(prev).add(reviewId));
       const result = await reviewsApi.toggleLike(reviewId);
-      
+
       // Update review in state
       setReviews((prevReviews) =>
         prevReviews.map((review) =>
           review.id === reviewId
             ? {
-                ...review,
-                likes: result.likesCount,
-                liked: result.liked,
-              }
+              ...review,
+              likes: result.likesCount,
+              liked: result.liked,
+            }
             : review
         )
       );
@@ -497,9 +498,9 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
   const removeImage = (index: number) => {
     // Revoke object URL to free memory
     if (selectedImages[index]?.startsWith('blob:')) {
-    URL.revokeObjectURL(selectedImages[index]);
+      URL.revokeObjectURL(selectedImages[index]);
     }
-    
+
     setSelectedImages(selectedImages.filter((_, i) => i !== index));
     setImageFiles(imageFiles.filter((_, i) => i !== index));
   };
@@ -524,9 +525,8 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
       return (
         <div
           key={child.id}
-          className={`mt-3 flex items-start gap-2 ${
-            isReply ? 'ml-6 pl-3 border-l-2 border-secondary/50' : ''
-          }`}
+          className={`mt-3 flex items-start gap-2 ${isReply ? 'ml-6 pl-3 border-l-2 border-secondary/50' : ''
+            }`}
         >
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0">
             {child.user?.avatarUrl ? (
@@ -687,132 +687,131 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
               </Link>
             </div>
           ) : (
-          <form onSubmit={handleSubmitReview} className="space-y-5">
-            {/* Rating Stars */}
-            <div>
-              <label className="block text-sm font-medium text-text mb-3">
-                Đánh giá của bạn <span className="text-primary">*</span>
-              </label>
-              <div className="flex items-center gap-2.5">
-                {[...Array(5)].map((_, i) => {
-                  const starValue = i + 1;
-                  return (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => setRating(starValue)}
-                      onMouseEnter={() => setHoverRating(starValue)}
-                      onMouseLeave={() => setHoverRating(0)}
-                      className="focus:outline-none transition-transform hover:scale-110 active:scale-95 cursor-pointer"
-                    >
-                      <svg
-                          className={`w-12 h-12 transition-colors ${
-                          starValue <= (hoverRating || rating)
+            <form onSubmit={handleSubmitReview} className="space-y-5">
+              {/* Rating Stars */}
+              <div>
+                <label className="block text-sm font-medium text-text mb-3">
+                  Đánh giá của bạn <span className="text-primary">*</span>
+                </label>
+                <div className="flex items-center gap-2.5">
+                  {[...Array(5)].map((_, i) => {
+                    const starValue = i + 1;
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setRating(starValue)}
+                        onMouseEnter={() => setHoverRating(starValue)}
+                        onMouseLeave={() => setHoverRating(0)}
+                        className="focus:outline-none transition-transform hover:scale-110 active:scale-95 cursor-pointer"
+                      >
+                        <svg
+                          className={`w-12 h-12 transition-colors ${starValue <= (hoverRating || rating)
                             ? 'text-yellow-400 fill-current'
                             : 'text-secondary/30'
-                        }`}
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                    </button>
-                  );
-                })}
-                {rating > 0 && (
-                  <span className="ml-3 text-sm text-text-muted font-medium">
-                    {rating === 1 && 'Rất tệ'}
-                    {rating === 2 && 'Tệ'}
-                    {rating === 3 && 'Bình thường'}
-                    {rating === 4 && 'Tốt'}
-                    {rating === 5 && 'Rất tốt'}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Comment Textarea */}
-            <div>
-              <label htmlFor="review-comment" className="block text-sm font-medium text-text mb-3">
-                Bình luận <span className="text-primary">*</span>
-              </label>
-              <textarea
-                id="review-comment"
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="Chia sẻ trải nghiệm của bạn..."
-                rows={4}
-                maxLength={500}
-                className="w-full px-4 py-3 bg-background-light border border-secondary/30 rounded-lg text-text placeholder:text-text-muted/50 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all resize-none"
-              />
-              <div className="mt-2 text-xs text-text-muted text-right">
-                {comment.length}/500
-              </div>
-            </div>
-
-            {/* Image Upload */}
-            <div>
-              <label className="block text-sm font-medium text-text mb-3">
-                Hình ảnh (tùy chọn)
-              </label>
-              
-              {/* Image Preview Grid */}
-              {selectedImages.length > 0 && (
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mb-3">
-                  {selectedImages.map((imageUrl, index) => (
-                    <div key={index} className="relative group">
-                      <div className="aspect-square rounded-lg overflow-hidden bg-secondary/20 border border-secondary/30">
-                        <img
-                          src={imageUrl}
-                          alt={`Preview ${index + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeImage(index)}
-                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer hover:bg-red-600 shadow-lg"
-                        aria-label="Xóa ảnh"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            }`}
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                         </svg>
                       </button>
-                    </div>
-                  ))}
+                    );
+                  })}
+                  {rating > 0 && (
+                    <span className="ml-3 text-sm text-text-muted font-medium">
+                      {rating === 1 && 'Rất tệ'}
+                      {rating === 2 && 'Tệ'}
+                      {rating === 3 && 'Bình thường'}
+                      {rating === 4 && 'Tốt'}
+                      {rating === 5 && 'Rất tốt'}
+                    </span>
+                  )}
                 </div>
-              )}
+              </div>
 
-              {/* Upload Button */}
-              {selectedImages.length < 5 && (
-                <label className="inline-flex items-center gap-2 px-4 py-2.5 bg-background-light border border-secondary/30 rounded-lg hover:bg-background hover:border-primary/50 transition-all cursor-pointer text-sm font-medium text-text">
-                  <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <span>Thêm ảnh</span>
-                  <input
-                      ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleImageSelect}
-                    className="hidden"
-                    disabled={selectedImages.length >= 5}
-                  />
+              {/* Comment Textarea */}
+              <div>
+                <label htmlFor="review-comment" className="block text-sm font-medium text-text mb-3">
+                  Bình luận <span className="text-primary">*</span>
                 </label>
-              )}
-              {selectedImages.length >= 5 && (
-                <p className="text-xs text-text-muted">Đã đạt giới hạn 5 ảnh</p>
-              )}
-            </div>
+                <textarea
+                  id="review-comment"
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="Chia sẻ trải nghiệm của bạn..."
+                  rows={4}
+                  maxLength={500}
+                  className="w-full px-4 py-3 bg-background-light border border-secondary/30 rounded-lg text-text placeholder:text-text-muted/50 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all resize-none"
+                />
+                <div className="mt-2 text-xs text-text-muted text-right">
+                  {comment.length}/500
+                </div>
+              </div>
 
-            {/* Submit Buttons */}
-            <div className="flex items-center gap-3 pt-2">
-              <button
-                type="submit"
+              {/* Image Upload */}
+              <div>
+                <label className="block text-sm font-medium text-text mb-3">
+                  Hình ảnh (tùy chọn)
+                </label>
+
+                {/* Image Preview Grid */}
+                {selectedImages.length > 0 && (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mb-3">
+                    {selectedImages.map((imageUrl, index) => (
+                      <div key={index} className="relative group">
+                        <div className="aspect-square rounded-lg overflow-hidden bg-secondary/20 border border-secondary/30">
+                          <img
+                            src={imageUrl}
+                            alt={`Preview ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer hover:bg-red-600 shadow-lg"
+                          aria-label="Xóa ảnh"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Upload Button */}
+                {selectedImages.length < 5 && (
+                  <label className="inline-flex items-center gap-2 px-4 py-2.5 bg-background-light border border-secondary/30 rounded-lg hover:bg-background hover:border-primary/50 transition-all cursor-pointer text-sm font-medium text-text">
+                    <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span>Thêm ảnh</span>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleImageSelect}
+                      className="hidden"
+                      disabled={selectedImages.length >= 5}
+                    />
+                  </label>
+                )}
+                {selectedImages.length >= 5 && (
+                  <p className="text-xs text-text-muted">Đã đạt giới hạn 5 ảnh</p>
+                )}
+              </div>
+
+              {/* Submit Buttons */}
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="submit"
                   disabled={rating === 0 || !comment.trim() || submitting}
                   className="px-6 py-2.5 bg-gradient-to-r from-primary to-primary-hover text-white rounded-lg hover:shadow-lg hover:shadow-primary/30 active:scale-95 transition-all font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none flex items-center gap-2"
-              >
+                >
                   {submitting ? (
                     <>
                       <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -821,29 +820,29 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
                   ) : (
                     'Gửi đánh giá'
                   )}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowReviewForm(false);
-                  setRating(0);
-                  setComment('');
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowReviewForm(false);
+                    setRating(0);
+                    setComment('');
                     setTitle('');
-                  // Clean up object URLs
+                    // Clean up object URLs
                     selectedImages.forEach((url) => {
                       if (url.startsWith('blob:')) {
                         URL.revokeObjectURL(url);
                       }
                     });
-                  setSelectedImages([]);
-                  setImageFiles([]);
-                }}
-                className="px-6 py-2.5 bg-background-light border border-secondary/30 text-text rounded-lg hover:bg-background transition-colors font-medium cursor-pointer"
-              >
-                Hủy
-              </button>
-            </div>
-          </form>
+                    setSelectedImages([]);
+                    setImageFiles([]);
+                  }}
+                  className="px-6 py-2.5 bg-background-light border border-secondary/30 text-text rounded-lg hover:bg-background transition-colors font-medium cursor-pointer"
+                >
+                  Hủy
+                </button>
+              </div>
+            </form>
           )}
         </div>
       )}
@@ -908,18 +907,17 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
                       {[...Array(5)].map((_, i) => {
                         const isFull = i < Math.floor(review.rating);
                         return (
-                            <svg
+                          <svg
                             key={i}
-                            className={`w-8 h-8 sm:w-9 sm:h-9 transition-all ${
-                                isFull
-                                  ? 'text-yellow-400 fill-current'
-                                  : 'text-secondary/30'
+                            className={`w-8 h-8 sm:w-9 sm:h-9 transition-all ${isFull
+                              ? 'text-yellow-400 fill-current'
+                              : 'text-secondary/30'
                               }`}
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
-                            >
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
                         );
                       })}
                     </div>
@@ -930,8 +928,8 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
 
               {/* Comment */}
               <div className="mb-4 pl-0 sm:pl-16">
-                <ExpandableText 
-                  text={review.comment} 
+                <ExpandableText
+                  text={review.comment}
                   maxLength={200}
                   className="text-text text-sm sm:text-base"
                 />
@@ -941,42 +939,29 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
               {review.images && review.images.length > 0 && (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4 pl-0 sm:pl-16">
                   {review.images.map((imageUrl, index) => {
-                    // Handle both relative and absolute URLs
-                    const displayUrl = imageUrl.startsWith('/') 
-                      ? imageUrl 
-                      : imageUrl.startsWith('http://') || imageUrl.startsWith('https://')
-                      ? imageUrl
-                      : `/${imageUrl}`;
-                    
-                    const fullUrl = imageUrl.startsWith('http://') || imageUrl.startsWith('https://')
-                      ? imageUrl
-                      : typeof window !== 'undefined' 
-                        ? `${window.location.origin}${displayUrl}`
-                        : displayUrl;
-
+                    const fullUrl = getFullImageUrl(imageUrl);
                     return (
-                    <div
-                      key={index}
-                      className="relative aspect-square rounded-lg overflow-hidden bg-secondary/20 border border-secondary/30 group cursor-pointer"
-                      onClick={() => {
-                        setLightboxImages(review.images || []);
-                        setLightboxImage(displayUrl);
-                      }}
-                    >
-                      <Image
-                          src={displayUrl}
-                        alt={`Review image ${index + 1}`}
-                        fill
-                        className="object-cover group-hover:scale-110 transition-transform duration-300"
-                        sizes="(max-width: 640px) 50vw, 33vw"
-                        unoptimized
-                      />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                        <svg className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                        </svg>
+                      <div
+                        key={index}
+                        className="relative aspect-square rounded-lg overflow-hidden bg-secondary/20 border border-secondary/30 group cursor-pointer"
+                        onClick={() => {
+                          setLightboxImages(review.images || []);
+                          setLightboxImage(fullUrl);
+                        }}
+                      >
+                        <Image
+                          src={fullUrl}
+                          alt={`Review image ${index + 1}`}
+                          fill
+                          className="object-cover group-hover:scale-110 transition-transform duration-300"
+                          sizes="(max-width: 640px) 50vw, 33vw"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                          <svg className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                          </svg>
+                        </div>
                       </div>
-                    </div>
                     );
                   })}
                 </div>
@@ -998,8 +983,8 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
                       stroke="currentColor"
                       viewBox="0 0 24 24"
                     >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                  </svg>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
                   )}
                   <span>Thích ({review.likes})</span>
                 </button>
@@ -1111,8 +1096,8 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
                           <span className="font-medium text-text text-sm">{reply.userName}</span>
                           <span className="text-xs text-text-muted">{formatDate(reply.createdAt)}</span>
                         </div>
-                        <ExpandableText 
-                          text={reply.comment} 
+                        <ExpandableText
+                          text={reply.comment}
                           maxLength={150}
                           className="text-text-muted text-sm"
                         />
@@ -1128,7 +1113,7 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
 
       {/* Lightbox Modal */}
       {lightboxImage && (
-        <div 
+        <div
           className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center animate-in fade-in duration-200"
           onClick={() => {
             setLightboxImage(null);
@@ -1150,39 +1135,27 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
           </button>
 
           {/* Image */}
-          <div 
+          <div
             className="relative w-full h-full max-w-4xl max-h-[90vh] mx-4 animate-in zoom-in-95 duration-300"
             onClick={(e) => e.stopPropagation()}
           >
             <Image
-              src={lightboxImage}
+              src={getFullImageUrl(lightboxImage)}
               alt="Review image"
               fill
               className="object-contain"
               sizes="100vw"
               priority
-              unoptimized
             />
           </div>
 
           {/* Navigation & Thumbnails */}
           {lightboxImages.length > 1 && (() => {
             // Normalize URLs for comparison
-            const normalizeUrl = (url: string) => {
-              if (url.startsWith('/')) return url;
-              if (url.startsWith('http://') || url.startsWith('https://')) return url;
-              return `/${url}`;
-            };
-            
-            const normalizedLightboxImage = normalizeUrl(lightboxImage);
-            const normalizedImages = lightboxImages.map(normalizeUrl);
-            const currentIndex = normalizedImages.findIndex(img => {
-              // Compare by removing protocol and domain if present
-              const img1 = img.replace(/^https?:\/\/[^/]+/, '');
-              const img2 = normalizedLightboxImage.replace(/^https?:\/\/[^/]+/, '');
-              return img1 === img2 || img === normalizedLightboxImage;
-            });
-            
+            const normalizedLightboxImage = getFullImageUrl(lightboxImage);
+            const normalizedImages = lightboxImages.map(img => getFullImageUrl(img));
+            const currentIndex = normalizedImages.findIndex(img => img === normalizedLightboxImage);
+
             return (
               <>
                 {/* Previous Button */}
@@ -1191,8 +1164,8 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
                     onClick={(e) => {
                       e.stopPropagation();
                       const prevUrl = lightboxImages[currentIndex - 1];
-                      const displayUrl = normalizeUrl(prevUrl);
-                      setLightboxImage(displayUrl);
+                      const fullUrl = getFullImageUrl(prevUrl);
+                      setLightboxImage(fullUrl);
                     }}
                     className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors z-50"
                     aria-label="Ảnh trước"
@@ -1209,8 +1182,8 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
                     onClick={(e) => {
                       e.stopPropagation();
                       const nextUrl = lightboxImages[currentIndex + 1];
-                      const displayUrl = normalizeUrl(nextUrl);
-                      setLightboxImage(displayUrl);
+                      const fullUrl = getFullImageUrl(nextUrl);
+                      setLightboxImage(fullUrl);
                     }}
                     className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors z-50"
                     aria-label="Ảnh sau"
@@ -1224,25 +1197,20 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
                 {/* Thumbnails */}
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 p-2 bg-black/50 rounded-lg max-w-[90vw] overflow-x-auto">
                   {lightboxImages.map((img, i) => {
-                    const displayUrl = normalizeUrl(img);
-                    const isActive = (() => {
-                      const img1 = displayUrl.replace(/^https?:\/\/[^/]+/, '');
-                      const img2 = normalizedLightboxImage.replace(/^https?:\/\/[^/]+/, '');
-                      return img1 === img2 || displayUrl === normalizedLightboxImage;
-                    })();
-                    
+                    const fullUrl = getFullImageUrl(img);
+                    const isActive = fullUrl === normalizedLightboxImage;
+
                     return (
                       <button
                         key={i}
                         onClick={(e) => {
                           e.stopPropagation();
-                          setLightboxImage(displayUrl);
+                          setLightboxImage(fullUrl);
                         }}
-                        className={`relative w-14 h-14 rounded overflow-hidden border-2 transition-all flex-shrink-0 ${
-                          isActive ? 'border-primary' : 'border-transparent hover:border-white/50'
-                        }`}
+                        className={`relative w-14 h-14 rounded overflow-hidden border-2 transition-all flex-shrink-0 ${isActive ? 'border-primary' : 'border-transparent hover:border-white/50'
+                          }`}
                       >
-                        <Image src={displayUrl} alt="" fill className="object-cover" unoptimized />
+                        <Image src={fullUrl} alt="" fill className="object-cover" />
                       </button>
                     );
                   })}

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { Girl } from '@/types/girl';
 import { girlsApi } from '../api/girls.api';
+import { getFullImageUrl } from '@/lib/utils/image';
 
 interface GirlCardProps {
   girl: Girl;
@@ -19,7 +20,7 @@ export default function GirlCard({ girl, index = 0 }: GirlCardInternalProps) {
   const imageUrl = girl.avatar || girl.images?.[0] || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=600&fit=crop';
 
   // Generate URL with slug if available, otherwise use ID
-  const girlUrl = girl.slug 
+  const girlUrl = girl.slug
     ? `/girls/${girl.id}/${girl.slug}`
     : `/girls/${girl.id}`;
 
@@ -30,7 +31,7 @@ export default function GirlCard({ girl, index = 0 }: GirlCardInternalProps) {
   const handleClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
     // Increment view count optimistically
     setViewCount(prev => prev + 1);
-    
+
     // Call API to increment view count (fire and forget - don't block navigation)
     girlsApi.incrementView(girl.id).catch((error) => {
       // If API call fails, revert the optimistic update
@@ -45,18 +46,17 @@ export default function GirlCard({ girl, index = 0 }: GirlCardInternalProps) {
         {/* Image Container - Top Section */}
         <div className="relative w-full aspect-[3/4] overflow-hidden bg-secondary/20">
           <Image
-            src={imageUrl}
+            src={getFullImageUrl(imageUrl)}
             alt={girl.fullName || 'Profile image'}
             fill
             className="object-cover group-hover:scale-110 transition-transform duration-500"
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 20vw, 16vw"
             priority={isPriority}
-            unoptimized
           />
-          
+
           {/* Gradient Overlay on Hover */}
           <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          
+
           {/* Top Left Badges */}
           <div className="absolute top-2 left-2 flex flex-col gap-1.5 z-10">
             {girl.verified && (
@@ -87,13 +87,12 @@ export default function GirlCard({ girl, index = 0 }: GirlCardInternalProps) {
                 return (
                   <svg
                     key={i}
-                    className={`w-3 h-3 ${
-                      filled
-                        ? 'text-yellow-400 fill-current'
-                        : halfFilled
+                    className={`w-3 h-3 ${filled
+                      ? 'text-yellow-400 fill-current'
+                      : halfFilled
                         ? 'text-yellow-400 fill-current opacity-50'
                         : 'text-secondary/30'
-                    }`}
+                      }`}
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -110,14 +109,14 @@ export default function GirlCard({ girl, index = 0 }: GirlCardInternalProps) {
             </span>
           </div>
         </div>
-        
+
         {/* Card Footer - Information Section - Bottom */}
         <div className="p-3 sm:p-4 bg-background-light">
           {/* Name */}
           <h3 className="text-sm sm:text-base font-bold text-text group-hover:text-primary transition-colors line-clamp-1 mb-2">
             {girl.fullName}
           </h3>
-          
+
           {/* Location (district + province) */}
           {(girl.district?.name || (girl as any).province || (girl as any).location) && (
             <div className="flex items-center gap-1.5 text-xs sm:text-sm text-text-muted mb-2">
@@ -137,7 +136,7 @@ export default function GirlCard({ girl, index = 0 }: GirlCardInternalProps) {
               </span>
             </div>
           )}
-          
+
           {/* Rating Stars (1-5) */}
           <div className="flex items-center gap-2 mb-2">
             <div className="flex items-center gap-0.5">
@@ -148,13 +147,12 @@ export default function GirlCard({ girl, index = 0 }: GirlCardInternalProps) {
                 return (
                   <svg
                     key={i}
-                    className={`w-3.5 h-3.5 ${
-                      filled
-                        ? 'text-yellow-400 fill-current'
-                        : halfFilled
+                    className={`w-3.5 h-3.5 ${filled
+                      ? 'text-yellow-400 fill-current'
+                      : halfFilled
                         ? 'text-yellow-400 fill-current opacity-50'
                         : 'text-secondary/30'
-                    }`}
+                      }`}
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -170,7 +168,7 @@ export default function GirlCard({ girl, index = 0 }: GirlCardInternalProps) {
               ({girl.totalReviews ?? 0})
             </span>
           </div>
-          
+
           {/* Price and View Count Row */}
           <div className="flex items-center justify-between gap-2 pt-2 border-t border-secondary/20">
             {/* Price */}
@@ -180,18 +178,18 @@ export default function GirlCard({ girl, index = 0 }: GirlCardInternalProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span>{girl.price}</span>
-            </div>
+              </div>
             )}
-            
+
             {/* View Count */}
             {(viewCount > 0 || girl.viewCount !== undefined) && (
-            <div className="flex items-center gap-1 text-text-muted text-xs">
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-center gap-1 text-text-muted text-xs">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
+                </svg>
                 <span>{viewCount.toLocaleString('vi-VN')}</span>
-            </div>
+              </div>
             )}
           </div>
         </div>

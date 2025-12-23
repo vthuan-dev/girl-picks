@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
+import { getFullImageUrl } from '@/lib/utils/image';
 
 interface GirlGalleryProps {
   images: string[];
@@ -16,7 +17,7 @@ export default function GirlGallery({ images, name }: GirlGalleryProps) {
   // Handle keyboard navigation
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (!lightboxOpen) return;
-    
+
     if (e.key === 'Escape') {
       setLightboxOpen(false);
     } else if (e.key === 'ArrowLeft') {
@@ -52,20 +53,19 @@ export default function GirlGallery({ images, name }: GirlGalleryProps) {
     <>
       <div className="max-w-2xl mx-auto bg-background-light rounded-2xl overflow-hidden border border-secondary/30 shadow-lg">
         {/* Main Image */}
-        <div 
+        <div
           className="relative w-full aspect-[3/4] max-h-[55vh] bg-secondary/20 overflow-hidden group cursor-pointer"
           onClick={() => openLightbox(selectedIndex)}
         >
           <Image
-            src={mainImage}
+            src={getFullImageUrl(mainImage)}
             alt={`${name} - Ảnh ${selectedIndex + 1}`}
             fill
             className="object-cover transition-opacity duration-300"
             sizes="(max-width: 768px) 100vw, (max-width: 1024px) 66vw, 50vw"
             priority
-            unoptimized
           />
-          
+
           {/* Zoom hint */}
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
             <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 rounded-full p-3">
@@ -74,7 +74,7 @@ export default function GirlGallery({ images, name }: GirlGalleryProps) {
               </svg>
             </div>
           </div>
-          
+
           {/* Image Navigation Arrows */}
           {images.length > 1 && (
             <>
@@ -122,20 +122,18 @@ export default function GirlGallery({ images, name }: GirlGalleryProps) {
                   key={index}
                   onClick={() => setSelectedIndex(index)}
                   onDoubleClick={() => openLightbox(index)}
-                  className={`relative flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden border-2 transition-all cursor-pointer ${
-                    selectedIndex === index
-                      ? 'border-primary shadow-lg shadow-primary/30 scale-105'
-                      : 'border-secondary/30 hover:border-primary/50'
-                  }`}
+                  className={`relative flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden border-2 transition-all cursor-pointer ${selectedIndex === index
+                    ? 'border-primary shadow-lg shadow-primary/30 scale-105'
+                    : 'border-secondary/30 hover:border-primary/50'
+                    }`}
                   aria-label={`Xem ảnh ${index + 1}`}
                 >
                   <Image
-                    src={image}
+                    src={getFullImageUrl(image)}
                     alt={`${name} - Thumbnail ${index + 1}`}
                     fill
                     className="object-cover"
                     sizes="96px"
-                    unoptimized
                   />
                   {selectedIndex === index && (
                     <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
@@ -153,7 +151,7 @@ export default function GirlGallery({ images, name }: GirlGalleryProps) {
 
       {/* Lightbox Modal */}
       {lightboxOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
           onClick={() => setLightboxOpen(false)}
         >
@@ -163,7 +161,7 @@ export default function GirlGallery({ images, name }: GirlGalleryProps) {
             <div className="px-3 py-1.5 bg-black/50 rounded-lg text-white text-sm font-medium">
               {selectedIndex + 1} / {images.length}
             </div>
-            
+
             {/* Close Button - Always visible on mobile */}
             <button
               onClick={() => setLightboxOpen(false)}
@@ -177,18 +175,17 @@ export default function GirlGallery({ images, name }: GirlGalleryProps) {
           </div>
 
           {/* Main Image */}
-          <div 
+          <div
             className="relative w-full h-full max-w-6xl max-h-[90vh] mx-4"
             onClick={(e) => e.stopPropagation()}
           >
             <Image
-              src={images[selectedIndex]}
+              src={getFullImageUrl(images[selectedIndex])}
               alt={`${name} - Ảnh ${selectedIndex + 1}`}
               fill
               className="object-contain"
               sizes="100vw"
               priority
-              unoptimized
             />
           </div>
 
@@ -232,19 +229,17 @@ export default function GirlGallery({ images, name }: GirlGalleryProps) {
                     e.stopPropagation();
                     setSelectedIndex(index);
                   }}
-                  className={`relative flex-shrink-0 w-16 h-16 rounded overflow-hidden border-2 transition-all ${
-                    selectedIndex === index
-                      ? 'border-primary'
-                      : 'border-transparent hover:border-white/50'
-                  }`}
+                  className={`relative flex-shrink-0 w-16 h-16 rounded overflow-hidden border-2 transition-all ${selectedIndex === index
+                    ? 'border-primary'
+                    : 'border-transparent hover:border-white/50'
+                    }`}
                 >
                   <Image
-                    src={image}
+                    src={getFullImageUrl(image)}
                     alt={`Thumbnail ${index + 1}`}
                     fill
                     className="object-cover"
                     sizes="64px"
-                    unoptimized
                   />
                 </button>
               ))}

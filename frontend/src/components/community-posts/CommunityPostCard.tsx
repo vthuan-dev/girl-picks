@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/auth.store';
 import toast from 'react-hot-toast';
 import { communityPostsApi, type CommunityPost, type CommunityPostComment } from '@/modules/community-posts/api/community-posts.api';
 import { getGirlDetailUrl, generateSlug } from '@/lib/utils/slug';
+import { getFullImageUrl } from '@/lib/utils/image';
 
 interface CommunityPostCardProps {
   post: CommunityPost;
@@ -71,7 +72,7 @@ function CommentItem({
             </span>
           </div>
           <p className={`text-text ${isNested ? 'text-xs' : 'text-sm'} whitespace-pre-wrap mb-2`}>{comment.content}</p>
-          
+
           {isAuthenticated && depth < maxDepth && (
             <button
               type="button"
@@ -147,7 +148,7 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
   const [loadingComments, setLoadingComments] = useState(false);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState<{ [key: string]: string }>({});
-  
+
   const girlUrl = post.girl
     ? getGirlDetailUrl(post.girl.id, post.girl.name || generateSlug(post.girl.id))
     : '#';
@@ -156,7 +157,7 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
     PENDING: 'Chờ duyệt',
     REJECTED: 'Bị từ chối',
   };
-  
+
   useEffect(() => {
     if (lightboxIndex !== null) {
       document.body.style.overflow = 'hidden';
@@ -171,12 +172,12 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
       setLoadingComments(true);
       const result = await communityPostsApi.getComments(post.id);
       const commentsData = result.data || [];
-      
+
       const organizedComments = commentsData.map((cmt: CommunityPostComment) => ({
         ...cmt,
         replies: cmt.replies || [],
       }));
-      
+
       setComments(organizedComments);
       setCommentsCount(result.total || commentsData.length);
     } catch (error) {
@@ -230,7 +231,7 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
       className={`relative w-full h-full overflow-hidden bg-background-light/80 group ${className}`}
     >
       <Image
-        src={src}
+        src={getFullImageUrl(src)}
         alt={`Hình ${idx + 1}`}
         fill
         className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
@@ -355,7 +356,7 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
     } catch (error: any) {
       console.error('Error toggling like:', error);
       let errorMessage = 'Không thể thích bài viết';
-      
+
       if (error.response?.status === 401) {
         errorMessage = 'Vui lòng đăng nhập để thích bài viết';
       } else if (error.response?.status === 403) {
@@ -365,7 +366,7 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
+
       toast.error(errorMessage);
     } finally {
       setLiking(false);
@@ -432,17 +433,17 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
       toast.error('Vui lòng đăng nhập để bình luận');
       return;
     }
-    
+
     const commentText = parentId ? (replyText[parentId] || '').trim() : comment.trim();
     if (!commentText) return;
-    
+
     try {
       setSubmitting(true);
-      const newComment = await communityPostsApi.addComment(post.id, { 
+      const newComment = await communityPostsApi.addComment(post.id, {
         content: commentText,
         ...(parentId && { parentId })
       });
-      
+
       if (parentId) {
         setReplyText(prev => ({ ...prev, [parentId]: '' }));
         setReplyingTo(null);
@@ -453,7 +454,7 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
         setComments(prevComments => [newComment, ...prevComments]);
         setCommentsCount(prev => prev + 1);
       }
-      
+
       toast.success(parentId ? 'Đã gửi phản hồi' : 'Đã gửi bình luận');
     } catch {
       toast.error('Không thể gửi bình luận');
@@ -502,7 +503,7 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
             }}
           >
             <Image
-              src={currentImg}
+              src={getFullImageUrl(currentImg)}
               alt="Ảnh"
               fill
               className="object-contain"
@@ -544,13 +545,12 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
         </div>
         {post.status && (
           <span
-            className={`text-xs font-semibold px-3 py-1 rounded-full border ${
-              post.status === 'APPROVED'
+            className={`text-xs font-semibold px-3 py-1 rounded-full border ${post.status === 'APPROVED'
                 ? 'bg-green-500/10 text-green-400 border-green-500/30'
                 : post.status === 'PENDING'
-                ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30'
-                : 'bg-red-500/10 text-red-400 border-red-500/30'
-            }`}
+                  ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30'
+                  : 'bg-red-500/10 text-red-400 border-red-500/30'
+              }`}
           >
             {statusTextMap[post.status] || post.status}
           </span>
@@ -567,15 +567,15 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
 
       {/* Girl Tag */}
       {post.girl && (
-        <Link 
+        <Link
           href={girlUrl}
           className="inline-flex items-center max-w-full gap-2 px-2.5 py-1 rounded-md transition-all duration-200 mb-3 group cursor-pointer text-primary hover:text-primary-hover"
         >
           <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center flex-shrink-0 shadow-sm">
             {post.girl.user?.avatarUrl ? (
-              <img 
-                src={post.girl.user.avatarUrl} 
-                alt={post.girl.name || 'Gái'} 
+              <img
+                src={post.girl.user.avatarUrl}
+                alt={post.girl.name || 'Gái'}
                 className="w-full h-full rounded-full object-cover"
               />
             ) : (
@@ -602,12 +602,12 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
 
       {/* Stats */}
       <div className="flex items-center gap-6 mt-4 pt-4 border-t border-secondary/20">
-        <button 
+        <button
           type="button"
-          onClick={(e) => { 
-            e.stopPropagation(); 
+          onClick={(e) => {
+            e.stopPropagation();
             e.preventDefault();
-            handleLike(); 
+            handleLike();
           }}
           disabled={liking}
           className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all ${liked ? 'text-primary bg-primary/10' : 'text-text-muted hover:text-primary hover:bg-background'} ${liking ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}

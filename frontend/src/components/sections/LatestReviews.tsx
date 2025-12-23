@@ -8,6 +8,7 @@ import { useAuthStore } from '@/store/auth.store';
 import toast from 'react-hot-toast';
 import { reviewsApi } from '@/modules/reviews/api/reviews.api';
 import type { Review, ReviewComment } from '@/modules/reviews/api/reviews.api';
+import { getFullImageUrl } from '@/lib/utils/image';
 
 interface LatestReviewsProps {
   limit?: number;
@@ -80,7 +81,7 @@ function CommentItem({
             </span>
           </div>
           <p className={`text-text ${isNested ? 'text-xs' : 'text-sm'} whitespace-pre-wrap mb-2`}>{comment.content}</p>
-          
+
           {/* Reply Button - chỉ hiển thị nếu chưa đạt maxDepth */}
           {isAuthenticated && depth < maxDepth && (
             <button
@@ -214,8 +215,8 @@ export default function LatestReviews({ limit = 6 }: LatestReviewsProps) {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-bold text-text">Đánh giá gái gọi</h2>
-        <Link 
-          href="/reviews" 
+        <Link
+          href="/reviews"
           className="text-sm text-primary hover:text-primary-hover transition-colors"
         >
           Xem tất cả
@@ -258,14 +259,14 @@ function ReviewCard({ review }: { review: Review }) {
   const [loadingComments, setLoadingComments] = useState(false);
   const [replyingTo, setReplyingTo] = useState<string | null>(null); // ID của comment đang reply
   const [replyText, setReplyText] = useState<{ [key: string]: string }>({}); // Text reply cho mỗi comment
-  
+
   const girlUrl =
     review.girl && (review.girl as any).slug
       ? `/girls/${review.girl.id}/${(review.girl as any).slug}`
       : review.girl
         ? `/girls/${review.girl.id}`
         : '#';
-  
+
   // Lock body scroll when lightbox is open
   useEffect(() => {
     if (lightboxImage) {
@@ -281,14 +282,14 @@ function ReviewCard({ review }: { review: Review }) {
       setLoadingComments(true);
       const result = await reviewsApi.getComments(review.id);
       const commentsData = result.data || [];
-      
+
       // Backend đã include replies sẵn trong mỗi comment
       // Đảm bảo mỗi comment có replies array (có thể rỗng)
       const organizedComments = commentsData.map((cmt: ReviewComment) => ({
         ...cmt,
         replies: cmt.replies || [],
       }));
-      
+
       setComments(organizedComments);
       // Cập nhật số lượng comments từ total (bao gồm cả replies)
       setCommentsCount(result.total || commentsData.length);
@@ -357,7 +358,7 @@ function ReviewCard({ review }: { review: Review }) {
     } catch (error: any) {
       console.error('Error toggling like:', error);
       let errorMessage = 'Không thể thích bài viết';
-      
+
       // Handle specific error cases
       if (error.response?.status === 401) {
         errorMessage = 'Vui lòng đăng nhập để thích bài viết';
@@ -368,7 +369,7 @@ function ReviewCard({ review }: { review: Review }) {
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
+
       toast.error(errorMessage);
     } finally {
       setLiking(false);
@@ -408,37 +409,37 @@ function ReviewCard({ review }: { review: Review }) {
       toast.error('Vui lòng đăng nhập để bình luận');
       return;
     }
-    
+
     const commentText = parentId ? (replyText[parentId] || '').trim() : comment.trim();
     if (!commentText) return;
-    
+
     try {
       setSubmitting(true);
-      const newComment = await reviewsApi.addComment(review.id, { 
+      const newComment = await reviewsApi.addComment(review.id, {
         content: commentText,
         ...(parentId && { parentId }) // Thêm parentId nếu là reply (có thể là reply của comment hoặc reply của reply)
       });
-      
+
       // Clear input
       if (parentId) {
         setReplyText(prev => ({ ...prev, [parentId]: '' }));
         setReplyingTo(null);
-        
+
         // Cập nhật state local - thêm reply vào comment/reply tương ứng (hỗ trợ nested)
         setComments(prevComments => addReplyToComment(prevComments, parentId, newComment));
-        
+
         // Cập nhật số lượng comments
         setCommentsCount(prev => prev + 1);
       } else {
         setComment('');
-        
+
         // Cập nhật state local - thêm comment mới vào đầu danh sách
         setComments(prevComments => [newComment, ...prevComments]);
-        
+
         // Cập nhật số lượng comments
         setCommentsCount(prev => prev + 1);
       }
-      
+
       toast.success(parentId ? 'Đã gửi phản hồi' : 'Đã gửi bình luận');
       // Không cần gọi onRefetch() vì đã update state local rồi
       // onRefetch() sẽ gây reload toàn bộ reviews, làm mất component
@@ -488,7 +489,7 @@ function ReviewCard({ review }: { review: Review }) {
 
       {/* Girl Tag */}
       {review.girl && (
-        <Link 
+        <Link
           href={girlUrl}
           className="inline-flex items-center gap-1 text-sm text-primary hover:text-primary-hover mb-3"
         >
@@ -501,17 +502,16 @@ function ReviewCard({ review }: { review: Review }) {
       {displayImages.length > 0 && (
         <div className="grid grid-cols-2 gap-2 mt-2">
           {displayImages.map((img, i) => (
-            <div 
+            <div
               key={i}
               className="relative w-full aspect-square rounded-xl overflow-hidden bg-secondary/20 cursor-pointer group"
               onClick={() => setLightboxImage(img)}
             >
               <Image
-                src={img}
+                src={getFullImageUrl(img)}
                 alt={`Review image ${i + 1}`}
                 fill
                 className="object-cover group-hover:scale-105 transition-transform duration-300"
-                unoptimized
               />
               {/* Hiển thị số ảnh còn lại nếu là ảnh thứ 4 và còn nhiều ảnh hơn */}
               {i === 3 && images.length > 4 && (
@@ -526,12 +526,12 @@ function ReviewCard({ review }: { review: Review }) {
 
       {/* Stats */}
       <div className="flex items-center gap-5 mt-4 text-base md:text-lg text-text-muted">
-        <button 
+        <button
           type="button"
-          onClick={(e) => { 
-            e.stopPropagation(); 
+          onClick={(e) => {
+            e.stopPropagation();
             e.preventDefault();
-            handleLike(); 
+            handleLike();
           }}
           disabled={liking}
           className={`flex items-center gap-1.5 hover:text-primary transition-colors ${liked ? 'text-primary' : ''} ${liking ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -607,7 +607,7 @@ function ReviewCard({ review }: { review: Review }) {
 
       {/* Lightbox Modal */}
       {lightboxImage && (
-        <div 
+        <div
           className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center animate-in fade-in duration-200"
           onClick={() => setLightboxImage(null)}
         >
@@ -623,18 +623,17 @@ function ReviewCard({ review }: { review: Review }) {
           </button>
 
           {/* Image */}
-          <div 
+          <div
             className="relative w-full h-full max-w-4xl max-h-[90vh] mx-4 animate-in zoom-in-95 duration-300"
             onClick={(e) => e.stopPropagation()}
           >
             <Image
-              src={lightboxImage}
+              src={getFullImageUrl(lightboxImage)}
               alt="Review image"
               fill
               className="object-contain"
               sizes="100vw"
               priority
-              unoptimized
             />
           </div>
 
@@ -648,11 +647,10 @@ function ReviewCard({ review }: { review: Review }) {
                     e.stopPropagation();
                     setLightboxImage(img);
                   }}
-                  className={`relative w-14 h-14 rounded overflow-hidden border-2 transition-all ${
-                    lightboxImage === img ? 'border-primary' : 'border-transparent hover:border-white/50'
-                  }`}
+                  className={`relative w-14 h-14 rounded overflow-hidden border-2 transition-all ${lightboxImage === img ? 'border-primary' : 'border-transparent hover:border-white/50'
+                    }`}
                 >
-                  <Image src={img} alt="" fill className="object-cover" unoptimized />
+                  <Image src={getFullImageUrl(img)} alt="" fill className="object-cover" />
                 </button>
               ))}
             </div>
