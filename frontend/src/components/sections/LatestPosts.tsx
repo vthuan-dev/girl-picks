@@ -4,6 +4,7 @@ import { useQuery } from 'react-query';
 import Image from 'next/image';
 import Link from 'next/link';
 import { postsApi } from '@/modules/posts/api/posts.api';
+import { getFullImageUrl } from '@/lib/utils/image';
 
 interface Post {
   id: string;
@@ -128,12 +129,11 @@ function PostCard({ post }: { post: Post }) {
       {/* Image */}
       <Link href={postUrl} className="block relative aspect-video overflow-hidden">
         <Image
-          src={imageUrl}
+          src={getFullImageUrl(imageUrl)}
           alt={post.title || 'Bài viết'}
           fill
           className="object-cover group-hover:scale-105 transition-transform duration-300"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          unoptimized
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
       </Link>
@@ -154,12 +154,11 @@ function PostCard({ post }: { post: Post }) {
               <div className="w-7 h-7 rounded-full overflow-hidden bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
                 {post.author.avatarUrl ? (
                   <Image
-                    src={post.author.avatarUrl}
+                    src={getFullImageUrl(post.author.avatarUrl)}
                     alt={post.author.fullName || 'Tác giả'}
                     width={28}
                     height={28}
                     className="object-cover w-full h-full"
-                    unoptimized
                   />
                 ) : (
                   <span className="text-xs font-bold text-primary">
@@ -183,12 +182,11 @@ function PostCard({ post }: { post: Post }) {
               <div className="w-7 h-7 rounded-full overflow-hidden bg-secondary/30">
                 {post.girl.images?.[0] && (
                   <Image
-                    src={post.girl.images[0]}
+                    src={getFullImageUrl(post.girl.images[0])}
                     alt={post.girl.name || 'Gái gọi'}
                     width={28}
                     height={28}
                     className="object-cover w-full h-full"
-                    unoptimized
                   />
                 )}
               </div>
