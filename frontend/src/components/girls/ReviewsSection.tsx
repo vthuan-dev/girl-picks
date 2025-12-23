@@ -639,64 +639,28 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
     <div className="bg-background-light rounded-2xl p-4 sm:p-6 border border-secondary/30 shadow-lg">
       {/* Header */}
       {/* Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 mb-8 pb-6 border-b border-secondary/30">
-        <div className="flex-1">
-          <h2 className="text-2xl sm:text-3xl font-bold text-text mb-4 flex items-center gap-3">
-            <div className="w-1 h-8 bg-primary rounded-full"></div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 pb-4 border-b border-secondary/30">
+        <div className="flex items-center gap-3 flex-wrap">
+          <h2 className="text-lg sm:text-xl font-bold text-text flex items-center gap-2">
+            <div className="w-1 h-6 bg-primary rounded-full" />
             Đánh giá & Bình luận
           </h2>
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-1.5">
-              {[...Array(5)].map((_, i) => {
-                const isHalf = i < averageRating && i + 1 > averageRating;
-                const isFull = i < Math.floor(averageRating);
-                return (
-                  <div key={i} className="relative">
-                    <svg
-                      className={`w-8 h-8 sm:w-9 sm:h-9 transition-all ${
-                        isFull
-                          ? 'text-yellow-400 fill-current'
-                          : 'text-secondary/30'
-                      }`}
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                    {isHalf && (
-                      <div className="absolute inset-0 overflow-hidden" style={{ width: '50%' }}>
-                        <svg
-                          className="w-8 h-8 sm:w-9 sm:h-9 text-yellow-400 fill-current"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="font-bold text-text text-xl sm:text-2xl">{averageRating.toFixed(1)}</span>
-              <span className="text-text-muted text-base">({totalReviews} đánh giá)</span>
-            </div>
+          <div className="flex items-center gap-2 text-sm sm:text-base">
+            <span className="font-semibold text-text">{averageRating.toFixed(1)}</span>
+            <span className="text-yellow-400">★</span>
+            <span className="text-text-muted">({totalReviews} đánh giá)</span>
           </div>
         </div>
         {!loading && (
-              <button
+          <button
             onClick={() => {
               if (!requireAuth()) return;
               setShowReviewForm(!showReviewForm);
             }}
-                className="px-6 py-3 bg-gradient-to-r from-primary to-primary-hover text-white rounded-xl hover:shadow-xl hover:shadow-primary/30 active:scale-95 transition-all font-semibold cursor-pointer flex items-center justify-center gap-2.5 flex-shrink-0 text-base"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                </svg>
-                Viết đánh giá
-              </button>
+            className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-hover transition-colors"
+          >
+            Viết đánh giá
+          </button>
         )}
       </div>
 
@@ -893,27 +857,12 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
           <p className="text-text-muted text-base font-medium">Đang tải đánh giá...</p>
         </div>
       ) : reviews.length === 0 ? (
-        <div className="text-center py-16 px-4">
-          <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-primary/20 to-primary/10 rounded-2xl flex items-center justify-center border-2 border-primary/30 shadow-lg shadow-primary/10">
-            <svg className="w-14 h-14 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-            </svg>
-          </div>
-          <h3 className="text-xl font-bold text-text mb-2">Chưa có đánh giá nào</h3>
-          <p className="text-text-muted text-base mb-6 max-w-md mx-auto">
-            Hãy là người đầu tiên chia sẻ trải nghiệm của bạn về dịch vụ này!
+        <div className="text-center py-10 px-4 border border-secondary/20 rounded-xl bg-background">
+          <div className="text-3xl mb-3">⭐</div>
+          <h3 className="text-base font-semibold text-text mb-1">Chưa có đánh giá</h3>
+          <p className="text-sm text-text-muted mb-4">
+            Hãy là người đầu tiên chia sẻ trải nghiệm của bạn.
           </p>
-          {isAuthenticated && user && (
-            <button
-              onClick={() => setShowReviewForm(true)}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-primary-hover text-white rounded-xl hover:shadow-xl hover:shadow-primary/30 active:scale-95 transition-all font-semibold cursor-pointer"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-              </svg>
-              Viết đánh giá đầu tiên
-            </button>
-          )}
         </div>
       ) : (
         <div className="space-y-4">
