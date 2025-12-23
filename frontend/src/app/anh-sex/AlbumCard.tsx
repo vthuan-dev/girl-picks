@@ -1,9 +1,10 @@
-/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Album } from '@/modules/albums/api/albums.api';
+import { getFullImageUrl } from '@/lib/utils/image';
 
 interface AlbumCardProps {
   album: Album;
@@ -71,16 +72,22 @@ export default function AlbumCard({ album, images }: AlbumCardProps) {
         {displayImages.map((src, i) => {
           const isActive = i === index;
           return (
-            <img
+            <div
               key={src + i}
-              src={src}
-              alt={album.title}
-              referrerPolicy="no-referrer"
-              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${isActive ? 'opacity-100' : 'opacity-0'}`}
-            />
+              className={`absolute inset-0 transition-opacity duration-500 ${isActive ? 'opacity-100' : 'opacity-0'}`}
+            >
+              <Image
+                src={getFullImageUrl(src)}
+                alt={album.title}
+                fill
+                className="object-cover"
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                referrerPolicy="no-referrer"
+              />
+            </div>
           );
         })}
-        <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-lg">
+        <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-lg z-10">
           {(album._count?.images || displayImages.length || 0)} ảnh
         </div>
       </div>

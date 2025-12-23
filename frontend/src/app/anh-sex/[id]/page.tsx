@@ -1,10 +1,10 @@
-'use client';
-
 import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import StructuredData from '@/components/seo/StructuredData';
 import { albumsApi, Album } from '@/modules/albums/api/albums.api';
+import { getFullImageUrl } from '@/lib/utils/image';
 
 export default function AlbumDetailPage() {
   const params = useParams();
@@ -94,10 +94,16 @@ export default function AlbumDetailPage() {
                   setLightboxIndex(idx);
                   requestAnimationFrame(() => setIsLightboxVisible(true));
                 }}
-                className="group bg-background-light border border-secondary/20 rounded-md overflow-hidden hover:border-primary/50 hover:shadow-md hover:shadow-primary/10 transition-all"
+                className="group relative aspect-square bg-background-light border border-secondary/20 rounded-md overflow-hidden hover:border-primary/50 hover:shadow-md hover:shadow-primary/10 transition-all"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={img.url} alt={img.caption || album.title} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                <Image
+                  src={getFullImageUrl(img.url)}
+                  alt={img.caption || album.title}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                  referrerPolicy="no-referrer"
+                />
               </button>
             ))}
           </div>
@@ -108,31 +114,33 @@ export default function AlbumDetailPage() {
         <div className={`fixed inset-0 z-50 bg-black/80 flex items-center justify-center transition-opacity duration-200 ${isLightboxVisible ? 'opacity-100' : 'opacity-0'}`}>
           <button
             onClick={closeLightbox}
-            className="absolute top-4 right-4 text-white text-2xl px-3 py-2 bg-black/40 rounded-full hover:bg-black/60"
+            className="absolute top-4 right-4 text-white text-2xl px-3 py-2 bg-black/40 rounded-full hover:bg-black/60 z-10"
           >
             ✕
           </button>
           <button
             onClick={showPrev}
-            className="absolute left-4 text-white text-2xl px-3 py-2 bg-black/40 rounded-full hover:bg-black/60"
+            className="absolute left-4 text-white text-2xl px-3 py-2 bg-black/40 rounded-full hover:bg-black/60 z-10"
           >
             ‹
           </button>
-          <div className={`max-w-5xl max-h-[80vh] mx-4 transform transition-transform duration-250 ease-out ${isLightboxVisible ? 'scale-100' : 'scale-90'}`}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={images[lightboxIndex].url}
+          <div className={`relative max-w-5xl w-full h-[80vh] mx-4 transform transition-transform duration-250 ease-out ${isLightboxVisible ? 'scale-100' : 'scale-90'}`}>
+            <Image
+              src={getFullImageUrl(images[lightboxIndex].url)}
               alt={images[lightboxIndex].caption || album?.title || ''}
+              fill
+              className="object-contain"
+              sizes="100vw"
+              priority
               referrerPolicy="no-referrer"
-              className={`w-full h-full object-contain transition-opacity duration-200 ${isLightboxVisible ? 'opacity-100' : 'opacity-0'}`}
             />
             {images[lightboxIndex].caption && (
-              <p className="text-center text-sm text-white mt-2">{images[lightboxIndex].caption}</p>
+              <p className="absolute -bottom-8 left-0 right-0 text-center text-sm text-white mt-2">{images[lightboxIndex].caption}</p>
             )}
           </div>
           <button
             onClick={showNext}
-            className="absolute right-4 text-white text-2xl px-3 py-2 bg-black/40 rounded-full hover:bg-black/60"
+            className="absolute right-4 text-white text-2xl px-3 py-2 bg-black/40 rounded-full hover:bg-black/60 z-10"
           >
             ›
           </button>

@@ -6,6 +6,11 @@ export function getFullImageUrl(url: string | undefined | null): string {
 
     // Return as is if it's already an absolute URL (but not on our domain with old path) or base64
     if (url.startsWith('http') || url.startsWith('data:')) {
+        // Handle gaigu1.net to gaigu2.net transition
+        if (url.includes('gaigu1.net')) {
+            url = url.replace('gaigu1.net', 'gaigu2.net');
+        }
+
         // If it's our own domain and has the problematic path, we still want to fix it below
         if (url.includes('gaigo1.net/public/uploads/') && !url.includes('gaigo1.net/api/public/uploads/')) {
             // Continue to cleanUrl logic
