@@ -9,8 +9,14 @@ import { CacheHeaderInterceptor } from './common/interceptors/cache-header.inter
 import helmet from 'helmet';
 import compression from 'compression';
 
+import { json, urlencoded } from 'express';
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Tăng giới hạn body size cho Base64 images
+  app.use(json({ limit: '50mb' }));
+  app.use(urlencoded({ extended: true, limit: '50mb' }));
 
   // Compression - giảm kích thước response
   app.use(compression());
