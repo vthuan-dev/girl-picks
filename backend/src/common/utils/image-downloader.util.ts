@@ -107,8 +107,11 @@ export async function getImageBufferFromUrl(imageUrl: string): Promise<Buffer> {
  * Validate image URL
  */
 export function isValidImageUrl(url: string): boolean {
+  if (url && url.startsWith('data:image/')) {
+    return true;
+  }
   try {
-    const urlObj = new URL(url);
+    const urlObj = new URL(url || '');
     return ['http:', 'https:'].includes(urlObj.protocol);
   } catch {
     return false;
