@@ -50,7 +50,7 @@ async function bootstrap() {
     new CacheHeaderInterceptor(), // Thêm cache headers
   );
 
-  const port = process.env.PORT || 3001;
+  const port = process.env.PORT || 8000;
   await app.listen(port, '0.0.0.0');
   console.log(`Application is running on: http://0.0.0.0:${port}`);
 }
