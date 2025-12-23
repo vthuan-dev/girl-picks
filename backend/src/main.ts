@@ -16,11 +16,6 @@ import { json, urlencoded } from 'express';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // Cấu hình serve static files từ thư mục public
-  app.useStaticAssets(join(__dirname, '..', 'public'), {
-    prefix: '/public',
-  });
-
   // Tăng giới hạn body size cho Base64 images
   app.use(json({ limit: '50mb' }));
   app.use(urlencoded({ extended: true, limit: '50mb' }));

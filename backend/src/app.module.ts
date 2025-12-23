@@ -33,9 +33,17 @@ import { AlbumsModule } from './modules/albums/albums.module';
 import { AlbumCategoriesModule } from './modules/album-categories/album-categories.module';
 import { ChatSexModule } from './modules/chat-sex/chat-sex.module';
 import { MoviesModule } from './modules/movies/movies.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
   imports: [
+    ServeStaticModule.forRoot(
+      {
+        rootPath: join(process.cwd(), 'uploads'),
+        serveRoot: '/uploads',
+      }
+    ),
     PrismaModule,
     CacheModule,
     AuthModule,
@@ -82,4 +90,4 @@ import { MoviesModule } from './modules/movies/movies.module';
     // },
   ],
 })
-export class AppModule {}
+export class AppModule { }
