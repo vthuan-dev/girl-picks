@@ -12,7 +12,7 @@ export default function AlbumDetailPage() {
   const [album, setAlbum] = useState<Album | null>(null);
   const [loading, setLoading] = useState(true);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-
+  const [isLightboxVisible, setIsLightboxVisible] = useState(false);
   const fetchAlbum = useCallback(async () => {
     if (!albumId) return;
     setLoading(true);
@@ -34,7 +34,6 @@ export default function AlbumDetailPage() {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gaigo1.net';
 
   const images = album?.images || [];
-  const [isLightboxVisible, setIsLightboxVisible] = useState(false);
 
   const closeLightbox = () => {
     setIsLightboxVisible(false);
@@ -93,7 +92,7 @@ export default function AlbumDetailPage() {
                 key={img.id}
                 onClick={() => {
                   setLightboxIndex(idx);
-                  setIsLightboxVisible(true);
+                  requestAnimationFrame(() => setIsLightboxVisible(true));
                 }}
                 className="group bg-background-light border border-secondary/20 rounded-md overflow-hidden hover:border-primary/50 hover:shadow-md hover:shadow-primary/10 transition-all"
               >
@@ -119,12 +118,12 @@ export default function AlbumDetailPage() {
           >
             ‹
           </button>
-          <div className={`max-w-5xl max-h-[80vh] mx-4 transform transition-transform duration-200 ${isLightboxVisible ? 'scale-100' : 'scale-95'}`}>
+          <div className={`max-w-5xl max-h-[80vh] mx-4 transform transition-transform duration-250 ease-out ${isLightboxVisible ? 'scale-100' : 'scale-90'}`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={images[lightboxIndex].url}
               alt={images[lightboxIndex].caption || album?.title || ''}
-              className="w-full h-full object-contain"
+              className={`w-full h-full object-contain transition-opacity duration-200 ${isLightboxVisible ? 'opacity-100' : 'opacity-0'}`}
             />
             {images[lightboxIndex].caption && (
               <p className="text-center text-sm text-white mt-2">{images[lightboxIndex].caption}</p>

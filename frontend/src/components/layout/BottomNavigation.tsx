@@ -83,8 +83,13 @@ export default function BottomNavigation() {
 
     const replaceableHrefs = baseNavItems.map((item) => item.href);
     const isReplaceableActive = replaceableHrefs.some((href) => pathname === href || pathname?.startsWith(href + '/'));
+    const isAnhSexActive = pathname === '/anh-sex' || pathname?.startsWith('/anh-sex/');
 
     const navItems = (() => {
+        if (isAnhSexActive) {
+            // Đang ở /anh-sex: không hiển thị tab Ảnh sex
+            return [...baseNavItems, supportItem];
+        }
         if (isReplaceableActive) {
             const filtered = baseNavItems.filter((item) => !(pathname === item.href || pathname?.startsWith(item.href + '/')));
             return [...filtered, anhSexItem, supportItem];
