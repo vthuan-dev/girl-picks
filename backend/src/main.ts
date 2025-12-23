@@ -9,10 +9,16 @@ import { CacheHeaderInterceptor } from './common/interceptors/cache-header.inter
 import helmet from 'helmet';
 import compression from 'compression';
 
-import { json, urlencoded } from 'express';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // Cấu hình serve static files từ thư mục public
+  app.useStaticAssets(join(__dirname, '..', 'public'), {
+    prefix: '/public',
+  });
 
   // Tăng giới hạn body size cho Base64 images
   app.use(json({ limit: '50mb' }));
