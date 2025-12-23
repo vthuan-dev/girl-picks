@@ -1,7 +1,8 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
-import { v4 as uuidv4 } from 'uuid';
+// Dùng hàm đơn giản thay cho uuid để tránh thiếu module
+const generateId = () => Date.now() + '-' + Math.round(Math.random() * 1e9);
 
 export interface UploadImageDto {
   url: string; // Đây là chuỗi Base64 gửi từ Frontend
@@ -50,7 +51,7 @@ export class UploadService {
 
       const extension = matches[1] === 'jpeg' ? 'jpg' : matches[1];
       const base64Data = matches[2];
-      const filename = `${dto.publicId || uuidv4()}.${extension}`;
+      const filename = `${dto.publicId || generateId()}.${extension}`;
       const filePath = join(fullFolderPath, filename);
 
       // Lưu file
