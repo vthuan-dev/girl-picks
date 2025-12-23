@@ -51,6 +51,7 @@ export default function ImageLightbox({ images, currentIndex, onClose, onNext, o
                     <img
                         src={images[currentIndex]}
                         alt={`Image ${currentIndex + 1}`}
+                        referrerPolicy="no-referrer"
                         className="max-w-full max-h-full object-contain rounded-lg"
                         onClick={(e) => e.stopPropagation()}
                     />

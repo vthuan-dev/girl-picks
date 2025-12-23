@@ -97,7 +97,7 @@ export default function AlbumDetailPage() {
                 className="group bg-background-light border border-secondary/20 rounded-md overflow-hidden hover:border-primary/50 hover:shadow-md hover:shadow-primary/10 transition-all"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={img.url} alt={img.caption || album.title} className="w-full h-full object-cover" />
+                <img src={img.url} alt={img.caption || album.title} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
               </button>
             ))}
           </div>
@@ -123,6 +123,7 @@ export default function AlbumDetailPage() {
             <img
               src={images[lightboxIndex].url}
               alt={images[lightboxIndex].caption || album?.title || ''}
+              referrerPolicy="no-referrer"
               className={`w-full h-full object-contain transition-opacity duration-200 ${isLightboxVisible ? 'opacity-100' : 'opacity-0'}`}
             />
             {images[lightboxIndex].caption && (

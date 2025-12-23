@@ -34,6 +34,7 @@ export default function ReviewImageGallery({ images }: ReviewImageGalleryProps) 
                     <img
                         src={images[0]}
                         alt="Review image"
+                        referrerPolicy="no-referrer"
                         className="w-full h-auto object-cover max-h-[600px] hover:scale-105 transition-transform duration-300"
                     />
                 </div>
@@ -65,6 +66,7 @@ export default function ReviewImageGallery({ images }: ReviewImageGalleryProps) 
                             <img
                                 src={img}
                                 alt={`Review image ${index + 1}`}
+                                referrerPolicy="no-referrer"
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 aspect-square"
                             />
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
@@ -96,6 +98,7 @@ export default function ReviewImageGallery({ images }: ReviewImageGalleryProps) 
                     <img
                         src={images[0]}
                         alt="Main review image"
+                        referrerPolicy="no-referrer"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
@@ -111,6 +114,7 @@ export default function ReviewImageGallery({ images }: ReviewImageGalleryProps) 
                         <img
                             src={img}
                             alt={`Review image ${index + 2}`}
+                            referrerPolicy="no-referrer"
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>

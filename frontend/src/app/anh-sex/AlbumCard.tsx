@@ -75,6 +75,7 @@ export default function AlbumCard({ album, images }: AlbumCardProps) {
               key={src + i}
               src={src}
               alt={album.title}
+              referrerPolicy="no-referrer"
               className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${isActive ? 'opacity-100' : 'opacity-0'}`}
             />
           );
