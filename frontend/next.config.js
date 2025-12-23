@@ -40,12 +40,22 @@ const nextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'gaigu2.net',
+        pathname: '/images/**',
+      },
+      {
+        protocol: 'https',
         hostname: 'gaigo1.net',
         pathname: '/media/**',
       },
       {
         protocol: 'https',
         hostname: 'gaigu1.net',
+        pathname: '/media/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'gaigu2.net',
         pathname: '/media/**',
       },
       {
@@ -70,12 +80,27 @@ const nextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'gaigu2.net',
+        pathname: '/public/uploads/**',
+      },
+      {
+        protocol: 'https',
         hostname: 'gaigu1.net',
         pathname: '/api/public/uploads/**',
       },
       {
         protocol: 'https',
+        hostname: 'gaigu2.net',
+        pathname: '/api/public/uploads/**',
+      },
+      {
+        protocol: 'https',
         hostname: 'gaigu1.net',
+        pathname: '/api/uploads/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'gaigu2.net',
         pathname: '/api/uploads/**',
       },
       {

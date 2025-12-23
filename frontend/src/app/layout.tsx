@@ -18,11 +18,11 @@ export const metadata: Metadata = {
   },
   description: 'Kết nối với những người bạn đồng hành chuyên nghiệp, đáng tin cậy và thú vị. Tìm kiếm và đặt lịch dịch vụ giải trí chất lượng cao.',
   keywords: [
-    'gái gọi', 'gaigu', 'gaigoi', 'gái gọi sài gòn', 'gái gọi hà nội', 'gái gọi cao cấp', 
-    'gái gọi giá rẻ', 'gái gọi quận 10', 'gái gọi quận 8', 'gái gọi bình dương', 
-    'gái gọi đà nẵng', 'gái gọi cần thơ', 'gái gọi online', 'gái gọi kỹ nữ', 
-    'dịch vụ giải trí', 'tìm gái gọi', 'gái gọi xinh', 'gái gọi vú to', 
-    'gái gọi làm tình', 'gái dâm', 'gái xinh', 'hot girl', 'sinh viên', 
+    'gái gọi', 'gaigu', 'gaigoi', 'gái gọi sài gòn', 'gái gọi hà nội', 'gái gọi cao cấp',
+    'gái gọi giá rẻ', 'gái gọi quận 10', 'gái gọi quận 8', 'gái gọi bình dương',
+    'gái gọi đà nẵng', 'gái gọi cần thơ', 'gái gọi online', 'gái gọi kỹ nữ',
+    'dịch vụ giải trí', 'tìm gái gọi', 'gái gọi xinh', 'gái gọi vú to',
+    'gái gọi làm tình', 'gái dâm', 'gái xinh', 'hot girl', 'sinh viên',
     'người mẫu', 'chân dài', 'eo thon', 'mông to', 'ngực khủng', 'da trắng',
     'phim sex', 'sex tự quay', 'sex việt nam', 'sex nhật bản', 'sex hàn quốc',
     'chat sex', 'ảnh sex', 'video sex', 'phim người lớn', 'phim 18+',
@@ -40,9 +40,9 @@ export const metadata: Metadata = {
     telephone: false,
   },
   icons: {
-    icon: 'https://gaigu1.net/images/logo/logo.png?v=0.0.1',
-    shortcut: 'https://gaigu1.net/images/logo/logo.png?v=0.0.1',
-    apple: 'https://gaigu1.net/images/logo/logo.png?v=0.0.1',
+    icon: 'https://gaigu2.net/images/logo/logo.png?v=0.0.1',
+    shortcut: 'https://gaigu2.net/images/logo/logo.png?v=0.0.1',
+    apple: 'https://gaigu2.net/images/logo/logo.png?v=0.0.1',
   },
   openGraph: {
     type: 'website',
@@ -53,7 +53,7 @@ export const metadata: Metadata = {
     description: 'Kết nối với những người bạn đồng hành chuyên nghiệp, đáng tin cậy và thú vị',
     images: [
       {
-        url: 'https://gaigu1.net/images/logo/logo.png?v=0.0.1',
+        url: 'https://gaigu2.net/images/logo/logo.png?v=0.0.1',
         width: 1200,
         height: 630,
         alt: 'Tìm Gái gọi Logo',
@@ -64,7 +64,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Tìm Gái gọi - Nền tảng đặt lịch dịch vụ giải trí',
     description: 'Kết nối với những người bạn đồng hành chuyên nghiệp, đáng tin cậy và thú vị',
-    images: ['https://gaigu1.net/images/logo/logo.png?v=0.0.1'],
+    images: ['https://gaigu2.net/images/logo/logo.png?v=0.0.1'],
   },
   robots: {
     index: true,
@@ -99,58 +99,58 @@ export default function RootLayout({
       <body className={inter.className}>
         <ChunkErrorHandler />
         <QueryProvider>
-        <PageViewTracker />
-        <StructuredData
-          type="Organization"
-          data={{
-            name: 'Tìm Gái gọi',
-            url: siteUrl,
-            logo: 'https://gaigu1.net/images/logo/logo.png?v=0.0.1',
-            description: 'Nền tảng đặt lịch dịch vụ giải trí chuyên nghiệp',
-            sameAs: [],
-          }}
-        />
-        <StructuredData
-          type="WebSite"
-          data={{
-            name: 'Tìm Gái gọi',
-            url: siteUrl,
-            description: 'Nền tảng đặt lịch dịch vụ giải trí chuyên nghiệp',
-            potentialAction: {
-              '@type': 'SearchAction',
-              target: {
-                '@type': 'EntryPoint',
-                urlTemplate: `${siteUrl}/search?q={search_term_string}`,
+          <PageViewTracker />
+          <StructuredData
+            type="Organization"
+            data={{
+              name: 'Tìm Gái gọi',
+              url: siteUrl,
+              logo: 'https://gaigu2.net/images/logo/logo.png?v=0.0.1',
+              description: 'Nền tảng đặt lịch dịch vụ giải trí chuyên nghiệp',
+              sameAs: [],
+            }}
+          />
+          <StructuredData
+            type="WebSite"
+            data={{
+              name: 'Tìm Gái gọi',
+              url: siteUrl,
+              description: 'Nền tảng đặt lịch dịch vụ giải trí chuyên nghiệp',
+              potentialAction: {
+                '@type': 'SearchAction',
+                target: {
+                  '@type': 'EntryPoint',
+                  urlTemplate: `${siteUrl}/search?q={search_term_string}`,
+                },
+                'query-input': 'required name=search_term_string',
               },
-              'query-input': 'required name=search_term_string',
-            },
-          }}
-        />
-        <ClientLayout>
-          {children}
-        </ClientLayout>
-        <Toaster 
-          position="top-right"
-          toastOptions={{
-            style: {
-              background: '#1c1c1c',
-              color: '#ffffff',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-            },
-            success: {
-              iconTheme: {
-                primary: '#22c55e',
-                secondary: '#ffffff',
+            }}
+          />
+          <ClientLayout>
+            {children}
+          </ClientLayout>
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              style: {
+                background: '#1c1c1c',
+                color: '#ffffff',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
               },
-            },
-            error: {
-              iconTheme: {
-                primary: '#ff0000',
-                secondary: '#ffffff',
+              success: {
+                iconTheme: {
+                  primary: '#22c55e',
+                  secondary: '#ffffff',
+                },
               },
-            },
-          }}
-        />
+              error: {
+                iconTheme: {
+                  primary: '#ff0000',
+                  secondary: '#ffffff',
+                },
+              },
+            }}
+          />
         </QueryProvider>
       </body>
     </html>
