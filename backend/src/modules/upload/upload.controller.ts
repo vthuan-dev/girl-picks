@@ -25,7 +25,7 @@ export class UploadController {
    * POST /api/upload/image
    */
   @Post('image')
-  @Roles(UserRole.ADMIN, UserRole.GIRL, UserRole.STAFF_UPLOAD)
+  @Roles(UserRole.ADMIN, UserRole.GIRL, UserRole.STAFF_UPLOAD, UserRole.CUSTOMER)
   async uploadImage(@Body() dto: UploadImageDto) {
     return this.uploadService.uploadImageFromUrl(dto);
   }
@@ -35,7 +35,7 @@ export class UploadController {
    * POST /api/upload/images
    */
   @Post('images')
-  @Roles(UserRole.ADMIN, UserRole.GIRL, UserRole.STAFF_UPLOAD)
+  @Roles(UserRole.ADMIN, UserRole.GIRL, UserRole.STAFF_UPLOAD, UserRole.CUSTOMER)
   async uploadMultipleImages(@Body() dto: UploadMultipleImagesDto) {
     return this.uploadService.uploadMultipleImagesFromUrls(dto);
   }
@@ -45,7 +45,7 @@ export class UploadController {
    * DELETE /api/upload/image/:publicId
    */
   @Delete('image/:publicId')
-  @Roles(UserRole.ADMIN, UserRole.GIRL, UserRole.STAFF_UPLOAD)
+  @Roles(UserRole.ADMIN, UserRole.GIRL, UserRole.STAFF_UPLOAD, UserRole.CUSTOMER)
   async deleteImage(@Param('publicId') publicId: string) {
     return this.uploadService.deleteImage(publicId);
   }
