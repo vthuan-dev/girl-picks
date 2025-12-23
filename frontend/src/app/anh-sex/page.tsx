@@ -25,7 +25,8 @@ export default function AnhSexPage() {
         limit: itemsPerPage,
       });
       setAlbums(data.data || []);
-      setTotal(data.total || 0);
+      const totalCount = typeof data.total === 'number' ? data.total : (data.data?.length ?? 0);
+      setTotal(totalCount);
     } catch (error) {
       console.error('Failed to fetch albums:', error);
       setAlbums([]);
