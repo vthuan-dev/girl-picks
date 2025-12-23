@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import Header from './Header';
 import Footer from './Footer';
+import BottomNavigation from './BottomNavigation';
 import PageViewTracker from '@/components/analytics/PageViewTracker';
 
 export default function ClientLayout({
@@ -11,17 +12,17 @@ export default function ClientLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  
+
   // Không render Header/Footer cho admin routes, auth routes
   const isAdminRoute = pathname?.startsWith('/admin');
   const isAuthRoute = pathname?.startsWith('/auth');
   const isCustomerRoute = pathname === '/profile' ||
-                          pathname?.startsWith('/profile/') ||
-                          pathname?.startsWith('/messages') || 
-                          pathname?.startsWith('/search') ||
-                          pathname?.startsWith('/client') ||
-                          pathname?.startsWith('/girl') ||
-                          pathname?.startsWith('/customer');
+    pathname?.startsWith('/profile/') ||
+    pathname?.startsWith('/messages') ||
+    pathname?.startsWith('/search') ||
+    pathname?.startsWith('/client') ||
+    pathname?.startsWith('/girl') ||
+    pathname?.startsWith('/customer');
 
   if (isAdminRoute || isAuthRoute) {
     return <>{children}</>;
@@ -31,10 +32,11 @@ export default function ClientLayout({
   if (isCustomerRoute) {
     return (
       <div className="flex flex-col min-h-screen bg-background">
-        <main id="main-content" className="flex-1" tabIndex={-1}>
+        <main id="main-content" className="flex-1 pb-24" tabIndex={-1}>
           {children}
         </main>
         <Footer />
+        <BottomNavigation />
       </div>
     );
   }
@@ -42,10 +44,11 @@ export default function ClientLayout({
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      <main id="main-content" className="flex-1 bg-background" tabIndex={-1}>
+      <main id="main-content" className="flex-1 bg-background pb-24" tabIndex={-1}>
         {children}
       </main>
       <Footer />
+      <BottomNavigation />
     </div>
   );
 }
