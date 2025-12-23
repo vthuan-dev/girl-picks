@@ -105,10 +105,12 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
       const responseData = response.data;
       const data = responseData.success ? responseData.data : responseData;
 
-      if (!data?.cloudinaryUrl) {
+      if (!data?.url) {
         throw new Error('Phản hồi từ server không chứa URL ảnh');
       }
-      return data.cloudinaryUrl;
+
+      toast.success('Tải ảnh lên thành công!');
+      return data.url;
     } catch (error: any) {
       console.error('Upload error details:', error.response?.data || error.message);
       let errorMessage = 'Không thể tải ảnh lên';
@@ -390,8 +392,8 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
           placeholder="Nhập tiêu đề bài viết..."
           maxLength={MAX_TITLE_LENGTH}
           className={`w-full px-4 py-3 bg-background-light border rounded-xl text-text placeholder:text-text-muted/60 focus:outline-none focus:ring-2 transition-all duration-200 cursor-text ${errors.title
-              ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/20'
-              : 'border-secondary/30 focus:border-primary/60 focus:ring-primary/20'
+            ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/20'
+            : 'border-secondary/30 focus:border-primary/60 focus:ring-primary/20'
             }`}
         />
         <div className="mt-2 flex items-center justify-between text-xs">
@@ -439,8 +441,8 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
           rows={6}
           maxLength={MAX_CONTENT_LENGTH}
           className={`w-full px-4 py-3 bg-background-light border rounded-xl text-text placeholder:text-text-muted/60 focus:outline-none focus:ring-2 transition-all duration-200 resize-none cursor-text ${errors.content
-              ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/20'
-              : 'border-secondary/30 focus:border-primary/60 focus:ring-primary/20'
+            ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/20'
+            : 'border-secondary/30 focus:border-primary/60 focus:ring-primary/20'
             }`}
         />
         <div className="mt-2 flex items-center justify-between text-xs">
