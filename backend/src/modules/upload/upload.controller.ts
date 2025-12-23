@@ -15,10 +15,10 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '@prisma/client';
 
-@Controller('api/upload')
+@Controller('upload')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class UploadController {
-  constructor(private readonly uploadService: UploadService) {}
+  constructor(private readonly uploadService: UploadService) { }
 
   /**
    * Upload single image from URL
