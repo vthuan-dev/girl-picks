@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { chatSexApi, ChatSexReview } from '@/modules/chat-sex/api/chat-sex.api';
 import { useAuthStore } from '@/store/auth.store';
 import toast from 'react-hot-toast';
+import ReviewImageGallery from './ReviewImageGallery';
 
 interface ReviewSectionProps {
     girlId: string;
@@ -149,6 +150,54 @@ export default function ReviewSection({ girlId, girlName }: ReviewSectionProps) 
                         />
                     </div>
 
+                    {/* Image Upload */}
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium text-text mb-2">
+                            Ảnh (tùy chọn, tối đa 5 ảnh)
+                        </label>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={handleImageUpload}
+                            className="hidden"
+                            id="image-upload"
+                        />
+                        <label
+                            htmlFor="image-upload"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-secondary/20 hover:bg-secondary/30 border border-secondary/30 rounded-lg cursor-pointer transition-colors"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span className="text-sm text-text">Thêm ảnh</span>
+                        </label>
+
+                        {/* Image Previews */}
+                        {images.length > 0 && (
+                            <div className="mt-3 grid grid-cols-3 gap-2">
+                                {images.map((img, index) => (
+                                    <div key={index} className="relative group">
+                                        <img
+                                            src={img}
+                                            alt={`Preview ${index + 1}`}
+                                            className="w-full h-24 object-cover rounded-lg"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => removeImage(index)}
+                                            className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
                     <button
                         type="submit"
                         disabled={submitting}
@@ -204,6 +253,11 @@ export default function ReviewSection({ girlId, girlName }: ReviewSectionProps) 
                                 <p className="text-text-muted text-sm mt-2 whitespace-pre-line">
                                     {review.comment}
                                 </p>
+                            )}
+
+                            {/* Review Images */}
+                            {review.images && review.images.length > 0 && (
+                                <ReviewImageGallery images={review.images} />
                             )}
                         </div>
                     ))}

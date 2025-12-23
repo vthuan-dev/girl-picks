@@ -1,4 +1,4 @@
-import { IsInt, IsOptional, IsString, Min, Max, MaxLength } from 'class-validator';
+import { IsInt, IsOptional, IsString, Min, Max, MaxLength, IsArray } from 'class-validator';
 
 export class CreateChatSexReviewDto {
     @IsInt()
@@ -10,6 +10,11 @@ export class CreateChatSexReviewDto {
     @IsString()
     @MaxLength(1000)
     comment?: string;
+
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
+    images?: string[];
 
     @IsOptional()
     @IsString()

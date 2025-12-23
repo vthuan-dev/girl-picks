@@ -925,6 +925,7 @@ model ChatSexReview {
   // Review content
   rating  Int // 1-5 stars
   comment String? @db.Text
+  images  Json    @default("[]") // Array of image URLs
 
   // User info (for anonymous reviews)
   userName String? @map("user_name")

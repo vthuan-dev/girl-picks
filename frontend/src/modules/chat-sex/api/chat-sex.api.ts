@@ -46,6 +46,7 @@ export interface ChatSexReview {
   userId?: string;
   rating: number;
   comment?: string;
+  images?: string[]; // Array of image URLs
   userName?: string;
   createdAt: string;
   updatedAt: string;
@@ -118,6 +119,7 @@ export const chatSexApi = {
     data: {
       rating: number;
       comment?: string;
+      images?: string[]; // Array of image URLs or base64
       userName?: string;
     },
   ): Promise<ChatSexReview> => {
