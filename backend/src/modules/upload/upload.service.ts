@@ -1,11 +1,12 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
+import { getImageBufferFromUrl } from '../../common/utils/image-downloader.util';
 // Dùng hàm đơn giản thay cho uuid để tránh thiếu module
 const generateId = () => Date.now() + '-' + Math.round(Math.random() * 1e9);
 
 export interface UploadImageDto {
-  url: string; // Đây là chuỗi Base64 gửi từ Frontend
+  url: string; // Có thể là Base64 hoặc URL tuyệt đối từ website khác
   folder?: string;
   publicId?: string;
 }
@@ -28,11 +29,11 @@ export class UploadService {
   }
 
   /**
-   * Upload single image from Base64 to Local Storage
+   * Upload single image from URL or Base64 to Local Storage
    */
   async uploadImageFromUrl(dto: UploadImageDto) {
-    if (!dto.url || !dto.url.startsWith('data:image/')) {
-      throw new BadRequestException('Invalid image data. Base64 expected.');
+    if (!dto.url) {
+      throw new BadRequestException('Image data or URL is required.');
     }
 
     try {
@@ -43,21 +44,37 @@ export class UploadService {
         mkdirSync(fullFolderPath, { recursive: true });
       }
 
-      // Trích xuất thông tin từ base64
-      const matches = dto.url.match(/^data:image\/([A-Za-z-+/]+);base64,(.+)$/);
-      if (!matches || matches.length !== 3) {
-        throw new Error('Invalid base64 string format');
+      let buffer: Buffer;
+      let extension = 'jpg';
+
+      if (dto.url.startsWith('data:image/')) {
+        // Xử lý Base64
+        const matches = dto.url.match(/^data:image\/([A-Za-z-+/]+);base64,(.+)$/);
+        if (!matches || matches.length !== 3) {
+          throw new Error('Invalid base64 string format');
+        }
+        extension = matches[1] === 'jpeg' ? 'jpg' : matches[1];
+        buffer = Buffer.from(matches[2], 'base64');
+      } else if (dto.url.startsWith('http')) {
+        // Xử lý Remote URL (cho Crawler)
+        buffer = await getImageBufferFromUrl(dto.url);
+        // Tự động lấy extension từ URL nếu có thể, mặc định là jpg
+        const urlPart = dto.url.split('?')[0];
+        const ext = urlPart.split('.').pop()?.toLowerCase();
+        if (ext && ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext)) {
+          extension = ext === 'jpeg' ? 'jpg' : ext;
+        }
+      } else {
+        throw new Error('Unsupported image source format. Use Base64 or HTTP URL.');
       }
 
-      const extension = matches[1] === 'jpeg' ? 'jpg' : matches[1];
-      const base64Data = matches[2];
       const filename = `${dto.publicId || generateId()}.${extension}`;
       const filePath = join(fullFolderPath, filename);
 
       // Lưu file
-      writeFileSync(filePath, Buffer.from(base64Data, 'base64'));
+      writeFileSync(filePath, buffer);
 
-      const relativeUrl = `/public/uploads/${folder}/${filename}`;
+      const relativeUrl = `/api/public/uploads/${folder}/${filename}`;
 
       return {
         originalUrl: dto.url.substring(0, 100) + '...',

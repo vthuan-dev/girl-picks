@@ -55,8 +55,18 @@ const nextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'gaigo1.net',
+        pathname: '/api/public/uploads/**',
+      },
+      {
+        protocol: 'https',
         hostname: 'gaigu1.net',
         pathname: '/public/uploads/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'gaigu1.net',
+        pathname: '/api/public/uploads/**',
       },
       {
         protocol: 'https',

@@ -4,9 +4,15 @@
 export function getFullImageUrl(url: string | undefined | null): string {
     if (!url) return '';
 
-    // Return as is if it's already an absolute URL or base64
+    // Return as is if it's already an absolute URL (but not on our domain with old path) or base64
     if (url.startsWith('http') || url.startsWith('data:')) {
-        return url;
+        // If it's our own domain and has the problematic path, we still want to fix it below
+        if (url.includes('gaigo1.net/public/uploads/') && !url.includes('gaigo1.net/api/public/uploads/')) {
+            // Continue to cleanUrl logic
+            url = url.replace(/https?:\/\/gaigo1\.net/i, '');
+        } else {
+            return url;
+        }
     }
 
     // Get base URL from environment or current window
@@ -14,7 +20,13 @@ export function getFullImageUrl(url: string | undefined | null): string {
         || (typeof window !== 'undefined' ? window.location.origin : 'https://gaigo1.net');
 
     // Ensure the URL starts with a slash
-    const cleanUrl = url.startsWith('/') ? url : `/${url}`;
+    let cleanUrl = url.startsWith('/') ? url : `/${url}`;
+
+    // Fix for proxy issues on production: rewrite /public/uploads to /api/public/uploads
+    // to ensure Nginx forwards the request to the backend
+    if (cleanUrl.startsWith('/public/uploads/') && !cleanUrl.startsWith('/api/public/uploads/')) {
+        cleanUrl = `/api${cleanUrl}`;
+    }
 
     // Prepend site URL to make it absolute
     return `${siteUrl}${cleanUrl}`;
