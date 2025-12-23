@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
- import Pagination from '@/components/common/Pagination';
+import Pagination from '@/components/common/Pagination';
 import StructuredData from '@/components/seo/StructuredData';
 import { albumsApi, Album } from '@/modules/albums/api/albums.api';
+import AlbumCard from './AlbumCard';
 
 export default function AnhSexPage() {
   const [albums, setAlbums] = useState<Album[]>([]);
+  const [albumImages, setAlbumImages] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -27,6 +29,28 @@ export default function AnhSexPage() {
       setAlbums(data.data || []);
       const totalCount = typeof data.total === 'number' ? data.total : (data.data?.length ?? 0);
       setTotal(totalCount);
+
+      // Fetch detail images for first few albums
+      const topAlbums = (data.data || []).slice(0, 8);
+      const detailPromises = topAlbums.map(async (album) => {
+        try {
+          const detail = await albumsApi.getById(album.id);
+          const imgs = detail.images?.map((img) => img.url).filter(Boolean) || [];
+          const cover = detail.coverUrl ? [detail.coverUrl] : [];
+          return { id: album.id, imgs: [...cover, ...imgs] };
+        } catch {
+          return { id: album.id, imgs: album.coverUrl ? [album.coverUrl] : [] };
+        }
+      });
+
+      const detailResults = await Promise.all(detailPromises);
+      setAlbumImages((prev) => {
+        const next = { ...prev };
+        detailResults.forEach(({ id, imgs }) => {
+          next[id] = imgs.length ? imgs : (prev[id] || []);
+        });
+        return next;
+      });
     } catch (error) {
       console.error('Failed to fetch albums:', error);
       setAlbums([]);
@@ -89,30 +113,11 @@ export default function AnhSexPage() {
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
               {albums.map((album) => (
-                <Link
+                <AlbumCard
                   key={album.id}
-                  href={`/anh-sex/${album.id}`}
-                  className="group bg-background-light border border-secondary/30 rounded-lg overflow-hidden hover:border-primary/50 hover:shadow-md hover:shadow-primary/10 transition-all"
-                >
-                  <div className="relative w-full aspect-[4/5] bg-background">
-                    {album.coverUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={album.coverUrl}
-                        alt={album.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-text-muted text-sm">No cover</div>
-                    )}
-                    <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-lg">
-                      {(album._count?.images || 0)} ảnh
-                    </div>
-                  </div>
-                  <div className="p-3 space-y-1">
-                    <p className="text-sm font-semibold text-text line-clamp-2">{album.title}</p>
-                  </div>
-                </Link>
+                  album={album}
+                  images={albumImages[album.id]}
+                />
               ))}
             </div>
 
