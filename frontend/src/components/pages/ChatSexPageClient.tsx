@@ -16,6 +16,7 @@ interface ChatGirl {
   views: number;
   views2: number;
   detailUrl: string;
+  createdAt?: string;
 }
 
 export default function ChatSexPageClient() {
@@ -24,10 +25,17 @@ export default function ChatSexPageClient() {
   const [currentPage, setCurrentPage] = useState(1);
   const [total, setTotal] = useState(0);
   const itemsPerPage = 12;
+  const [search, setSearch] = useState('');
+  const [province, setProvince] = useState('');
+  const [onlyVerified, setOnlyVerified] = useState(false);
+  const [onlyFeatured, setOnlyFeatured] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [sortOption, setSortOption] = useState<'most_viewed' | 'latest' | 'name'>('most_viewed');
 
   useEffect(() => {
     fetchChatSexGirls();
-  }, [currentPage]);
+  }, [currentPage, search, province, onlyVerified, onlyFeatured, sortOption]);
 
   const fetchChatSexGirls = async () => {
     setLoading(true);
@@ -36,6 +44,10 @@ export default function ChatSexPageClient() {
         page: currentPage,
         limit: itemsPerPage,
         isActive: true, // Only show active girls
+        search: search || undefined,
+        province: province || undefined,
+        isVerified: onlyVerified ? true : undefined,
+        isFeatured: onlyFeatured ? true : undefined,
       });
 
       console.log('[ChatSexPageClient] API Response:', data);
@@ -80,10 +92,25 @@ export default function ChatSexPageClient() {
           views: girl.viewCount || 0,
           views2: girl.viewCount || 0,
           detailUrl,
+          createdAt: girl.createdAt,
         };
       });
 
-      setGirls(mappedGirls);
+      // client-side sort
+      const sorted = [...mappedGirls].sort((a, b) => {
+        if (sortOption === 'most_viewed') {
+          return (b.views || 0) - (a.views || 0);
+        }
+        if (sortOption === 'latest') {
+          const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return tb - ta;
+        }
+        // name
+        return (a.title || '').localeCompare(b.title || '');
+      });
+
+      setGirls(sorted);
       setTotal(data.total || data.data?.length || 0);
     } catch (error) {
       console.error('Failed to fetch chat sex girls:', error);
@@ -126,18 +153,123 @@ export default function ChatSexPageClient() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <button className="px-4 py-2 bg-background-light border border-secondary/50 rounded-lg text-text hover:bg-primary/10 hover:border-primary transition-all text-sm flex items-center gap-2 shadow-sm hover:shadow-md">
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setFilterOpen((v) => !v);
+                    setSortOpen(false);
+                  }}
+                  className="px-4 py-2 bg-background-light border border-secondary/50 rounded-lg text-text hover:bg-primary/10 hover:border-primary transition-all text-sm flex items-center gap-2 shadow-sm hover:shadow-md"
+                >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                 </svg>
                 Lọc
-              </button>
-              <button className="px-4 py-2 bg-background-light border border-secondary/50 rounded-lg text-text hover:bg-primary/10 hover:border-primary transition-all text-sm flex items-center gap-2 shadow-sm hover:shadow-md">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-                Sắp xếp
-              </button>
+                </button>
+                {filterOpen && (
+                  <div className="absolute left-0 top-full mt-2 w-64 bg-background-light border border-secondary/40 rounded-lg shadow-lg p-3 space-y-3 z-50">
+                    <div className="space-y-1">
+                      <label className="text-xs text-text-muted">Từ khóa</label>
+                      <input
+                        value={search}
+                        onChange={(e) => {
+                          setCurrentPage(1);
+                          setSearch(e.target.value);
+                        }}
+                        className="w-full px-3 py-2 bg-background border border-secondary/40 rounded-md text-sm text-text focus:outline-none focus:border-primary"
+                        placeholder="Tìm theo tên/tiêu đề"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs text-text-muted">Tỉnh/TP</label>
+                      <input
+                        value={province}
+                        onChange={(e) => {
+                          setCurrentPage(1);
+                          setProvince(e.target.value);
+                        }}
+                        className="w-full px-3 py-2 bg-background border border-secondary/40 rounded-md text-sm text-text focus:outline-none focus:border-primary"
+                        placeholder="Ví dụ: Hồ Chí Minh"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={onlyVerified}
+                          onChange={(e) => {
+                            setCurrentPage(1);
+                            setOnlyVerified(e.target.checked);
+                          }}
+                          className="accent-primary"
+                        />
+                        Chỉ verified
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={onlyFeatured}
+                          onChange={(e) => {
+                            setCurrentPage(1);
+                            setOnlyFeatured(e.target.checked);
+                          }}
+                          className="accent-primary"
+                        />
+                        Chỉ featured
+                      </label>
+                    </div>
+                    <div className="flex justify-end gap-2 pt-1">
+                      <button
+                        onClick={() => {
+                          setSearch('');
+                          setProvince('');
+                          setOnlyFeatured(false);
+                          setOnlyVerified(false);
+                          setCurrentPage(1);
+                          setFilterOpen(false);
+                        }}
+                        className="px-3 py-1.5 text-xs rounded-md border border-secondary/40 text-text hover:border-primary"
+                      >
+                        Xóa lọc
+                      </button>
+                      <button
+                        onClick={() => setFilterOpen(false)}
+                        className="px-3 py-1.5 text-xs rounded-md bg-primary text-white hover:bg-primary/90"
+                      >
+                        Đóng
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="relative">
+                <div className="flex items-center gap-2 px-3 py-2 bg-background-light/80 border border-secondary/40 rounded-full text-text text-sm shadow-sm backdrop-blur">
+                  <span className="text-xs text-text-muted whitespace-nowrap">Sắp xếp:</span>
+                  <div className="flex items-center gap-1">
+                    {[
+                      { id: 'most_viewed', label: 'Xem nhiều' },
+                      { id: 'latest', label: 'Mới nhất' },
+                      { id: 'name', label: 'Tên A-Z' },
+                    ].map((opt) => (
+                      <button
+                        key={opt.id}
+                        onClick={() => {
+                          setSortOption(opt.id as any);
+                          setCurrentPage(1);
+                        }}
+                        className={`px-2.5 py-1 text-xs font-medium rounded-full border transition-colors ${
+                          sortOption === opt.id
+                            ? 'border-primary bg-primary text-white shadow-sm'
+                            : 'border-transparent text-text-muted hover:bg-primary/10 hover:border-primary/40'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
