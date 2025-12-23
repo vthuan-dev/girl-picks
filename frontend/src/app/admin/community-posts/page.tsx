@@ -32,6 +32,11 @@ export default function AdminCommunityPostsPage() {
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
+  // Edit State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingPost, setEditingPost] = useState<{ id: string; title: string; content: string } | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
   const statuses = ['PENDING', 'APPROVED', 'REJECTED'];
 
   useEffect(() => {
@@ -61,7 +66,7 @@ export default function AdminCommunityPostsPage() {
       const postsData = response.data || [];
       setPosts(postsData);
       setTotalPages(response.totalPages || 1);
-      
+
       // Update stats based on loaded posts
       const pendingCount = postsData.filter((p: CommunityPost) => p.status === 'PENDING').length;
       const approvedCount = postsData.filter((p: CommunityPost) => p.status === 'APPROVED').length;
@@ -84,7 +89,7 @@ export default function AdminCommunityPostsPage() {
       // Count community posts from current list
       const pendingCount = posts.filter(p => p.status === 'PENDING').length;
       const approvedCount = posts.filter(p => p.status === 'APPROVED').length;
-      
+
       setStats({
         total: posts.length,
         pending: pendingCount,
@@ -152,6 +157,39 @@ export default function AdminCommunityPostsPage() {
     }
   };
 
+  const handleEditClick = (post: CommunityPost) => {
+    setEditingPost({
+      id: post.id,
+      title: post.title || '',
+      content: post.content || '',
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdatePost = async () => {
+    if (!editingPost) return;
+    if (!editingPost.content.trim()) {
+      toast.error('Nội dung không được để trống');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await communityPostsAdminApi.update(editingPost.id, {
+        title: editingPost.title,
+        content: editingPost.content,
+      });
+      toast.success('📝 Cập nhật bài viết thành công');
+      setIsEditModalOpen(false);
+      setEditingPost(null);
+      loadPosts();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Không thể cập nhật bài viết');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const openLightbox = (images: string[], currentImage: string) => {
     setLightboxImages(images);
     setLightboxIndex(images.indexOf(currentImage));
@@ -206,7 +244,7 @@ export default function AdminCommunityPostsPage() {
     const authorName = post.author?.fullName || '';
     const content = post.content || post.title || '';
     const matchesSearch = authorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         content.toLowerCase().includes(searchQuery.toLowerCase());
+      content.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSearch;
   }) : [];
 
@@ -313,10 +351,9 @@ export default function AdminCommunityPostsPage() {
                 }}
                 className={`
                   px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer
-                  ${
-                    statusFilter === status
-                      ? 'bg-gradient-to-r from-primary to-primary-hover text-white shadow-lg shadow-primary/30 scale-105'
-                      : 'bg-background border-2 border-secondary/50 text-text hover:bg-primary/10 hover:border-primary/50 hover:scale-105'
+                  ${statusFilter === status
+                    ? 'bg-gradient-to-r from-primary to-primary-hover text-white shadow-lg shadow-primary/30 scale-105'
+                    : 'bg-background border-2 border-secondary/50 text-text hover:bg-primary/10 hover:border-primary/50 hover:scale-105'
                   }
                 `}
               >
@@ -437,6 +474,16 @@ export default function AdminCommunityPostsPage() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                           </svg>
                         </IconButton>
+                        <IconButton
+                          variant="default"
+                          title="Chỉnh sửa content"
+                          onClick={() => handleEditClick(post)}
+                          className="!text-blue-400 hover:!bg-blue-500/20"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </IconButton>
                         {post.status === 'PENDING' ? (
                           <>
                             <Button variant="success" size="sm" onClick={() => handleApprove(post.id)}>
@@ -490,6 +537,90 @@ export default function AdminCommunityPostsPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {isEditModalOpen && editingPost && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn"
+          onClick={() => {
+            if (!isSaving) {
+              setIsEditModalOpen(false);
+              setEditingPost(null);
+            }
+          }}
+        >
+          <div
+            className="bg-gradient-to-br from-background-light to-background rounded-2xl border-2 border-primary/30 shadow-2xl max-w-2xl w-full p-6 animate-slideUp"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-blue-500/20 rounded-xl flex items-center justify-center">
+                <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-text">Chỉnh sửa bài viết</h2>
+                <p className="text-text-muted text-sm">Cập nhật tiêu đề và nội dung bài viết</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-text-muted mb-1">Tiêu đề (không bắt buộc)</label>
+                <input
+                  type="text"
+                  value={editingPost.title}
+                  onChange={(e) => setEditingPost({ ...editingPost, title: e.target.value })}
+                  placeholder="Nhập tiêu đề..."
+                  className="w-full px-4 py-3 bg-background border-2 border-secondary/50 rounded-xl text-text placeholder:text-text-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                  disabled={isSaving}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-muted mb-1">Nội dung</label>
+                <textarea
+                  value={editingPost.content}
+                  onChange={(e) => setEditingPost({ ...editingPost, content: e.target.value })}
+                  placeholder="Nhập nội dung bài viết..."
+                  className="w-full h-48 px-4 py-3 bg-background border-2 border-secondary/50 rounded-xl text-text placeholder:text-text-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all resize-none"
+                  disabled={isSaving}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 mt-8">
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setIsEditModalOpen(false);
+                  setEditingPost(null);
+                }}
+                className="flex-1"
+                disabled={isSaving}
+              >
+                Hủy
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleUpdatePost}
+                className="flex-1"
+                disabled={isSaving || !editingPost.content.trim()}
+              >
+                {isSaving ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Đang lưu...
+                  </div>
+                ) : (
+                  'Lưu thay đổi'
+                )}
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 

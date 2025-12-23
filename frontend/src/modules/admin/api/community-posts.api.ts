@@ -58,5 +58,13 @@ export const communityPostsAdminApi = {
     const response = await apiClient.get<ApiResponse<CommunityPost>>(`/community-posts/${id}`);
     return response.data.data;
   },
+  // Update community post (Admin)
+  update: async (id: string, data: { title?: string; content?: string }): Promise<CommunityPost> => {
+    const response = await apiClient.patch<ApiResponse<CommunityPost>>(
+      `/community-posts/${id}/admin`,
+      data
+    );
+    return response.data.data;
+  },
 };
 

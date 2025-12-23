@@ -19,7 +19,7 @@ export class CommunityPostsService {
     private prisma: PrismaService,
     @Inject(forwardRef(() => NotificationsService))
     private notificationsService: NotificationsService,
-  ) {}
+  ) { }
 
   async create(userId: string, createPostDto: CreateCommunityPostDto, userRole: UserRole) {
     // Check if user is GIRL and get girl profile (optional)
@@ -252,8 +252,52 @@ export class CommunityPostsService {
     const updateData: any = {
       ...updatePostDto,
     };
-    
+
     // Only update images if provided
+    if (updatePostDto.images !== undefined) {
+      updateData.images = updatePostDto.images;
+    }
+
+    return this.prisma.communityPost.update({
+      where: { id },
+      data: updateData,
+      include: {
+        author: {
+          select: {
+            id: true,
+            fullName: true,
+            avatarUrl: true,
+            role: true,
+          },
+        },
+        girl: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                fullName: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
+          },
+        },
+      },
+    });
+  }
+
+  async updateAsAdmin(id: string, updatePostDto: UpdateCommunityPostDto) {
+    await this.findOne(id, false);
+
+    const updateData: any = {
+      ...updatePostDto,
+    };
+
     if (updatePostDto.images !== undefined) {
       updateData.images = updatePostDto.images;
     }
