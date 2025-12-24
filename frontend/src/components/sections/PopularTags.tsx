@@ -36,10 +36,10 @@ interface PopularTagsProps {
   source?: 'girls' | 'posts' | 'all'; // Source of tags
 }
 
-export default function PopularTags({ 
-  onTagClick, 
+export default function PopularTags({
+  onTagClick,
   selectedTag: externalSelectedTag,
-  source = 'girls' 
+  source = 'girls'
 }: PopularTagsProps) {
   const router = useRouter();
   const [internalSelectedTag, setInternalSelectedTag] = useState<string | null>(null);
@@ -67,10 +67,10 @@ export default function PopularTags({
   );
 
   const handleTagClick = (tag: string) => {
-    // Navigate to search page with tag query
-    const searchUrl = `/search?q=${encodeURIComponent(tag)}&tag=${encodeURIComponent(tag)}`;
+    // Navigate to girls page with tag query
+    const searchUrl = `/girls?tag=${encodeURIComponent(tag)}`;
     router.push(searchUrl);
-    
+
     // Also call onTagClick callback if provided (for local filtering)
     if (onTagClick) {
       onTagClick(tag);
@@ -119,40 +119,38 @@ export default function PopularTags({
         ) : (
           <div className="space-y-2">
             {popularTags.map((tag, index) => (
-            <button
-              key={index}
-              onClick={() => handleTagClick(tag.name)}
-              className={`
+              <button
+                key={index}
+                onClick={() => handleTagClick(tag.name)}
+                className={`
                 group relative w-full flex items-center justify-between px-3 py-2.5 rounded-xl
                 transition-all duration-200 text-left cursor-pointer overflow-hidden
-                ${
-                  selectedTag === tag.name
+                ${selectedTag === tag.name
                     ? 'bg-gradient-to-r from-primary/20 via-primary/15 to-primary/5 text-primary border border-primary/50 shadow-lg shadow-primary/20'
                     : 'bg-background hover:bg-background-light/80 border border-secondary/20 hover:border-primary/40 text-text-muted hover:text-text hover:shadow-md hover:shadow-primary/10'
-                }
+                  }
               `}
-            >
-              {/* Gradient overlay on hover */}
-              {!selectedTag || selectedTag !== tag.name ? (
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/0 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
-              ) : null}
-              
-              <div className="relative flex items-center gap-2.5 flex-1 min-w-0">
-                <span className="text-base flex-shrink-0">{getTagIcon(tag.name)}</span>
-                <span className="text-sm font-medium truncate">{tag.name}</span>
-              </div>
-              
-              <span className={`
+              >
+                {/* Gradient overlay on hover */}
+                {!selectedTag || selectedTag !== tag.name ? (
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/0 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+                ) : null}
+
+                <div className="relative flex items-center gap-2.5 flex-1 min-w-0">
+                  <span className="text-base flex-shrink-0">{getTagIcon(tag.name)}</span>
+                  <span className="text-sm font-medium truncate">{tag.name}</span>
+                </div>
+
+                <span className={`
                 relative text-xs font-semibold ml-2 flex-shrink-0 px-2.5 py-1 rounded-full transition-all duration-200
-                ${
-                  selectedTag === tag.name
+                ${selectedTag === tag.name
                     ? 'bg-primary text-white shadow-sm shadow-primary/30'
                     : 'bg-secondary/20 text-text-muted group-hover:bg-primary/10 group-hover:text-primary'
-                }
+                  }
               `}>
-                {tag.count.toLocaleString()}
-              </span>
-            </button>
+                  {tag.count.toLocaleString()}
+                </span>
+              </button>
             ))}
           </div>
         )}
