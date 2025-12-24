@@ -19,7 +19,7 @@ export class CommunityPostsService {
     private prisma: PrismaService,
     @Inject(forwardRef(() => NotificationsService))
     private notificationsService: NotificationsService,
-  ) {}
+  ) { }
 
   async create(
     userId: string,
@@ -41,6 +41,7 @@ export class CommunityPostsService {
       data: {
         authorId: userId,
         girlId: girlId || createPostDto.girlId || null,
+        title: createPostDto.title,
         content: createPostDto.content,
         images: createPostDto.images || [],
         status: PostStatus.PENDING,
