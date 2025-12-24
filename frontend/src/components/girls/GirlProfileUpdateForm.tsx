@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { girlsApi } from '@/modules/girls/api/girls.api';
 import { Girl } from '@/types/girl';
 import toast from 'react-hot-toast';
+import Cookies from 'js-cookie';
 
 interface GirlProfileUpdateFormProps {
   girl: Girl;
@@ -109,6 +110,9 @@ export default function GirlProfileUpdateForm({ girl, onUpdate }: GirlProfileUpd
 
       const response = await fetch('/api/upload/image', {
         method: 'POST',
+        headers: {
+          Authorization: `Bearer ${Cookies.get('accessToken')}`,
+        },
         body: formData,
       });
 

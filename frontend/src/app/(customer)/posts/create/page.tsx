@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
+import Cookies from 'js-cookie';
 import { postsApi } from '@/modules/posts/api/posts.api';
 import { useAuthStore } from '@/store/auth.store';
 import Link from 'next/link';
@@ -42,6 +43,9 @@ export default function CreatePostPage() {
     const endpoint = type === 'video' ? '/api/upload/video' : '/api/upload/image';
     const response = await fetch(endpoint, {
       method: 'POST',
+      headers: {
+        Authorization: `Bearer ${Cookies.get('accessToken')}`,
+      },
       body: formData,
     });
     if (!response.ok) {

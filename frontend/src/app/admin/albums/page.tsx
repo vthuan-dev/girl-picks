@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
+import Cookies from 'js-cookie';
 import { albumsApi } from '@/modules/albums/api/albums.api';
 import { useRouter } from 'next/navigation';
 import { albumCategoriesApi, AlbumCategory } from '@/modules/albums/api/albumCategories.api';
@@ -92,7 +93,11 @@ export default function AdminAlbumsPage() {
     const formData = new FormData();
     formData.append('file', file);
     const response = await fetch('/api/upload/image', {
-      method: 'POST', body: formData
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${Cookies.get('accessToken')}`,
+      },
+      body: formData,
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));

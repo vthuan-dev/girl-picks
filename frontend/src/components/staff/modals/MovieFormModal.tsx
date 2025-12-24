@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
+import Cookies from 'js-cookie';
 import { moviesApi, type Movie } from '@/modules/movies/api/movies.api';
 import { categoriesApi, type Category } from '@/modules/categories/api/categories.api';
 
@@ -186,6 +187,9 @@ export default function MovieFormModal({ isOpen, onClose, onSuccess, movie }: Mo
       formData.append('file', file);
       const res = await fetch('/api/upload/image', {
         method: 'POST',
+        headers: {
+          Authorization: `Bearer ${Cookies.get('accessToken')}`,
+        },
         body: formData,
       });
       const data = await res.json();

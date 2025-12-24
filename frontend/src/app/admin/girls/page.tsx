@@ -5,7 +5,9 @@ import Button from '@/components/admin/Button';
 import IconButton from '@/components/admin/IconButton';
 import { girlsApi, Girl as AdminGirl } from '@/modules/admin/api/girls.api';
 import { adminApi } from '@/modules/admin/api/admin.api';
+import { girlsApi as publicGirlsApi } from '@/modules/girls/api/girls.api'; // Renamed to avoid conflict
 import toast from 'react-hot-toast';
+import Cookies from 'js-cookie';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import GirlsManagementLayout from '@/components/admin/GirlsManagementLayout';
@@ -246,6 +248,9 @@ export default function AdminGirlsPage() {
 
       const response = await fetch('/api/upload/image', {
         method: 'POST',
+        headers: {
+          Authorization: `Bearer ${Cookies.get('accessToken')}`,
+        },
         body: formData,
       });
 
@@ -709,8 +714,8 @@ export default function AdminGirlsPage() {
                     <div>
                       <label className="text-sm font-semibold text-text-muted mb-2 block">Xác thực</label>
                       <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium ${selectedGirl.verificationStatus === 'VERIFIED'
-                          ? 'bg-green-500/20 text-green-500'
-                          : 'bg-yellow-500/20 text-yellow-500'
+                        ? 'bg-green-500/20 text-green-500'
+                        : 'bg-yellow-500/20 text-yellow-500'
                         }`}>
                         {selectedGirl.verificationStatus === 'VERIFIED' ? 'Đã xác thực' : 'Chưa xác thực'}
                       </span>
@@ -718,8 +723,8 @@ export default function AdminGirlsPage() {
                     <div>
                       <label className="text-sm font-semibold text-text-muted mb-2 block">Trạng thái</label>
                       <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium ${selectedGirl.isActive
-                          ? 'bg-green-500/20 text-green-500'
-                          : 'bg-gray-500/20 text-gray-400'
+                        ? 'bg-green-500/20 text-green-500'
+                        : 'bg-gray-500/20 text-gray-400'
                         }`}>
                         {selectedGirl.isActive ? 'Hoạt động' : 'Tạm khóa'}
                       </span>
