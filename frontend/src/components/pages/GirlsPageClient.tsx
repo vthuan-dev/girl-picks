@@ -140,10 +140,10 @@ export default function GirlsPageClient() {
                 <button
                   type="button"
                   onClick={() => handlePhoneSearch(searchQuery)}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-white text-xs sm:text-sm font-semibold hover:bg-primary-hover active:scale-[0.98] transition-all whitespace-nowrap shadow-sm"
+                  className="inline-flex items-center justify-center px-3 py-2 rounded-xl bg-primary text-white hover:bg-primary-hover active:scale-[0.98] transition-all shadow-sm"
                 >
                   <svg
-                    className="w-4 h-4"
+                    className="w-5 h-5 sm:w-5 sm:h-5"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -155,7 +155,6 @@ export default function GirlsPageClient() {
                       d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z"
                     />
                   </svg>
-                  <span>Tìm</span>
                 </button>
               </div>
               <p className="mt-1 text-[11px] text-text-muted">

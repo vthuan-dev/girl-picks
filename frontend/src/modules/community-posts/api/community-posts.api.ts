@@ -282,27 +282,56 @@ export const communityPostsApi = {
   getComments: async (id: string, page = 1, limit = 20): Promise<CommentsResponse> => {
     const response = await apiClient.get<any>(`/community-posts/${id}/comments?page=${page}&limit=${limit}`);
     const responseData = response.data;
-    
-    if (responseData.success && responseData.data) {
-      return {
-        data: Array.isArray(responseData.data) ? responseData.data : [],
-        total: responseData.total || responseData.meta?.total || 0,
-        page: responseData.page || responseData.meta?.page || page,
-        limit: responseData.limit || responseData.meta?.limit || limit,
-        totalPages: responseData.totalPages || responseData.meta?.totalPages || 0,
-      };
+
+    // Trường hợp phổ biến: { success: true, data: { data: [...], meta: {...} } }
+    if (responseData?.success && responseData.data) {
+      const inner = responseData.data;
+
+      // Nếu server trả dạng phân trang chuẩn: data.data là mảng, data.meta là thông tin phân trang
+      if (Array.isArray(inner.data)) {
+        return {
+          data: inner.data,
+          total: inner.meta?.total ?? inner.data.length ?? 0,
+          page: inner.meta?.page ?? page,
+          limit: inner.meta?.limit ?? limit,
+          totalPages: inner.meta?.totalPages ?? 1,
+        };
+      }
+
+      // Nếu data là mảng phẳng: { success: true, data: [...] }
+      if (Array.isArray(inner)) {
+        return {
+          data: inner,
+          total: responseData.total ?? inner.length ?? 0,
+          page: responseData.page ?? page,
+          limit: responseData.limit ?? limit,
+          totalPages: responseData.totalPages ?? 1,
+        };
+      }
     }
-    
-    if (responseData.data && Array.isArray(responseData.data)) {
+
+    // Trường hợp không có success wrapper nhưng có data: [...]
+    if (Array.isArray(responseData.data)) {
       return {
         data: responseData.data,
-        total: responseData.total || responseData.data.length,
-        page: responseData.page || page,
-        limit: responseData.limit || limit,
-        totalPages: responseData.totalPages || 1,
+        total: responseData.total ?? responseData.data.length ?? 0,
+        page: responseData.page ?? page,
+        limit: responseData.limit ?? limit,
+        totalPages: responseData.totalPages ?? 1,
       };
     }
-    
+
+    // Trường hợp server trả trực tiếp mảng comments
+    if (Array.isArray(responseData)) {
+      return {
+        data: responseData,
+        total: responseData.length,
+        page,
+        limit,
+        totalPages: 1,
+      };
+    }
+
     return {
       data: [],
       total: 0,
