@@ -1,14 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import GirlList from '@/modules/girls/components/GirlList';
 import LocationFilters from '@/components/sections/LocationFilters';
 import PopularTags from '@/components/sections/PopularTags';
 import GirlFilters from '@/components/filters/GirlFilters';
 import Header from '@/components/layout/Header';
+import { provinceToSlug, slugToProvince } from '@/lib/location/provinceSlugs';
 
 export default function GirlsPageClient() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [filters, setFilters] = useState({
     verified: false,
@@ -26,10 +28,18 @@ export default function GirlsPageClient() {
   const [isLoadingTotal, setIsLoadingTotal] = useState<boolean>(true);
 
   const searchParamValue = searchParams?.get('search') || '';
+  const provinceParamValue = searchParams?.get('province') || '';
+  const tagParamValue = searchParams?.get('tag') || '';
 
   useEffect(() => {
-    setSearchQuery((prev) => (prev === searchParamValue ? prev : searchParamValue));
-  }, [searchParamValue]);
+    setSearchQuery(searchParamValue);
+
+    // Chuyển slug tỉnh thành tên tỉnh chuẩn (có dấu) cho API
+    const province = provinceParamValue ? slugToProvince(provinceParamValue) || provinceParamValue : '';
+    setSelectedProvince(province);
+
+    setSelectedTag(tagParamValue);
+  }, [searchParamValue, provinceParamValue, tagParamValue]);
 
   const handleFilterChange = (newFilters: { price: string; age: string; height: string }) => {
     setFilters((prev) => ({
@@ -79,9 +89,13 @@ export default function GirlsPageClient() {
               if (location) {
                 setSelectedProvince(location);
                 setSearchQuery(location);
+                // Dùng slug cho URL chuẩn SEO
+                const slug = provinceToSlug(location) || encodeURIComponent(location);
+                router.push(`/girls?province=${slug}`);
               } else {
                 setSelectedProvince(null);
                 setSearchQuery('');
+                router.push('/girls');
               }
             }}
           />

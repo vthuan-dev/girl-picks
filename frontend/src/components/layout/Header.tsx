@@ -32,7 +32,8 @@ export default function Header() {
     const province = slugCandidate ? slugToProvince(slugCandidate) : null;
 
     if (province && slugCandidate) {
-      router.push(`/${slugCandidate}`);
+      const pSlug = provinceToSlug(province) || encodeURIComponent(province);
+      router.push(`/girls?province=${pSlug}`);
     } else {
       router.push(`/search?q=${encodeURIComponent(query)}`);
     }

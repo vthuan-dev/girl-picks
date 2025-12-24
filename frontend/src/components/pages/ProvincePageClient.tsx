@@ -28,12 +28,13 @@ export default function ProvincePageClient({ province, slug }: ProvincePageClien
       return;
     }
 
-    const nextSlug = provinceToSlug(location);
-    if (nextSlug) {
+    if (location) {
       setSelectedProvince(location);
-      router.push(`/${nextSlug}`);
+      const slug = provinceToSlug(location) || encodeURIComponent(location);
+      router.push(`/girls?province=${slug}`);
     } else {
-      setSelectedProvince(location);
+      setSelectedProvince(null);
+      router.push('/girls');
     }
   };
 

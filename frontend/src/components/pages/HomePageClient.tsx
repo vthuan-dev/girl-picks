@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import LocationFilters from '@/components/sections/LocationFilters';
 import PopularTags from '@/components/sections/PopularTags';
 import LatestCommunityPosts from '@/components/sections/LatestCommunityPosts';
+import { provinceToSlug } from '@/lib/location/provinceSlugs';
 
 export default function HomePageClient() {
   const router = useRouter();
@@ -31,13 +32,14 @@ export default function HomePageClient() {
         <h2 className="text-sm font-semibold text-text-muted mb-3 uppercase tracking-wide">
           Tỉnh thành
         </h2>
-        <LocationFilters 
+        <LocationFilters
           selectedLocation={selectedProvince}
           onLocationChange={(location) => {
             console.log('[HomePageClient] Location changed:', location);
             setSelectedProvince(location);
             if (location) {
-              router.push(`/search?q=${encodeURIComponent(location)}`);
+              const slug = provinceToSlug(location) || encodeURIComponent(location);
+              router.push(`/girls?province=${slug}`);
             }
           }}
         />

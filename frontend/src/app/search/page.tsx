@@ -1,4 +1,4 @@
- 'use client';
+'use client';
 export const dynamic = 'force-dynamic';
 
 import { useEffect, useMemo, useState, Suspense } from 'react';
@@ -22,7 +22,7 @@ function SearchContent() {
     }
   }, [rawQuery]);
   const tagParam = searchParams.get('tag') || '';
-  
+
   const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
   const [filters, setFilters] = useState({
     verified: false,
@@ -52,7 +52,8 @@ function SearchContent() {
     const province = slug ? slugToProvince(slug) : null;
 
     if (slug && province) {
-      router.replace(`/${slug}`);
+      const pSlug = provinceToSlug(province) || encodeURIComponent(province);
+      router.replace(`/girls?province=${pSlug}`);
       return;
     }
 
@@ -86,15 +87,13 @@ function SearchContent() {
           <h2 className="text-sm font-semibold text-text-muted mb-3 uppercase tracking-wide">
             Tỉnh thành
           </h2>
-          <LocationFilters 
+          <LocationFilters
             selectedLocation={selectedProvince || null}
             onLocationChange={(location) => {
               if (location) {
                 setSelectedProvince(location);
-                const slug = provinceToSlug(location);
-                if (slug) {
-                  router.push(`/${slug}`);
-                }
+                const slug = provinceToSlug(location) || encodeURIComponent(location);
+                router.push(`/girls?province=${slug}`);
               } else {
                 setSelectedProvince(null);
               }
@@ -107,9 +106,9 @@ function SearchContent() {
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
         {/* Main Content - Girls Grid */}
         <div className="flex-1 min-w-0">
-          <GirlList 
-            filters={filters} 
-            selectedProvince={selectedProvince} 
+          <GirlList
+            filters={filters}
+            selectedProvince={selectedProvince}
             searchQuery={query && !selectedTag ? query : undefined}
             selectedTag={selectedTag}
           />
@@ -117,7 +116,7 @@ function SearchContent() {
 
         {/* Sidebar - Popular Tags */}
         <div className="lg:block">
-          <PopularTags 
+          <PopularTags
             source="girls"
             selectedTag={selectedTag}
             onTagClick={(tag) => {
