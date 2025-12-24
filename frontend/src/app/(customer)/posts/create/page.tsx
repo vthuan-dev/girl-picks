@@ -39,8 +39,11 @@ export default function CreatePostPage() {
   const uploadFile = async (file: File, type: 'image' | 'video'): Promise<string> => {
     const formData = new FormData();
     formData.append('file', file);
-    const endpoint = type === 'video' ? '/api/upload/video' : '/api/upload/post';
-    const response = await fetch(endpoint, { method: 'POST', body: formData });
+    const endpoint = type === 'video' ? '/api/upload/video' : '/api/upload/image';
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      body: formData,
+    });
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error || 'Tải lên thất bại');

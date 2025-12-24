@@ -106,16 +106,16 @@ export default function GirlProfileUpdateForm({ girl, onUpdate }: GirlProfileUpd
     try {
       const formData = new FormData();
       formData.append('file', file);
-      
-      const response = await fetch('/api/upload/post', {
+
+      const response = await fetch('/api/upload/image', {
         method: 'POST',
         body: formData,
       });
-      
+
       if (!response.ok) {
         throw new Error('Upload failed');
       }
-      
+
       const data = await response.json();
       if (data.success && data.url) {
         // Convert relative URL to absolute URL
@@ -193,9 +193,9 @@ export default function GirlProfileUpdateForm({ girl, onUpdate }: GirlProfileUpd
       const servicesArray =
         typeof formData.services === 'string'
           ? formData.services
-              .split(',')
-              .map((item) => item.trim())
-              .filter((item) => item.length > 0)
+            .split(',')
+            .map((item) => item.trim())
+            .filter((item) => item.length > 0)
           : [];
 
       // Prepare update data - only include fields allowed by backend DTO
@@ -224,19 +224,19 @@ export default function GirlProfileUpdateForm({ girl, onUpdate }: GirlProfileUpd
       });
 
       const response = await girlsApi.updateProfile(updateData);
-      
+
       // Backend returns { success: true, data: {...} } or direct data
       const girlData = (response as any).data || response;
       toast.success('Cập nhật hồ sơ thành công! Hồ sơ của bạn đang chờ admin duyệt.');
       onUpdate?.(girlData as Girl);
     } catch (error: any) {
       console.error('Update profile error:', error);
-      
+
       // Handle validation errors
       if (error.response?.status === 400) {
         const errorData = error.response.data;
         let errorMessage = 'Cập nhật thất bại';
-        
+
         if (errorData.errors && Array.isArray(errorData.errors)) {
           // Display validation errors
           const errorList = errorData.errors.map((err: string) => {
@@ -249,12 +249,12 @@ export default function GirlProfileUpdateForm({ girl, onUpdate }: GirlProfileUpd
             }
             return err;
           }).join(', ');
-          
+
           errorMessage = `Lỗi xác thực: ${errorList}`;
         } else if (errorData.message) {
           errorMessage = errorData.message;
         }
-        
+
         toast.error(errorMessage, { duration: 5000 });
       } else {
         toast.error(error.response?.data?.message || error.message || 'Cập nhật thất bại');
@@ -520,7 +520,7 @@ export default function GirlProfileUpdateForm({ girl, onUpdate }: GirlProfileUpd
             onChange={(e) => {
               const files = Array.from(e.target.files || []);
               setProfileImages(prev => [...prev, ...files]);
-              
+
               // Create previews
               files.forEach(file => {
                 const reader = new FileReader();
@@ -543,7 +543,7 @@ export default function GirlProfileUpdateForm({ girl, onUpdate }: GirlProfileUpd
               <p className="text-sm">Click để chọn ảnh (có thể chọn nhiều ảnh)</p>
             </div>
           </div>
-          
+
           {/* Image Previews */}
           {profileImagePreviews.length > 0 && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -573,7 +573,7 @@ export default function GirlProfileUpdateForm({ girl, onUpdate }: GirlProfileUpd
                     setProfileImagePreviews(newPreviews);
                   }
                 };
-                
+
                 return (
                   <div key={`${isExisting ? 'existing' : 'new'}-${index}`} className="relative group">
                     <img

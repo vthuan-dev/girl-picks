@@ -91,12 +91,14 @@ export default function AdminAlbumsPage() {
   const uploadFile = async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append('file', file);
-    const resp = await fetch('/api/upload/post', { method: 'POST', body: formData });
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({}));
+    const response = await fetch('/api/upload/image', {
+      method: 'POST', body: formData
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
       throw new Error(err.error || 'Tải ảnh thất bại');
     }
-    const json = await resp.json();
+    const json = await response.json();
     return json.url;
   };
 

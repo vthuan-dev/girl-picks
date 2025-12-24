@@ -40,9 +40,10 @@ interface ReviewsSectionProps {
   girlId: string;
   totalReviews: number;
   averageRating: number;
+  initialReviews?: any[];
 }
 
-export default function ReviewsSection({ girlId, totalReviews, averageRating }: ReviewsSectionProps) {
+export default function ReviewsSection({ girlId, totalReviews, averageRating, initialReviews }: ReviewsSectionProps) {
   const { isAuthenticated, user } = useAuthStore();
   const router = useRouter();
   const [showReviewForm, setShowReviewForm] = useState(false);
@@ -81,7 +82,13 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
 
   // Load reviews from API
   useEffect(() => {
-    loadReviews();
+    if (initialReviews && initialReviews.length > 0 && reviews.length === 0) {
+      const transformed = transformReviews(initialReviews);
+      setReviews(transformed);
+      setLoading(false);
+    } else {
+      loadReviews();
+    }
   }, [girlId, isAuthenticated]);
 
   // Lock body scroll when lightbox is open
@@ -94,37 +101,35 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
     return () => { document.body.style.overflow = ''; };
   }, [lightboxImage]);
 
+  const transformReviews = (apiReviews: any[]): Review[] => {
+    return apiReviews.map((apiReview) => {
+      const likesCount = apiReview._count?.likes || 0;
+      const liked = Boolean(apiReview.liked);
+      const commentsCount = apiReview._count?.comments || 0;
+
+      return {
+        id: apiReview.id,
+        userId: apiReview.customer?.id || apiReview.userId,
+        userName: apiReview.customer?.fullName || 'Người dùng',
+        userAvatar: apiReview.customer?.avatarUrl || null,
+        rating: apiReview.rating,
+        comment: apiReview.content,
+        images: apiReview.images || [],
+        createdAt: apiReview.createdAt,
+        likes: likesCount,
+        liked,
+        status: apiReview.status,
+        replies: [],
+        commentsCount,
+      };
+    });
+  };
+
   const loadReviews = async () => {
     try {
       setLoading(true);
       const apiReviews = await reviewsApi.getByGirlId(girlId);
-
-      // Transform API reviews to component format
-      const transformedReviews: Review[] = apiReviews.map((apiReview) => {
-        // Get likes count and liked status from API response (already calculated by backend)
-        const likesCount = apiReview._count?.likes || 0;
-        const liked = Boolean(apiReview.liked);
-
-        // Get comments count from API if available
-        const commentsCount = apiReview._count?.comments || 0;
-
-        return {
-          id: apiReview.id,
-          userId: apiReview.customer.id,
-          userName: apiReview.customer.fullName,
-          userAvatar: apiReview.customer.avatarUrl || null,
-          rating: apiReview.rating,
-          comment: apiReview.content,
-          images: apiReview.images || [],
-          createdAt: apiReview.createdAt,
-          likes: likesCount,
-          liked,
-          status: apiReview.status,
-          replies: [], // Will load separately if needed
-          commentsCount, // Store comment count
-        };
-      });
-
+      const transformedReviews = transformReviews(apiReviews);
       setReviews(transformedReviews);
     } catch (error: any) {
       console.error('Error loading reviews:', error);

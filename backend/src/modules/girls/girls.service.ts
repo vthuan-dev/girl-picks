@@ -3,7 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { Prisma, VerificationStatus } from '@prisma/client';
+import { Prisma, VerificationStatus, PostStatus, ReviewStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { generateSlug, generateUniqueSlug } from '../../common/utils/slug.util';
 import { UpdateGirlDto } from './dto/update-girl.dto';
@@ -601,69 +601,87 @@ export class GirlsService {
         : [provinceCondition];
     }
 
-    // If tags filter is provided, we need to fetch all and filter in application layer
-    // because MySQL JSON array filtering is complex
-    let allGirls = await this.prisma.girl.findMany({
-      where,
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        age: true,
-        bio: true,
-        phone: true,
-        birthYear: true,
-        height: true,
-        weight: true,
-        measurements: true,
-        origin: true,
-        districts: true,
-        address: true,
-        location: true,
-        province: true,
-        price: true,
-        ratingAverage: true,
-        totalReviews: true,
-        verificationStatus: true,
-        viewCount: true,
-        favoriteCount: true,
-        isFeatured: true,
-        isPremium: true,
-        isActive: true,
-        isAvailable: true,
-        images: true,
-        tags: true,
-        services: true,
-        lastActiveAt: true,
-        workingHours: true,
-        createdAt: true,
-        updatedAt: true,
-        user: {
-          select: {
-            id: true,
-            fullName: true,
-            email: true,
-            phone: true,
-            avatarUrl: true,
-          },
-        },
-        _count: {
-          select: {
-            posts: { where: { status: 'APPROVED' } },
-            reviews: { where: { status: 'APPROVED' } },
-            bookings: true,
-          },
+    const select = {
+      id: true,
+      name: true,
+      slug: true,
+      age: true,
+      bio: true,
+      phone: true,
+      birthYear: true,
+      height: true,
+      weight: true,
+      measurements: true,
+      origin: true,
+      districts: true,
+      address: true,
+      location: true,
+      province: true,
+      price: true,
+      ratingAverage: true,
+      totalReviews: true,
+      verificationStatus: true,
+      viewCount: true,
+      favoriteCount: true,
+      isFeatured: true,
+      isPremium: true,
+      isActive: true,
+      isAvailable: true,
+      images: true,
+      tags: true,
+      services: true,
+      lastActiveAt: true,
+      workingHours: true,
+      createdAt: true,
+      updatedAt: true,
+      user: {
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          phone: true,
+          avatarUrl: true,
         },
       },
-      orderBy: [
-        { isFeatured: 'desc' },
-        { ratingAverage: 'desc' },
-        { lastActiveAt: 'desc' },
-      ],
-    });
+      _count: {
+        select: {
+          posts: { where: { status: PostStatus.APPROVED } },
+          reviews: { where: { status: ReviewStatus.APPROVED } },
+          bookings: true,
+        },
+      },
+    };
 
-    // Filter by tags if provided
-    if (tags && tags.length > 0) {
+    const orderBy: Prisma.GirlOrderByWithRelationInput[] = [
+      { isFeatured: 'desc' },
+      { ratingAverage: 'desc' },
+      { lastActiveAt: 'desc' },
+    ];
+
+    let paginatedGirls: any[];
+    let total: number;
+
+    // If no tags filter, use DB pagination directly
+    if (!tags || tags.length === 0) {
+      [paginatedGirls, total] = await Promise.all([
+        this.prisma.girl.findMany({
+          where,
+          select,
+          skip: (page - 1) * limit,
+          take: limit,
+          orderBy,
+        }),
+        this.prisma.girl.count({ where }),
+      ]);
+    } else {
+      // If tags provided, we still fetch matching records and filter in app layer
+      // But we minimize the number of records by applying the rest of the 'where' in DB
+      let allGirls = await this.prisma.girl.findMany({
+        where,
+        select,
+        orderBy,
+      });
+
       const normalizedTags = tags.map((tag) => tag.trim().toLowerCase());
       allGirls = allGirls.filter((girl) => {
         if (!girl.tags || !Array.isArray(girl.tags)) {
@@ -672,20 +690,16 @@ export class GirlsService {
         const girlTags = (girl.tags as string[]).map((tag) =>
           typeof tag === 'string' ? tag.trim().toLowerCase() : '',
         );
-        // Check if any of the filter tags match any of the girl's tags
         return normalizedTags.some((filterTag) =>
           girlTags.some(
             (girlTag) => girlTag === filterTag || girlTag.includes(filterTag),
           ),
         );
       });
+
+      total = allGirls.length;
+      paginatedGirls = allGirls.slice((page - 1) * limit, page * limit);
     }
-
-    // Get total count after tag filtering
-    const total = allGirls.length;
-
-    // Apply pagination
-    const paginatedGirls = allGirls.slice((page - 1) * limit, page * limit);
 
     const result = {
       data: paginatedGirls,
@@ -753,12 +767,12 @@ export class GirlsService {
           },
         },
         posts: {
-          where: { status: 'APPROVED' },
+          where: { status: PostStatus.APPROVED },
           orderBy: { createdAt: 'desc' },
           take: 10,
         },
         reviews: {
-          where: { status: 'APPROVED' },
+          where: { status: ReviewStatus.APPROVED },
           orderBy: { createdAt: 'desc' },
           take: 10,
           include: {
@@ -777,8 +791,8 @@ export class GirlsService {
         },
         _count: {
           select: {
-            posts: { where: { status: 'APPROVED' } },
-            reviews: { where: { status: 'APPROVED' } },
+            posts: { where: { status: PostStatus.APPROVED } },
+            reviews: { where: { status: ReviewStatus.APPROVED } },
             bookings: true,
             favorites: true,
           },

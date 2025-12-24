@@ -184,7 +184,7 @@ export default function MovieFormModal({ isOpen, onClose, onSuccess, movie }: Mo
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const res = await fetch('/api/upload/post', {
+      const res = await fetch('/api/upload/image', {
         method: 'POST',
         body: formData,
       });

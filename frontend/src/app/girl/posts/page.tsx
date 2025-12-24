@@ -51,7 +51,7 @@ export default function GirlPostsPage() {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await fetch('/api/upload/post', {
+    const response = await fetch('/api/upload/image', {
       method: 'POST',
       body: formData,
     });
@@ -77,12 +77,12 @@ export default function GirlPostsPage() {
       setUploadingImages(true);
       const uploadPromises = newFiles.map((file) => uploadImage(file));
       const uploadedUrls = await Promise.all(uploadPromises);
-      
+
       setFormData({
         ...formData,
         images: [...formData.images, ...uploadedUrls],
       });
-      
+
       // Clear file input
       if (e.target) {
         e.target.value = '';
@@ -247,7 +247,7 @@ export default function GirlPostsPage() {
                 <label className="block text-sm font-medium text-text mb-2">
                   Hình ảnh
                 </label>
-                
+
                 {/* File Upload */}
                 <div className="mb-3">
                   <label className="inline-flex items-center gap-2 px-4 py-2 bg-background-light border border-secondary/30 rounded-lg hover:bg-background hover:border-primary/50 transition-all cursor-pointer text-sm font-medium text-text">
@@ -374,13 +374,12 @@ export default function GirlPostsPage() {
                     <div className="flex items-center gap-4 text-sm text-text-muted mb-2">
                       <span>{formatDate(post.createdAt)}</span>
                       <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          post.status === 'APPROVED'
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${post.status === 'APPROVED'
                             ? 'bg-green-500/20 text-green-500'
                             : post.status === 'PENDING'
-                            ? 'bg-yellow-500/20 text-yellow-500'
-                            : 'bg-red-500/20 text-red-500'
-                        }`}
+                              ? 'bg-yellow-500/20 text-yellow-500'
+                              : 'bg-red-500/20 text-red-500'
+                          }`}
                       >
                         {post.status === 'APPROVED' ? 'Đã duyệt' : post.status === 'PENDING' ? 'Chờ duyệt' : 'Từ chối'}
                       </span>

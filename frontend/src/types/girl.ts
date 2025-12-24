@@ -1,4 +1,5 @@
 import { User } from './auth';
+import { Review } from '@/modules/reviews/api/reviews.api';
 
 export interface Girl extends User {
   // Some API responses return `name`; keep both for compatibility
@@ -41,6 +42,7 @@ export interface Girl extends User {
   verificationStatus?: 'PENDING' | 'VERIFIED' | 'REJECTED';
   verificationRequestedAt?: string | null;
   verificationVerifiedAt?: string | null;
+  reviews?: Review[];
 }
 
 export interface GirlListParams {
