@@ -9,7 +9,7 @@ import Link from 'next/link';
 import Cookies from 'js-cookie';
 
 export default function GirlPostsPage() {
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, hasHydrated } = useAuthStore();
   const router = useRouter();
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -26,13 +26,15 @@ export default function GirlPostsPage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
+    if (!hasHydrated) return;
+
     if (!isAuthenticated || user?.role !== 'GIRL') {
       toast.error('Bạn cần đăng nhập với tài khoản GIRL');
       router.push('/auth/login');
       return;
     }
     loadPosts();
-  }, [isAuthenticated, user, router]);
+  }, [hasHydrated, isAuthenticated, user, router]);
 
   const loadPosts = async () => {
     try {

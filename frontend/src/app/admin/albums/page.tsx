@@ -89,15 +89,24 @@ export default function AdminAlbumsPage() {
     setImageFiles([]);
   };
 
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
   const uploadFile = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append('file', file);
+    const base64Data = await fileToBase64(file);
     const response = await fetch('/api/upload/image', {
       method: 'POST',
       headers: {
+        'Content-Type': 'application/json',
         Authorization: `Bearer ${Cookies.get('accessToken')}`,
       },
-      body: formData,
+      body: JSON.stringify({ url: base64Data }),
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));

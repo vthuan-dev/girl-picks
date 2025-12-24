@@ -37,16 +37,42 @@ export default function CreatePostPage() {
     return null;
   }
 
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
   const uploadFile = async (file: File, type: 'image' | 'video'): Promise<string> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    const endpoint = type === 'video' ? '/api/upload/video' : '/api/upload/image';
-    const response = await fetch(endpoint, {
+    if (type === 'video') {
+      const formData = new FormData();
+      formData.append('file', file);
+      const response = await fetch('/api/upload/video', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${Cookies.get('accessToken')}`,
+        },
+        body: formData,
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Tải lên thất bại');
+      }
+      return (await response.json()).url;
+    }
+
+    // Handle image with Base64
+    const base64Data = await fileToBase64(file);
+    const response = await fetch('/api/upload/image', {
       method: 'POST',
       headers: {
+        'Content-Type': 'application/json',
         Authorization: `Bearer ${Cookies.get('accessToken')}`,
       },
-      body: formData,
+      body: JSON.stringify({ url: base64Data }),
     });
     if (!response.ok) {
       const error = await response.json();

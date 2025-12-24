@@ -32,7 +32,7 @@ export class UploadService {
    * Upload single image from URL or Base64 to Local Storage
    */
   async uploadImageFromUrl(dto: UploadImageDto) {
-    if (!dto.url) {
+    if (!dto || !dto.url) {
       throw new BadRequestException('Image data or URL is required.');
     }
 

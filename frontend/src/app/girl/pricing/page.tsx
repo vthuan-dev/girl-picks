@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 import Link from 'next/link';
 
 export default function GirlPricingPage() {
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, hasHydrated } = useAuthStore();
   const router = useRouter();
   const [girl, setGirl] = useState<Girl | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -21,13 +21,15 @@ export default function GirlPricingPage() {
   });
 
   useEffect(() => {
+    if (!hasHydrated) return;
+
     if (!isAuthenticated || user?.role !== 'GIRL') {
       toast.error('Bạn cần đăng nhập với tài khoản GIRL');
       router.push('/auth/login');
       return;
     }
     loadProfile();
-  }, [isAuthenticated, user, router]);
+  }, [hasHydrated, isAuthenticated, user, router]);
 
   const loadProfile = async () => {
     try {
@@ -56,7 +58,7 @@ export default function GirlPricingPage() {
 
     try {
       setIsSubmitting(true);
-      
+
       // Parse services from comma-separated string
       const servicesArray = formData.services
         .split(',')

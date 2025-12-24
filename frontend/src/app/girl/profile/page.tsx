@@ -9,12 +9,14 @@ import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 
 export default function GirlProfilePage() {
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, hasHydrated } = useAuthStore();
   const router = useRouter();
   const [girl, setGirl] = useState<Girl | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    if (!hasHydrated) return;
+
     if (!isAuthenticated || user?.role !== 'GIRL') {
       toast.error('Bạn cần đăng nhập với tài khoản GIRL');
       router.push('/auth/login');
@@ -22,7 +24,7 @@ export default function GirlProfilePage() {
     }
 
     loadProfile();
-  }, [isAuthenticated, user, router]);
+  }, [hasHydrated, isAuthenticated, user, router]);
 
   const loadProfile = async () => {
     try {
