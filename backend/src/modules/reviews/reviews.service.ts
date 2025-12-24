@@ -31,7 +31,7 @@ export class ReviewsService {
     private notificationsService: NotificationsService,
     @Inject(forwardRef(() => GirlsService))
     private girlsService: GirlsService,
-  ) {}
+  ) { }
 
   /**
    * Kiểm tra xem cột parent_id có tồn tại trong database không
@@ -192,12 +192,12 @@ export class ReviewsService {
     //   throw new BadRequestException('You can only review girls you have booked');
     // }
 
-    return this.prisma.review.create({
+    const review = await this.prisma.review.create({
       data: {
         ...reviewData,
         customerId: userId,
         girlId,
-        status: ReviewStatus.PENDING,
+        status: ReviewStatus.APPROVED,
         images: reviewData.images || [],
       },
       include: {
@@ -226,6 +226,15 @@ export class ReviewsService {
         },
       },
     });
+
+    // Update girl rating immediately since reviews are auto-approved
+    try {
+      await this.girlsService.updateRating(girlId);
+    } catch (error) {
+      console.error('Failed to update girl rating after creation:', error);
+    }
+
+    return review;
   }
 
   async findAll(filters?: {
@@ -703,7 +712,7 @@ export class ReviewsService {
         // Insert comment bằng raw SQL với status PENDING
         await this.prisma.$executeRaw`
           INSERT INTO review_comments (id, reviewId, userId, content, status, createdAt)
-          VALUES (${commentId}, ${reviewId}, ${userId}, ${createReviewCommentDto.content}, 'PENDING', ${now})
+          VALUES (${commentId}, ${reviewId}, ${userId}, ${createReviewCommentDto.content}, 'APPROVED', ${now})
         `;
 
         // Lấy comment vừa tạo với user info
@@ -731,7 +740,7 @@ export class ReviewsService {
             reviewId: comment.reviewId,
             userId: comment.userId,
             content: comment.content,
-            status: comment.status || 'PENDING',
+            status: comment.status || 'APPROVED',
             createdAt: comment.createdAt,
             user: {
               id: comment.user_id,
@@ -755,7 +764,7 @@ export class ReviewsService {
       reviewId,
       userId,
       content: createReviewCommentDto.content,
-      status: ReviewCommentStatus.PENDING,
+      status: ReviewCommentStatus.APPROVED,
     };
 
     // Chỉ thêm parentId nếu có giá trị và không phải empty string
