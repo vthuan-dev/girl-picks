@@ -1,7 +1,7 @@
 /**
  * Utility to handle image URLs and ensure they are absolute for Next.js Image Optimization
  */
-export function getFullImageUrl(url: string | undefined | null): string {
+export function getFullImageUrl(url: string | undefined | null, forceAbsolute: boolean = false): string {
     if (!url) return '';
 
     // Return as is if it's already an absolute URL (but not on our domain with old path) or base64
@@ -39,6 +39,12 @@ export function getFullImageUrl(url: string | undefined | null): string {
         }
     }
 
-    // Prepend site URL to make it absolute
+    // Return relative path for local images to avoid "resolved to private ip" errors in Next.js
+    // SSRF protection in Next.js Image Optimization blocks absolute URLs to private/local IPs.
+    if (!forceAbsolute) {
+        return cleanUrl;
+    }
+
+    // Prepend site URL to make it absolute if forced (e.g., for SEO metadata or sharing)
     return `${siteUrl}${cleanUrl}`;
 }
