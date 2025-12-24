@@ -58,7 +58,12 @@ export class GirlsController {
   @ApiQuery({ name: 'locationFilter', required: false, type: String })
   @ApiQuery({ name: 'province', required: false, type: String })
   @ApiQuery({ name: 'search', required: false, type: String })
-  @ApiQuery({ name: 'tags', required: false, type: [String], description: 'Array of tags to filter by' })
+  @ApiQuery({
+    name: 'tags',
+    required: false,
+    type: [String],
+    description: 'Array of tags to filter by',
+  })
   @ApiResponse({ status: 200, description: 'List of girls' })
   findAll(
     @Query('districts') districts?: string | string[],
@@ -84,11 +89,7 @@ export class GirlsController {
         : [districts]
       : undefined;
 
-    const tagsArray = tags
-      ? Array.isArray(tags)
-        ? tags
-        : [tags]
-      : undefined;
+    const tagsArray = tags ? (Array.isArray(tags) ? tags : [tags]) : undefined;
 
     return this.girlsService.findAll({
       districts: districtsArray,
@@ -114,7 +115,7 @@ export class GirlsController {
       search,
       tags: tagsArray,
     });
-    
+
     console.log('[GirlsController] Filter params:', {
       province,
       locationFilter,
@@ -126,7 +127,12 @@ export class GirlsController {
   @Get('search/by-phone')
   @Public()
   @ApiOperation({ summary: 'Search girls by phone hoặc tên (public)' })
-  @ApiQuery({ name: 'q', required: true, type: String, description: 'Số điện thoại hoặc từ khóa tên' })
+  @ApiQuery({
+    name: 'q',
+    required: true,
+    type: String,
+    description: 'Số điện thoại hoặc từ khóa tên',
+  })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Search results' })
@@ -141,7 +147,12 @@ export class GirlsController {
   @Get('search/by-name')
   @Public()
   @ApiOperation({ summary: 'Search girls by name (public)' })
-  @ApiQuery({ name: 'q', required: true, type: String, description: 'Từ khóa tên/bio/location' })
+  @ApiQuery({
+    name: 'q',
+    required: true,
+    type: String,
+    description: 'Từ khóa tên/bio/location',
+  })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Search results' })
@@ -202,13 +213,16 @@ export class GirlsController {
   @ApiResponse({ status: 200, description: 'Girl details' })
   @ApiResponse({ status: 404, description: 'Girl not found' })
   findOne(@Param('id') id: string) {
-    return this.girlsService.findOne(id, true);
+    return this.girlsService.findOne(id, false);
   }
 
   @Get('count/by-province')
   @Public()
   @ApiOperation({ summary: 'Get count of girls by province' })
-  @ApiResponse({ status: 200, description: 'Returns array of province with count' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns array of province with count',
+  })
   getCountByProvince() {
     return this.girlsService.getCountByProvince();
   }
@@ -313,10 +327,7 @@ export class GirlsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete girl (Staff/Admin only)' })
   @ApiResponse({ status: 200, description: 'Girl deleted' })
-  remove(
-    @Param('id') id: string,
-    @CurrentUser('id') managedById: string,
-  ) {
+  remove(@Param('id') id: string, @CurrentUser('id') managedById: string) {
     return this.girlsService.remove(id, managedById);
   }
 }

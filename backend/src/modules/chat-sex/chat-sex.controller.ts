@@ -33,7 +33,7 @@ import {
 @ApiTags('Chat Sex')
 @Controller('chat-sex')
 export class ChatSexController {
-  constructor(private readonly chatSexService: ChatSexService) { }
+  constructor(private readonly chatSexService: ChatSexService) {}
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -88,11 +88,7 @@ export class ChatSexController {
         search,
         province,
         isActive:
-          isActive === 'true'
-            ? true
-            : isActive === 'false'
-              ? false
-              : undefined,
+          isActive === 'true' ? true : isActive === 'false' ? false : undefined,
         isFeatured:
           isFeatured === 'true'
             ? true
@@ -149,10 +145,7 @@ export class ChatSexController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete chat sex girl (Admin/Staff only)' })
   @ApiResponse({ status: 200, description: 'Chat sex girl deleted' })
-  remove(
-    @Param('id') id: string,
-    @CurrentUser('id') managedById: string,
-  ) {
+  remove(@Param('id') id: string, @CurrentUser('id') managedById: string) {
     return this.chatSexService.remove(id, managedById);
   }
 
@@ -168,11 +161,7 @@ export class ChatSexController {
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '10',
   ) {
-    return this.chatSexService.getReviews(
-      id,
-      parseInt(page),
-      parseInt(limit),
-    );
+    return this.chatSexService.getReviews(id, parseInt(page), parseInt(limit));
   }
 
   @Post(':id/reviews')
@@ -188,4 +177,3 @@ export class ChatSexController {
     return this.chatSexService.createReview(id, dto, userId);
   }
 }
-

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PostStatus, UserRole } from '@prisma/client';
 
@@ -12,7 +16,12 @@ export class MoviesService {
     page?: number;
     limit?: number;
   }) {
-    const { status = PostStatus.APPROVED, categoryId, page = 1, limit = 24 } = params || {};
+    const {
+      status = PostStatus.APPROVED,
+      categoryId,
+      page = 1,
+      limit = 24,
+    } = params || {};
 
     const where: any = { status };
     if (categoryId) {
@@ -249,7 +258,9 @@ export class MoviesService {
 
     // Validate parentId if provided
     if (parentId) {
-      const parentComment = await (this.prisma as any).movieReviewComment.findUnique({
+      const parentComment = await (
+        this.prisma as any
+      ).movieReviewComment.findUnique({
         where: { id: parentId },
         select: { id: true, reviewId: true },
       });
@@ -313,7 +324,9 @@ export class MoviesService {
       status?: PostStatus;
     },
   ) {
-    if (!([UserRole.ADMIN, UserRole.STAFF_UPLOAD] as UserRole[]).includes(role)) {
+    if (
+      !([UserRole.ADMIN, UserRole.STAFF_UPLOAD] as UserRole[]).includes(role)
+    ) {
       throw new ForbiddenException('You are not allowed to create movies');
     }
 
@@ -322,7 +335,9 @@ export class MoviesService {
       where: { slug: { startsWith: slugBase } },
       select: { slug: true },
     });
-    const existingSlugs = existing.map((m) => m.slug).filter(Boolean) as string[];
+    const existingSlugs = existing
+      .map((m) => m.slug)
+      .filter(Boolean) as string[];
     const slug = this.generateUniqueSlug(slugBase, existingSlugs);
 
     return (this.prisma as any).movie.create({
@@ -357,7 +372,9 @@ export class MoviesService {
       status?: PostStatus;
     },
   ) {
-    if (!([UserRole.ADMIN, UserRole.STAFF_UPLOAD] as UserRole[]).includes(role)) {
+    if (
+      !([UserRole.ADMIN, UserRole.STAFF_UPLOAD] as UserRole[]).includes(role)
+    ) {
       throw new ForbiddenException('You are not allowed to update movies');
     }
 
@@ -379,7 +396,9 @@ export class MoviesService {
         },
         select: { slug: true },
       });
-      const existingSlugs = existing.map((m) => m.slug).filter(Boolean) as string[];
+      const existingSlugs = existing
+        .map((m) => m.slug)
+        .filter(Boolean) as string[];
       slug = this.generateUniqueSlug(base, existingSlugs);
     }
 
@@ -401,11 +420,15 @@ export class MoviesService {
   }
 
   async delete(id: string, userId: string, role: UserRole) {
-    if (!([UserRole.ADMIN, UserRole.STAFF_UPLOAD] as UserRole[]).includes(role)) {
+    if (
+      !([UserRole.ADMIN, UserRole.STAFF_UPLOAD] as UserRole[]).includes(role)
+    ) {
       throw new ForbiddenException('You are not allowed to delete movies');
     }
 
-    const movie = await (this.prisma as any).movie.findUnique({ where: { id } });
+    const movie = await (this.prisma as any).movie.findUnique({
+      where: { id },
+    });
     if (!movie) {
       throw new NotFoundException('Movie not found');
     }
@@ -428,7 +451,10 @@ export class MoviesService {
       .trim();
   }
 
-  private generateUniqueSlug(baseSlug: string, existingSlugs: string[]): string {
+  private generateUniqueSlug(
+    baseSlug: string,
+    existingSlugs: string[],
+  ): string {
     if (!existingSlugs.includes(baseSlug)) {
       return baseSlug;
     }
@@ -442,5 +468,3 @@ export class MoviesService {
     return newSlug;
   }
 }
-
-

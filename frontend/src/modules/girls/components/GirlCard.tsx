@@ -28,16 +28,12 @@ export default function GirlCard({ girl, index = 0 }: GirlCardInternalProps) {
   const isPriority = index < 6;
 
   // Handle click to increment view count
-  const handleClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
-    // Increment view count optimistically
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    // Increment view count optimistically in UI
     setViewCount(prev => prev + 1);
 
-    // Call API to increment view count (fire and forget - don't block navigation)
-    girlsApi.incrementView(girl.id).catch((error) => {
-      // If API call fails, revert the optimistic update
-      console.error('Failed to increment view count:', error);
-      setViewCount(prev => Math.max(0, prev - 1));
-    });
+    // Note: Actual API call moved to ViewTracker component on detail page
+    // to prevent double counting and ensure consistent cache updates.
   };
 
   return (

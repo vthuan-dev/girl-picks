@@ -43,8 +43,11 @@ export class CacheService {
   }
 
   // Helper method to generate cache keys
-  generateKey(prefix: string, ...params: (string | number | undefined)[]): string {
-    const filteredParams = params.filter(p => p !== undefined && p !== null);
+  generateKey(
+    prefix: string,
+    ...params: (string | number | undefined)[]
+  ): string {
+    const filteredParams = params.filter((p) => p !== undefined && p !== null);
     return `${prefix}:${filteredParams.join(':')}`;
   }
 
@@ -66,4 +69,3 @@ export class CacheService {
     return [];
   }
 }
-

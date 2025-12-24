@@ -9,7 +9,8 @@ export class CategoriesService {
 
   async create(createCategoryDto: CreateCategoryDto) {
     // Generate slug from name if not provided
-    const slug = createCategoryDto.slug || this.generateSlug(createCategoryDto.name);
+    const slug =
+      createCategoryDto.slug || this.generateSlug(createCategoryDto.name);
 
     return this.prisma.category.create({
       data: {
@@ -25,10 +26,7 @@ export class CategoriesService {
   async findAll(includeInactive: boolean = false) {
     return this.prisma.category.findMany({
       where: includeInactive ? {} : { isActive: true },
-      orderBy: [
-        { order: 'asc' },
-        { createdAt: 'desc' },
-      ],
+      orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
     });
   }
 
@@ -86,7 +84,9 @@ export class CategoriesService {
     });
 
     if (postCount > 0) {
-      throw new Error(`Cannot delete category with ${postCount} posts. Please reassign posts first.`);
+      throw new Error(
+        `Cannot delete category with ${postCount} posts. Please reassign posts first.`,
+      );
     }
 
     return this.prisma.category.delete({
@@ -103,4 +103,3 @@ export class CategoriesService {
       .replace(/^-+|-+$/g, ''); // Remove leading/trailing dashes
   }
 }
-

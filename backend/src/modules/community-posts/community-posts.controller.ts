@@ -35,7 +35,7 @@ import {
 @ApiTags('Community Posts')
 @Controller('community-posts')
 export class CommunityPostsController {
-  constructor(private readonly communityPostsService: CommunityPostsService) { }
+  constructor(private readonly communityPostsService: CommunityPostsService) {}
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -121,7 +121,9 @@ export class CommunityPostsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.GIRL, UserRole.CUSTOMER)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update community post (Girl/Customer only, pending posts only)' })
+  @ApiOperation({
+    summary: 'Update community post (Girl/Customer only, pending posts only)',
+  })
   @ApiResponse({ status: 200, description: 'Community post updated' })
   update(
     @Param('id') id: string,
@@ -225,7 +227,9 @@ export class CommunityPostsController {
 
   @Get(':id/comments')
   @Public()
-  @ApiOperation({ summary: 'Get comments for a community post (with nested replies)' })
+  @ApiOperation({
+    summary: 'Get comments for a community post (with nested replies)',
+  })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'List of comments with replies' })
@@ -237,4 +241,3 @@ export class CommunityPostsController {
     return this.communityPostsService.getComments(id, page, limit);
   }
 }
-

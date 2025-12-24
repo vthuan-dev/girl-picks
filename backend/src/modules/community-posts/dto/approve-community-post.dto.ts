@@ -7,4 +7,3 @@ export class ApproveCommunityPostDto {
   @IsString()
   notes?: string;
 }
-

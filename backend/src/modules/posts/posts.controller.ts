@@ -122,7 +122,9 @@ export class PostsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.GIRL, UserRole.CUSTOMER)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update post (Girl/Customer only, pending posts only)' })
+  @ApiOperation({
+    summary: 'Update post (Girl/Customer only, pending posts only)',
+  })
   @ApiResponse({ status: 200, description: 'Post updated' })
   update(
     @Param('id') id: string,
@@ -206,10 +208,7 @@ export class PostsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete any post (Admin/Staff only)' })
   @ApiResponse({ status: 200, description: 'Post deleted' })
-  deleteAsAdmin(
-    @Param('id') id: string,
-    @CurrentUser('id') userId: string,
-  ) {
+  deleteAsAdmin(@Param('id') id: string, @CurrentUser('id') userId: string) {
     return this.postsService.deleteAsAdmin(id, userId);
   }
 
@@ -243,8 +242,8 @@ export class PostsController {
     @Body() createPostCommentDto: CreatePostCommentDto,
   ) {
     return this.postsService.addComment(
-      id, 
-      userId, 
+      id,
+      userId,
       createPostCommentDto.content,
       createPostCommentDto.parentId,
     );

@@ -18,7 +18,10 @@ export function generateSlug(text: string): string {
     .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
 }
 
-export function generateUniqueSlug(baseSlug: string, existingSlugs: string[] = []): string {
+export function generateUniqueSlug(
+  baseSlug: string,
+  existingSlugs: string[] = [],
+): string {
   let slug = baseSlug;
   let counter = 1;
 
@@ -29,4 +32,3 @@ export function generateUniqueSlug(baseSlug: string, existingSlugs: string[] = [
 
   return slug;
 }
-

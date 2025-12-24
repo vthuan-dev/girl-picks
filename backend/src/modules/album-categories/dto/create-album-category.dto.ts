@@ -20,4 +20,3 @@ export class CreateAlbumCategoryDto {
   @IsOptional()
   order?: number = 0;
 }
-

@@ -34,7 +34,7 @@ import {
 @Controller('reviews')
 export class ReviewsController {
   private readonly logger = new Logger(ReviewsController.name);
-  
+
   constructor(private readonly reviewsService: ReviewsService) {}
 
   @Post()
@@ -177,7 +177,12 @@ export class ReviewsController {
 
   @Get(':id/like-status')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.CUSTOMER, UserRole.ADMIN, UserRole.GIRL, UserRole.STAFF_UPLOAD)
+  @Roles(
+    UserRole.CUSTOMER,
+    UserRole.ADMIN,
+    UserRole.GIRL,
+    UserRole.STAFF_UPLOAD,
+  )
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get like status (liked & count) for current user' })
   getLikeStatus(@Param('id') id: string, @CurrentUser('id') userId: string) {
@@ -190,10 +195,7 @@ export class ReviewsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Approve comment (Admin only)' })
   @ApiResponse({ status: 200, description: 'Comment approved' })
-  approveComment(
-    @Param('id') id: string,
-    @CurrentUser('id') adminId: string,
-  ) {
+  approveComment(@Param('id') id: string, @CurrentUser('id') adminId: string) {
     return this.reviewsService.approveComment(id, adminId);
   }
 

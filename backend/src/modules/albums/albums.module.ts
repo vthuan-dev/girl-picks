@@ -10,4 +10,3 @@ import { AlbumCategoriesModule } from '../album-categories/album-categories.modu
   providers: [AlbumsService, PrismaService],
 })
 export class AlbumsModule {}
-

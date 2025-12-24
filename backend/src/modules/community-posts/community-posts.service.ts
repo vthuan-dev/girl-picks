@@ -19,9 +19,13 @@ export class CommunityPostsService {
     private prisma: PrismaService,
     @Inject(forwardRef(() => NotificationsService))
     private notificationsService: NotificationsService,
-  ) { }
+  ) {}
 
-  async create(userId: string, createPostDto: CreateCommunityPostDto, userRole: UserRole) {
+  async create(
+    userId: string,
+    createPostDto: CreateCommunityPostDto,
+    userRole: UserRole,
+  ) {
     // Check if user is GIRL and get girl profile (optional)
     let girlId: string | undefined;
     if (userRole === UserRole.GIRL) {
@@ -236,7 +240,11 @@ export class CommunityPostsService {
     });
   }
 
-  async update(id: string, userId: string, updatePostDto: UpdateCommunityPostDto) {
+  async update(
+    id: string,
+    userId: string,
+    updatePostDto: UpdateCommunityPostDto,
+  ) {
     const post = await this.findOne(id, false);
 
     // Check if user owns this post
@@ -521,7 +529,10 @@ export class CommunityPostsService {
   /**
    * Get interactions (likes or comments) of current user on community posts
    */
-  async getUserInteractions(userId: string, type: 'likes' | 'comments' = 'likes') {
+  async getUserInteractions(
+    userId: string,
+    type: 'likes' | 'comments' = 'likes',
+  ) {
     if (type === 'comments') {
       const comments = await this.prisma.communityPostComment.findMany({
         where: { userId },
@@ -557,16 +568,16 @@ export class CommunityPostsService {
         })
         .map((c) => {
           const post: any = c.post;
-          const images: string[] = Array.isArray(post.images) ? post.images : [];
-          const girlName =
-            post.girl?.name ||
-            post.girl?.user?.fullName ||
-            null;
+          const images: string[] = Array.isArray(post.images)
+            ? post.images
+            : [];
+          const girlName = post.girl?.name || post.girl?.user?.fullName || null;
 
           return {
             id: c.id,
             postId: c.postId,
-            postTitle: post.title || post.content?.slice(0, 80) || 'Bài viết cộng đồng',
+            postTitle:
+              post.title || post.content?.slice(0, 80) || 'Bài viết cộng đồng',
             girlName,
             previewImage: images[0] || null,
             type: 'comments' as const,
@@ -603,15 +614,13 @@ export class CommunityPostsService {
     return likes.map((l) => {
       const post: any = l.post;
       const images: string[] = Array.isArray(post.images) ? post.images : [];
-      const girlName =
-        post.girl?.name ||
-        post.girl?.user?.fullName ||
-        null;
+      const girlName = post.girl?.name || post.girl?.user?.fullName || null;
 
       return {
         id: l.id,
         postId: l.postId,
-        postTitle: post.title || post.content?.slice(0, 80) || 'Bài viết cộng đồng',
+        postTitle:
+          post.title || post.content?.slice(0, 80) || 'Bài viết cộng đồng',
         girlName,
         previewImage: images[0] || null,
         type: 'likes' as const,
@@ -650,7 +659,9 @@ export class CommunityPostsService {
       }
 
       if (parentComment.postId !== postId) {
-        throw new BadRequestException('Parent comment does not belong to this post');
+        throw new BadRequestException(
+          'Parent comment does not belong to this post',
+        );
       }
     }
 
@@ -751,29 +762,30 @@ export class CommunityPostsService {
         // Get nested replies recursively
         const repliesWithNested = await Promise.all(
           replies.map(async (reply) => {
-            const nestedReplies = await this.prisma.communityPostComment.findMany({
-              where: {
-                parentId: reply.id,
-              },
-              include: {
-                user: {
-                  select: {
-                    id: true,
-                    fullName: true,
-                    avatarUrl: true,
+            const nestedReplies =
+              await this.prisma.communityPostComment.findMany({
+                where: {
+                  parentId: reply.id,
+                },
+                include: {
+                  user: {
+                    select: {
+                      id: true,
+                      fullName: true,
+                      avatarUrl: true,
+                    },
+                  },
+                  _count: {
+                    select: {
+                      replies: true,
+                    },
                   },
                 },
-                _count: {
-                  select: {
-                    replies: true,
-                  },
+                orderBy: {
+                  createdAt: 'asc',
                 },
-              },
-              orderBy: {
-                createdAt: 'asc',
-              },
-              take: 5, // Limit nested replies
-            });
+                take: 5, // Limit nested replies
+              });
 
             return {
               ...reply,
@@ -798,4 +810,3 @@ export class CommunityPostsService {
     };
   }
 }
-

@@ -11,4 +11,3 @@ export class CreateCommunityPostCommentDto {
   @IsUUID()
   parentId?: string;
 }
-

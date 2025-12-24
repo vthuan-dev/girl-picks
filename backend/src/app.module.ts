@@ -46,7 +46,7 @@ import { join } from 'path';
       {
         rootPath: join(process.cwd(), 'uploads'),
         serveRoot: '/uploads',
-      }
+      },
     ),
     PrismaModule,
     CacheModule,
@@ -94,4 +94,4 @@ import { join } from 'path';
     // },
   ],
 })
-export class AppModule { }
+export class AppModule {}

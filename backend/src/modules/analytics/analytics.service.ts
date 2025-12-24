@@ -9,7 +9,11 @@ export class AnalyticsService {
   /**
    * Track a page view
    */
-  async trackPageView(dto: TrackPageViewDto, ipAddress?: string, userId?: string) {
+  async trackPageView(
+    dto: TrackPageViewDto,
+    ipAddress?: string,
+    userId?: string,
+  ) {
     try {
       await this.prisma.pageView.create({
         data: {
@@ -95,7 +99,14 @@ export class AnalyticsService {
 
     // Get previous period for comparison
     const previousStartDate = new Date(startDate);
-    const periodDays = timeRange === '7days' ? 7 : timeRange === '30days' ? 30 : timeRange === '90days' ? 90 : 365;
+    const periodDays =
+      timeRange === '7days'
+        ? 7
+        : timeRange === '30days'
+          ? 30
+          : timeRange === '90days'
+            ? 90
+            : 365;
     previousStartDate.setDate(previousStartDate.getDate() - periodDays);
 
     const previousVisits = await this.prisma.pageView.groupBy({
@@ -111,9 +122,12 @@ export class AnalyticsService {
     // Calculate change percentage
     const currentCount = totalVisits.length;
     const previousCount = previousVisits.length;
-    const visitsChange = previousCount > 0 
-      ? ((currentCount - previousCount) / previousCount) * 100 
-      : currentCount > 0 ? 100 : 0;
+    const visitsChange =
+      previousCount > 0
+        ? ((currentCount - previousCount) / previousCount) * 100
+        : currentCount > 0
+          ? 100
+          : 0;
 
     // Get new users (users created in this period)
     const newUsers = await this.prisma.user.count({
@@ -133,9 +147,12 @@ export class AnalyticsService {
       },
     });
 
-    const usersChange = previousNewUsers > 0
-      ? ((newUsers - previousNewUsers) / previousNewUsers) * 100
-      : newUsers > 0 ? 100 : 0;
+    const usersChange =
+      previousNewUsers > 0
+        ? ((newUsers - previousNewUsers) / previousNewUsers) * 100
+        : newUsers > 0
+          ? 100
+          : 0;
 
     // Get revenue
     const revenue = await this.prisma.payment.aggregate({
@@ -165,9 +182,12 @@ export class AnalyticsService {
 
     const currentRevenue = Number(revenue._sum.amount || 0);
     const prevRevenue = Number(previousRevenue._sum.amount || 0);
-    const revenueChange = prevRevenue > 0
-      ? ((currentRevenue - prevRevenue) / prevRevenue) * 100
-      : currentRevenue > 0 ? 100 : 0;
+    const revenueChange =
+      prevRevenue > 0
+        ? ((currentRevenue - prevRevenue) / prevRevenue) * 100
+        : currentRevenue > 0
+          ? 100
+          : 0;
 
     // Get bookings
     const bookings = await this.prisma.booking.count({
@@ -187,9 +207,12 @@ export class AnalyticsService {
       },
     });
 
-    const bookingsChange = previousBookings > 0
-      ? ((bookings - previousBookings) / previousBookings) * 100
-      : bookings > 0 ? 100 : 0;
+    const bookingsChange =
+      previousBookings > 0
+        ? ((bookings - previousBookings) / previousBookings) * 100
+        : bookings > 0
+          ? 100
+          : 0;
 
     return {
       metrics: {
@@ -255,7 +278,7 @@ export class AnalyticsService {
     const topPages = await Promise.all(
       result.map(async (item) => {
         const currentViews = item.views;
-        
+
         // Get views from previous period (30-60 days ago)
         const previousPageViews = await this.prisma.pageView.findMany({
           where: {
@@ -270,19 +293,24 @@ export class AnalyticsService {
           },
         });
 
-        const previousSessions = new Set(previousPageViews.map(v => v.sessionId));
+        const previousSessions = new Set(
+          previousPageViews.map((v) => v.sessionId),
+        );
         const previousViews = previousSessions.size;
-        
-        const change = previousViews > 0
-          ? ((currentViews - previousViews) / previousViews) * 100
-          : currentViews > 0 ? 100 : 0;
+
+        const change =
+          previousViews > 0
+            ? ((currentViews - previousViews) / previousViews) * 100
+            : currentViews > 0
+              ? 100
+              : 0;
 
         return {
           page: item.page,
           views: currentViews,
           change: Number(change.toFixed(1)),
         };
-      })
+      }),
     );
 
     return topPages;
@@ -313,15 +341,18 @@ export class AnalyticsService {
     });
 
     // Extract girl ID from path (format: /gai-goi/[id]/[slug])
-    const girlViewsMap = new Map<string, { views: Set<string>; name: string }>();
-    
+    const girlViewsMap = new Map<
+      string,
+      { views: Set<string>; name: string }
+    >();
+
     pageViews.forEach((view) => {
       // Extract ID from path like /gai-goi/123/abc-slug
       const pathParts = view.path.split('/');
       if (pathParts.length >= 3 && pathParts[1] === 'gai-goi') {
         const girlId = pathParts[2];
         const girlName = view.title || pathParts[3] || 'N/A';
-        
+
         if (!girlViewsMap.has(girlId)) {
           girlViewsMap.set(girlId, { views: new Set(), name: girlName });
         }
@@ -346,22 +377,25 @@ export class AnalyticsService {
     });
 
     // Get user details if needed
-    const userIds = girls.filter(g => g.userId).map(g => g.userId!);
-    const users = userIds.length > 0 ? await this.prisma.user.findMany({
-      where: {
-        id: {
-          in: userIds,
-        },
-      },
-      select: {
-        id: true,
-        fullName: true,
-      },
-    }) : [];
-    const usersMap = new Map(users.map(u => [u.id, u]));
+    const userIds = girls.filter((g) => g.userId).map((g) => g.userId!);
+    const users =
+      userIds.length > 0
+        ? await this.prisma.user.findMany({
+            where: {
+              id: {
+                in: userIds,
+              },
+            },
+            select: {
+              id: true,
+              fullName: true,
+            },
+          })
+        : [];
+    const usersMap = new Map(users.map((u) => [u.id, u]));
 
     // Create a map of girl details
-    const girlsMap = new Map(girls.map(g => [g.id, g]));
+    const girlsMap = new Map(girls.map((g) => [g.id, g]));
 
     // Convert to array and sort
     const result = Array.from(girlViewsMap.entries())
@@ -369,9 +403,13 @@ export class AnalyticsService {
         const girl = girlsMap.get(girlId);
         const user = girl?.userId ? usersMap.get(girl.userId) : null;
         // Get first image from images array (JSON)
-        const images = girl?.images ? (Array.isArray(girl.images) ? girl.images : JSON.parse(girl.images as any)) : [];
+        const images = girl?.images
+          ? Array.isArray(girl.images)
+            ? girl.images
+            : JSON.parse(girl.images as any)
+          : [];
         const avatar = images && images.length > 0 ? images[0] : null;
-        
+
         return {
           id: girlId,
           name: girl?.name || user?.fullName || data.name,
@@ -389,7 +427,7 @@ export class AnalyticsService {
     const topGirls = await Promise.all(
       result.map(async (item) => {
         const currentViews = item.views;
-        
+
         // Get views from previous period (30-60 days ago) for this girl
         const previousPageViews = await this.prisma.pageView.findMany({
           where: {
@@ -406,12 +444,17 @@ export class AnalyticsService {
           },
         });
 
-        const previousSessions = new Set(previousPageViews.map(v => v.sessionId));
+        const previousSessions = new Set(
+          previousPageViews.map((v) => v.sessionId),
+        );
         const previousViews = previousSessions.size;
-        
-        const change = previousViews > 0
-          ? ((currentViews - previousViews) / previousViews) * 100
-          : currentViews > 0 ? 100 : 0;
+
+        const change =
+          previousViews > 0
+            ? ((currentViews - previousViews) / previousViews) * 100
+            : currentViews > 0
+              ? 100
+              : 0;
 
         return {
           id: item.id,
@@ -420,10 +463,9 @@ export class AnalyticsService {
           views: currentViews,
           change: Number(change.toFixed(1)),
         };
-      })
+      }),
     );
 
     return topGirls;
   }
 }
-

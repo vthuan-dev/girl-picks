@@ -71,4 +71,3 @@ export class AlbumsController {
     return this.albumsService.deleteImage(imageId);
   }
 }
-

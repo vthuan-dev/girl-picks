@@ -18,14 +18,19 @@ import { UserRole } from '@prisma/client';
 @Controller('upload')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class UploadController {
-  constructor(private readonly uploadService: UploadService) { }
+  constructor(private readonly uploadService: UploadService) {}
 
   /**
    * Upload single image from URL
    * POST /api/upload/image
    */
   @Post('image')
-  @Roles(UserRole.ADMIN, UserRole.GIRL, UserRole.STAFF_UPLOAD, UserRole.CUSTOMER)
+  @Roles(
+    UserRole.ADMIN,
+    UserRole.GIRL,
+    UserRole.STAFF_UPLOAD,
+    UserRole.CUSTOMER,
+  )
   async uploadImage(@Body() dto: UploadImageDto) {
     return this.uploadService.uploadImageFromUrl(dto);
   }
@@ -35,7 +40,12 @@ export class UploadController {
    * POST /api/upload/images
    */
   @Post('images')
-  @Roles(UserRole.ADMIN, UserRole.GIRL, UserRole.STAFF_UPLOAD, UserRole.CUSTOMER)
+  @Roles(
+    UserRole.ADMIN,
+    UserRole.GIRL,
+    UserRole.STAFF_UPLOAD,
+    UserRole.CUSTOMER,
+  )
   async uploadMultipleImages(@Body() dto: UploadMultipleImagesDto) {
     return this.uploadService.uploadMultipleImagesFromUrls(dto);
   }
@@ -45,7 +55,12 @@ export class UploadController {
    * DELETE /api/upload/image/:publicId
    */
   @Delete('image/:publicId')
-  @Roles(UserRole.ADMIN, UserRole.GIRL, UserRole.STAFF_UPLOAD, UserRole.CUSTOMER)
+  @Roles(
+    UserRole.ADMIN,
+    UserRole.GIRL,
+    UserRole.STAFF_UPLOAD,
+    UserRole.CUSTOMER,
+  )
   async deleteImage(@Param('publicId') publicId: string) {
     return this.uploadService.deleteImage(publicId);
   }
@@ -66,11 +81,14 @@ export class UploadController {
       url: this.uploadService.getOptimizedUrl(publicId, {
         width: width ? parseInt(width, 10) : undefined,
         height: height ? parseInt(height, 10) : undefined,
-        quality: quality === 'auto' ? 'auto' : quality ? parseInt(quality, 10) : 'auto',
+        quality:
+          quality === 'auto'
+            ? 'auto'
+            : quality
+              ? parseInt(quality, 10)
+              : 'auto',
         format: format || 'auto',
       }),
     };
   }
 }
-
-

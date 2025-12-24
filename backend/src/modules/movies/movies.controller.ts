@@ -110,7 +110,12 @@ export class MoviesController {
     @CurrentUser('id') userId: string,
     @Body() body: { content: string; parentId?: string },
   ) {
-    return this.moviesService.createReviewComment(reviewId, userId, body.content, body.parentId);
+    return this.moviesService.createReviewComment(
+      reviewId,
+      userId,
+      body.content,
+      body.parentId,
+    );
   }
 
   @Post('movies/:id/view')
@@ -207,5 +212,3 @@ export class MoviesController {
     return this.moviesService.delete(id, userId, role);
   }
 }
-
-

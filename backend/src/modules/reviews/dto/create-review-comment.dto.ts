@@ -6,7 +6,10 @@ export class CreateReviewCommentDto {
   @IsString()
   content: string;
 
-  @ApiProperty({ description: 'Parent comment ID for replies', required: false })
+  @ApiProperty({
+    description: 'Parent comment ID for replies',
+    required: false,
+  })
   @IsOptional()
   @IsUUID()
   parentId?: string;

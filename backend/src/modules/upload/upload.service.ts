@@ -51,7 +51,9 @@ export class UploadService {
 
       if (dto.url.startsWith('data:image/')) {
         // Xử lý Base64
-        const matches = dto.url.match(/^data:image\/([A-Za-z-+/]+);base64,(.+)$/);
+        const matches = dto.url.match(
+          /^data:image\/([A-Za-z-+/]+);base64,(.+)$/,
+        );
         if (!matches || matches.length !== 3) {
           throw new Error('Invalid base64 string format');
         }
@@ -67,7 +69,9 @@ export class UploadService {
           extension = ext === 'jpeg' ? 'jpg' : ext;
         }
       } else {
-        throw new Error('Unsupported image source format. Use Base64 or HTTP URL.');
+        throw new Error(
+          'Unsupported image source format. Use Base64 or HTTP URL.',
+        );
       }
 
       const filename = `${dto.publicId || generateId()}.${extension}`;
@@ -96,7 +100,9 @@ export class UploadService {
    */
   async uploadMultipleImagesFromUrls(dto: UploadMultipleImagesDto) {
     const results = await Promise.all(
-      dto.urls.map((url) => this.uploadImageFromUrl({ url, folder: dto.folder })),
+      dto.urls.map((url) =>
+        this.uploadImageFromUrl({ url, folder: dto.folder }),
+      ),
     );
 
     return results;
@@ -109,7 +115,8 @@ export class UploadService {
     // Logic xóa file nếu cần, tạm thời để trống hoặc thực hiện xóa cơ bản
     return {
       success: true,
-      message: 'Local image delete functionality not fully implemented but bypassed',
+      message:
+        'Local image delete functionality not fully implemented but bypassed',
     };
   }
 
@@ -120,4 +127,3 @@ export class UploadService {
     return url; // Local storage doesn't support on-the-fly optimization like Cloudinary without extra libs
   }
 }
-

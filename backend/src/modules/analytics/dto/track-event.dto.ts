@@ -22,4 +22,3 @@ export class TrackEventDto {
   @IsOptional()
   timestamp?: string;
 }
-

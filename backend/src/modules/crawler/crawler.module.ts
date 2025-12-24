@@ -10,4 +10,3 @@ import { UploadModule } from '../upload/upload.module';
   providers: [CrawlerService],
 })
 export class CrawlerModule {}
-

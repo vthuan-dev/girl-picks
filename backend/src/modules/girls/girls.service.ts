@@ -360,8 +360,8 @@ export class GirlsService {
           break;
       }
       if (priceConditions.length > 0) {
-        where.AND = where.AND 
-          ? Array.isArray(where.AND) 
+        where.AND = where.AND
+          ? Array.isArray(where.AND)
             ? [...where.AND, ...priceConditions]
             : [where.AND, ...priceConditions]
           : priceConditions;
@@ -406,8 +406,8 @@ export class GirlsService {
           break;
       }
       if (ageConditions.length > 0) {
-        where.AND = where.AND 
-          ? Array.isArray(where.AND) 
+        where.AND = where.AND
+          ? Array.isArray(where.AND)
             ? [...where.AND, ...ageConditions]
             : [where.AND, ...ageConditions]
           : ageConditions;
@@ -454,8 +454,8 @@ export class GirlsService {
           break;
       }
       if (heightConditions.length > 0) {
-        where.AND = where.AND 
-          ? Array.isArray(where.AND) 
+        where.AND = where.AND
+          ? Array.isArray(where.AND)
             ? [...where.AND, ...heightConditions]
             : [where.AND, ...heightConditions]
           : heightConditions;
@@ -502,8 +502,8 @@ export class GirlsService {
           break;
       }
       if (weightConditions.length > 0) {
-        where.AND = where.AND 
-          ? Array.isArray(where.AND) 
+        where.AND = where.AND
+          ? Array.isArray(where.AND)
             ? [...where.AND, ...weightConditions]
             : [where.AND, ...weightConditions]
           : weightConditions;
@@ -553,8 +553,8 @@ export class GirlsService {
           break;
       }
       if (originConditions.length > 0) {
-        where.AND = where.AND 
-          ? Array.isArray(where.AND) 
+        where.AND = where.AND
+          ? Array.isArray(where.AND)
             ? [...where.AND, ...originConditions]
             : [where.AND, ...originConditions]
           : originConditions;
@@ -578,8 +578,8 @@ export class GirlsService {
             { province: { contains: targetLocation } },
           ],
         };
-        where.AND = where.AND 
-          ? Array.isArray(where.AND) 
+        where.AND = where.AND
+          ? Array.isArray(where.AND)
             ? [...where.AND, locationCondition]
             : [where.AND, locationCondition]
           : [locationCondition];
@@ -594,8 +594,8 @@ export class GirlsService {
           { location: { contains: province } },
         ],
       };
-      where.AND = where.AND 
-        ? Array.isArray(where.AND) 
+      where.AND = where.AND
+        ? Array.isArray(where.AND)
           ? [...where.AND, provinceCondition]
           : [where.AND, provinceCondition]
         : [provinceCondition];
@@ -604,45 +604,47 @@ export class GirlsService {
     // If tags filter is provided, we need to fetch all and filter in application layer
     // because MySQL JSON array filtering is complex
     let allGirls = await this.prisma.girl.findMany({
-        where,
-        include: {
-          user: {
-            select: {
-              id: true,
-              fullName: true,
-              email: true,
-              phone: true,
-              avatarUrl: true,
-            },
-          },
-          _count: {
-            select: {
-              posts: { where: { status: 'APPROVED' } },
-              reviews: { where: { status: 'APPROVED' } },
-              bookings: true,
-            },
+      where,
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            phone: true,
+            avatarUrl: true,
           },
         },
-        orderBy: [
-          { isFeatured: 'desc' },
-          { ratingAverage: 'desc' },
-          { lastActiveAt: 'desc' },
-        ],
+        _count: {
+          select: {
+            posts: { where: { status: 'APPROVED' } },
+            reviews: { where: { status: 'APPROVED' } },
+            bookings: true,
+          },
+        },
+      },
+      orderBy: [
+        { isFeatured: 'desc' },
+        { ratingAverage: 'desc' },
+        { lastActiveAt: 'desc' },
+      ],
     });
 
     // Filter by tags if provided
     if (tags && tags.length > 0) {
-      const normalizedTags = tags.map(tag => tag.trim().toLowerCase());
+      const normalizedTags = tags.map((tag) => tag.trim().toLowerCase());
       allGirls = allGirls.filter((girl) => {
         if (!girl.tags || !Array.isArray(girl.tags)) {
           return false;
         }
-        const girlTags = (girl.tags as string[]).map(tag => 
-          typeof tag === 'string' ? tag.trim().toLowerCase() : ''
+        const girlTags = (girl.tags as string[]).map((tag) =>
+          typeof tag === 'string' ? tag.trim().toLowerCase() : '',
         );
         // Check if any of the filter tags match any of the girl's tags
-        return normalizedTags.some(filterTag => 
-          girlTags.some(girlTag => girlTag === filterTag || girlTag.includes(filterTag))
+        return normalizedTags.some((filterTag) =>
+          girlTags.some(
+            (girlTag) => girlTag === filterTag || girlTag.includes(filterTag),
+          ),
         );
       });
     }
@@ -665,7 +667,8 @@ export class GirlsService {
 
     // Cache the result for 5 minutes (300 seconds)
     // Cache longer for first page, shorter for filtered results
-    const ttl = page === 1 && !province && !priceFilter && !ageFilter ? 600 : 300;
+    const ttl =
+      page === 1 && !province && !priceFilter && !ageFilter ? 600 : 300;
     await this.cacheService.set(cacheKey, result, ttl);
 
     return result;
@@ -674,10 +677,10 @@ export class GirlsService {
   async findOne(idOrSlug: string, incrementView: boolean = true) {
     // Try to find by ID first, then by slug
     console.log(`[GirlsService] Finding girl with idOrSlug: ${idOrSlug}`);
-    
+
     // Generate cache key
     const cacheKey = this.cacheService.generateKey('girls:detail', idOrSlug);
-    
+
     // Try to get from cache first
     const cachedGirl = await this.cacheService.get<any>(cacheKey);
     if (cachedGirl) {
@@ -701,10 +704,7 @@ export class GirlsService {
       where: {
         AND: [
           {
-            OR: [
-              { id: idOrSlug },
-              { slug: idOrSlug },
-            ],
+            OR: [{ id: idOrSlug }, { slug: idOrSlug }],
           },
           { isActive: true },
         ],
@@ -759,20 +759,21 @@ export class GirlsService {
       // Try to find without isActive check to see if girl exists but is inactive
       const inactiveGirl = await this.prisma.girl.findFirst({
         where: {
-          OR: [
-            { id: idOrSlug },
-            { slug: idOrSlug },
-          ],
+          OR: [{ id: idOrSlug }, { slug: idOrSlug }],
         },
         select: { id: true, isActive: true },
       });
       if (inactiveGirl) {
-        console.log(`[GirlsService] Girl exists but isActive: ${inactiveGirl.isActive}`);
+        console.log(
+          `[GirlsService] Girl exists but isActive: ${inactiveGirl.isActive}`,
+        );
       }
       throw new NotFoundException('Girl not found');
     }
-    
-    console.log(`[GirlsService] Found girl: ${girl.id}, isActive: ${girl.isActive}`);
+
+    console.log(
+      `[GirlsService] Found girl: ${girl.id}, isActive: ${girl.isActive}`,
+    );
 
     // Increment view count if requested
     let result: any = girl;
@@ -794,11 +795,16 @@ export class GirlsService {
   /**
    * Get count of girls by province
    */
-  async getCountByProvince(): Promise<Array<{ province: string; count: number }>> {
+  async getCountByProvince(): Promise<
+    Array<{ province: string; count: number }>
+  > {
     const cacheKey = this.cacheService.generateKey('girls:count:by-province');
-    
+
     // Try to get from cache first
-    const cachedData = await this.cacheService.get<Array<{ province: string; count: number }>>(cacheKey);
+    const cachedData =
+      await this.cacheService.get<Array<{ province: string; count: number }>>(
+        cacheKey,
+      );
     if (cachedData && Array.isArray(cachedData)) {
       return cachedData;
     }
@@ -840,26 +846,46 @@ export class GirlsService {
   }
 
   async incrementViewCount(id: string) {
-    await this.prisma.girl.update({
+    const updated = await this.prisma.girl.update({
       where: { id },
       data: {
         viewCount: {
           increment: 1,
         },
       },
+      select: { id: true, slug: true, viewCount: true },
     });
+
+    // Update Detail Cache if exists to prevent "dropping" view count on refresh
+    const idKey = this.cacheService.generateKey('girls:detail', updated.id);
+    const cachedById = await this.cacheService.get<any>(idKey);
+    if (cachedById) {
+      await this.cacheService.set(
+        idKey,
+        { ...cachedById, viewCount: updated.viewCount },
+        600,
+      );
+    }
+
+    if (updated.slug) {
+      const slugKey = this.cacheService.generateKey(
+        'girls:detail',
+        updated.slug,
+      );
+      const cachedBySlug = await this.cacheService.get<any>(slugKey);
+      if (cachedBySlug) {
+        await this.cacheService.set(
+          slugKey,
+          { ...cachedBySlug, viewCount: updated.viewCount },
+          600,
+        );
+      }
+    }
   }
 
   async create(createGirlDto: any, managedById: string) {
-    const {
-      districts,
-      images,
-      tags,
-      services,
-      name,
-      phone,
-      ...rest
-    } = createGirlDto;
+    const { districts, images, tags, services, name, phone, ...rest } =
+      createGirlDto;
 
     // Validate phone uniqueness if provided
     if (phone && phone.trim()) {
@@ -871,7 +897,7 @@ export class GirlsService {
 
       if (existingGirl) {
         throw new BadRequestException(
-          `Số điện thoại ${normalizedPhone} đã được sử dụng bởi gái "${existingGirl.name || existingGirl.id}". Vui lòng sử dụng số điện thoại khác.`
+          `Số điện thoại ${normalizedPhone} đã được sử dụng bởi gái "${existingGirl.name || existingGirl.id}". Vui lòng sử dụng số điện thoại khác.`,
         );
       }
     }
@@ -885,7 +911,9 @@ export class GirlsService {
         where: { slug: { startsWith: baseSlug } },
         select: { slug: true },
       });
-      const existingSlugs = existingGirls.map(g => g.slug).filter(Boolean) as string[];
+      const existingSlugs = existingGirls
+        .map((g) => g.slug)
+        .filter(Boolean) as string[];
       slug = generateUniqueSlug(baseSlug, existingSlugs);
     }
 
@@ -897,10 +925,18 @@ export class GirlsService {
         phone: phone?.trim() || null, // Normalize phone and set to null if empty
         managedById, // Track who manages this girl
         userId: null, // Girl is independent, not linked to user
-        districts: districts ? (Array.isArray(districts) ? districts : [districts]) : [],
+        districts: districts
+          ? Array.isArray(districts)
+            ? districts
+            : [districts]
+          : [],
         images: images ? (Array.isArray(images) ? images : [images]) : [],
         tags: tags ? (Array.isArray(tags) ? tags : [tags]) : [],
-        services: services ? (Array.isArray(services) ? services : [services]) : [],
+        services: services
+          ? Array.isArray(services)
+            ? services
+            : [services]
+          : [],
       },
       // include: {
       //   managedBy: {
@@ -934,23 +970,21 @@ export class GirlsService {
 
     // @ts-ignore - managedById will exist after migration
     const girlManagedById = (girl as any).managedById;
-    
-    if (
-      currentUser?.role !== 'ADMIN' &&
-      girlManagedById !== managedById
-    ) {
+
+    if (currentUser?.role !== 'ADMIN' && girlManagedById !== managedById) {
       throw new BadRequestException(
         'You do not have permission to update this girl',
       );
     }
 
-    const { districts, images, tags, services, name, phone, ...rest } = updateGirlDto;
+    const { districts, images, tags, services, name, phone, ...rest } =
+      updateGirlDto;
 
     // Validate phone uniqueness if provided and changed
     if (phone && phone.trim() && phone.trim() !== girl.phone) {
       const normalizedPhone = phone.trim();
       const existingGirl = await this.prisma.girl.findFirst({
-        where: { 
+        where: {
           phone: normalizedPhone,
           id: { not: id }, // Exclude current girl
         },
@@ -959,7 +993,7 @@ export class GirlsService {
 
       if (existingGirl) {
         throw new BadRequestException(
-          `Số điện thoại ${normalizedPhone} đã được sử dụng bởi gái "${existingGirl.name || existingGirl.id}". Vui lòng sử dụng số điện thoại khác.`
+          `Số điện thoại ${normalizedPhone} đã được sử dụng bởi gái "${existingGirl.name || existingGirl.id}". Vui lòng sử dụng số điện thoại khác.`,
         );
       }
     }
@@ -969,13 +1003,15 @@ export class GirlsService {
     if (name && name !== girl.name) {
       const baseSlug = generateSlug(name);
       const existingGirls = await this.prisma.girl.findMany({
-        where: { 
+        where: {
           slug: { startsWith: baseSlug },
           NOT: { id },
         },
         select: { slug: true },
       });
-      const existingSlugs = existingGirls.map(g => g.slug).filter(Boolean) as string[];
+      const existingSlugs = existingGirls
+        .map((g) => g.slug)
+        .filter(Boolean) as string[];
       slug = generateUniqueSlug(baseSlug, existingSlugs);
     }
 
@@ -987,7 +1023,10 @@ export class GirlsService {
         ...(phone !== undefined && { phone: phone?.trim() || null }), // Normalize phone if provided
         ...(slug && { slug }),
         // @ts-ignore - managedById will exist after migration
-        managedById: currentUser?.role === 'ADMIN' ? managedById : (girl as any).managedById,
+        managedById:
+          currentUser?.role === 'ADMIN'
+            ? managedById
+            : (girl as any).managedById,
         districts: districts !== undefined ? districts : undefined,
         images: images !== undefined ? images : undefined,
         tags: tags !== undefined ? tags : undefined,
@@ -1102,11 +1141,8 @@ export class GirlsService {
 
     // @ts-ignore - managedById will exist after migration
     const girlManagedById = (girl as any).managedById;
-    
-    if (
-      currentUser?.role !== 'ADMIN' &&
-      girlManagedById !== managedById
-    ) {
+
+    if (currentUser?.role !== 'ADMIN' && girlManagedById !== managedById) {
       throw new BadRequestException(
         'You do not have permission to delete this girl',
       );
@@ -1303,7 +1339,9 @@ export class GirlsService {
       throw new NotFoundException('Girl not found');
     }
 
-    const currentImages = Array.isArray(girl.images) ? (girl.images as string[]) : [];
+    const currentImages = Array.isArray(girl.images)
+      ? (girl.images as string[])
+      : [];
     const uniqueImages = Array.from(
       new Set([...currentImages, ...imageUrls.filter((url) => !!url)]),
     );
@@ -1332,7 +1370,9 @@ export class GirlsService {
       throw new NotFoundException('Girl not found');
     }
 
-    const currentImages = Array.isArray(girl.images) ? (girl.images as string[]) : [];
+    const currentImages = Array.isArray(girl.images)
+      ? (girl.images as string[])
+      : [];
     return this.prisma.girl.update({
       where: { id: girlId },
       data: {
@@ -1363,8 +1403,12 @@ export class GirlsService {
     // Since we can't easily pattern match, we'll use a simple approach:
     // Set a version number that changes when list is invalidated
     const versionKey = 'girls:list:version';
-    const currentVersion = await this.cacheService.get<number>(versionKey) || 0;
+    const currentVersion =
+      (await this.cacheService.get<number>(versionKey)) || 0;
     await this.cacheService.set(versionKey, currentVersion + 1, 86400); // 24 hours
-    console.log('[GirlsService] Invalidated list cache, new version:', currentVersion + 1);
+    console.log(
+      '[GirlsService] Invalidated list cache, new version:',
+      currentVersion + 1,
+    );
   }
 }

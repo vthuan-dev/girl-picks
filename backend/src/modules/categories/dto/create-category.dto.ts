@@ -6,7 +6,10 @@ export class CreateCategoryDto {
   @IsString()
   name: string;
 
-  @ApiPropertyOptional({ description: 'URL-friendly slug', example: 'sex-tu-quay' })
+  @ApiPropertyOptional({
+    description: 'URL-friendly slug',
+    example: 'sex-tu-quay',
+  })
   @IsString()
   @IsOptional()
   slug?: string;
@@ -27,4 +30,3 @@ export class CreateCategoryDto {
   @IsOptional()
   isActive?: boolean;
 }
-

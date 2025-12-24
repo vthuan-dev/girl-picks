@@ -1,4 +1,4 @@
-   import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { AlbumCategoriesService } from './album-categories.service';
 import { CreateAlbumCategoryDto } from './dto/create-album-category.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -22,4 +22,3 @@ export class AlbumCategoriesController {
     return this.service.create(dto);
   }
 }
-

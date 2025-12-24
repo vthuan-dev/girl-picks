@@ -18,9 +18,9 @@ export class AlbumsService {
 
     let categoryName = dto.category || null;
     if (dto.albumCategoryId) {
-      const cat = await this.albumCategoriesService.findAll(false).then((cats) =>
-        cats.find((c) => c.id === dto.albumCategoryId),
-      );
+      const cat = await this.albumCategoriesService
+        .findAll(false)
+        .then((cats) => cats.find((c) => c.id === dto.albumCategoryId));
       if (!cat) {
         throw new NotFoundException('Danh mục album không tồn tại');
       }
@@ -80,7 +80,9 @@ export class AlbumsService {
   }
 
   async deleteImage(imageId: string) {
-    const image = await this.prisma.albumImage.findUnique({ where: { id: imageId } });
+    const image = await this.prisma.albumImage.findUnique({
+      where: { id: imageId },
+    });
     if (!image) throw new NotFoundException('Ảnh không tồn tại');
     await this.prisma.albumImage.delete({ where: { id: imageId } });
     return { message: 'Đã xóa ảnh' };
@@ -133,4 +135,3 @@ export class AlbumsService {
     return album;
   }
 }
-

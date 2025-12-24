@@ -135,7 +135,8 @@ export class AuthService {
           updatedAt: user.updatedAt.toISOString(),
         },
         pendingApproval: true,
-        message: 'Tài khoản GIRL đã tạo. Vui lòng chờ admin duyệt để kích hoạt.',
+        message:
+          'Tài khoản GIRL đã tạo. Vui lòng chờ admin duyệt để kích hoạt.',
       };
     }
 

@@ -34,7 +34,7 @@ export class CreateUserDto {
   @IsString()
   phone?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'User role',
     enum: UserRole,
     default: UserRole.CUSTOMER,
@@ -47,4 +47,3 @@ export class CreateUserDto {
   @IsString()
   avatarUrl?: string;
 }
-

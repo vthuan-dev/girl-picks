@@ -14,7 +14,7 @@ import { redisStore } from 'cache-manager-redis-yet';
           },
           password: process.env.REDIS_PASSWORD || undefined,
         });
-        
+
         return {
           store: store as any,
           ttl: 300, // Default TTL: 5 minutes
@@ -27,4 +27,3 @@ import { redisStore } from 'cache-manager-redis-yet';
   exports: [CacheService, NestCacheModule],
 })
 export class CacheModule {}
-

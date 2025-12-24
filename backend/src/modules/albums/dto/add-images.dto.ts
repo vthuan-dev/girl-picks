@@ -5,4 +5,3 @@ export class AddImagesDto {
   @IsString({ each: true })
   images: string[];
 }
-
