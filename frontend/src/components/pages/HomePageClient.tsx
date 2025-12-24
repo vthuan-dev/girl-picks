@@ -1,15 +1,11 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import LocationFilters from '@/components/sections/LocationFilters';
 import PopularTags from '@/components/sections/PopularTags';
 import LatestCommunityPosts from '@/components/sections/LatestCommunityPosts';
-import { provinceToSlug } from '@/lib/location/provinceSlugs';
 
 export default function HomePageClient() {
   const router = useRouter();
-  const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
 
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
@@ -27,36 +23,14 @@ export default function HomePageClient() {
         </div>
       </div>
 
-      {/* Location Filters */}
-      <div className="mb-6">
-        <h2 className="text-sm font-semibold text-text-muted mb-3 uppercase tracking-wide">
-          Tỉnh thành
-        </h2>
-        <LocationFilters
-          selectedLocation={selectedProvince}
-          onLocationChange={(location) => {
-            console.log('[HomePageClient] Location changed:', location);
-            setSelectedProvince(location);
-            if (location) {
-              const slug = provinceToSlug(location) || encodeURIComponent(location);
-              router.push(`/girls?province=${slug}`);
-            }
-          }}
-        />
+      {/* Latest Community Posts */}
+      <div className="mb-10">
+        <LatestCommunityPosts />
       </div>
 
-      {/* Main Content with Sidebar Layout */}
-      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-        {/* Main Content - Community Posts */}
-        <div className="flex-1 min-w-0">
-          {/* Latest Community Posts Section - Bài viết cộng đồng */}
-          <LatestCommunityPosts limit={10} />
-        </div>
-
-        {/* Sidebar - Popular Tags */}
-        <div className="lg:block">
-          <PopularTags />
-        </div>
+      {/* Popular Tags */}
+      <div className="mt-8">
+        <PopularTags />
       </div>
     </div>
   );
