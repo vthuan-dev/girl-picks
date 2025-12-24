@@ -87,6 +87,11 @@ export class UpdateGirlDto {
   @IsArray()
   tags?: string[];
 
+  @ApiPropertyOptional({ description: 'Services', type: [String] })
+  @IsOptional()
+  @IsArray()
+  services?: string[];
+
   @ApiPropertyOptional({ description: 'Is available' })
   @IsOptional()
   @IsBoolean()

@@ -239,6 +239,11 @@ model Girl {
   @@index([verificationStatus, isActive]) // For verification filter
   @@index([lastActiveAt]) // For sorting by last active
   @@index([isActive, ratingAverage]) // For rating filter
+  @@index([birthYear]) // For age filter
+  @@index([height]) // For height filter
+  @@index([weight]) // For weight filter
+  @@index([price]) // For price filter
+  @@index([origin]) // For origin filter
   @@map("girls")
 }
 

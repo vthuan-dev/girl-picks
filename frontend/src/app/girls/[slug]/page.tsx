@@ -248,6 +248,7 @@ export default async function GirlDetailBySlugPage({ params }: PageProps) {
             girlId={girl.id}
             totalReviews={totalReviews}
             averageRating={ratingValue}
+            initialReviews={girl.reviews}
           />
         </div>
 
