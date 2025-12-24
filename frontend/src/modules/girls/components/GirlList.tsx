@@ -80,19 +80,18 @@ export default function GirlList({ filters = {}, selectedProvince = null, search
 
   // Build filter params
   const filterParams: GirlListParams = useMemo(() => ({
-        page: params.page || 1,
-        limit: params.limit || 20,
-        verified: filters.verified ? true : undefined,
-        priceFilter: filters.price || undefined,
-        ageFilter: filters.age || undefined,
-        heightFilter: filters.height || undefined,
-        weightFilter: filters.weight || undefined,
-        originFilter: filters.origin || undefined,
-        locationFilter: filters.location || undefined,
-        province: selectedProvince || undefined,
-        // Nếu đã chọn tỉnh, không gửi search để tránh conflict bộ lọc (vd: search=Cần Thơ nhưng chọn Thừa Thiên Huế)
-        search: selectedProvince ? undefined : (searchQuery || undefined),
-        tags: selectedTag ? [selectedTag] : undefined,
+    page: params.page || 1,
+    limit: params.limit || 20,
+    verified: filters.verified ? true : undefined,
+    priceFilter: filters.price || undefined,
+    ageFilter: filters.age || undefined,
+    heightFilter: filters.height || undefined,
+    weightFilter: filters.weight || undefined,
+    originFilter: filters.origin || undefined,
+    locationFilter: filters.location || undefined,
+    province: selectedProvince || undefined,
+    search: searchQuery || undefined,
+    tags: selectedTag ? [selectedTag] : undefined,
   }), [params.page, params.limit, filters.verified, filters.price, filters.age, filters.height, filters.weight, filters.origin, filters.location, selectedProvince, searchQuery, selectedTag]);
 
   // Use React Query to fetch and cache data
@@ -127,63 +126,63 @@ export default function GirlList({ filters = {}, selectedProvince = null, search
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data?.total, params.page, params.limit]);
-      
-      // Map API response to Girl type
+
+  // Map API response to Girl type
   const girls = useMemo(() => {
     if (!data?.data) return [];
-    
-    return (data.data || []).map((girl: any, index: number) => {
-        // Handle images - can be JSON string or array
-        let images: string[] = [];
-        if (girl.images) {
-          if (typeof girl.images === 'string') {
-            try {
-              images = JSON.parse(girl.images);
-            } catch {
-              images = [girl.images];
-            }
-          } else if (Array.isArray(girl.images)) {
-            images = girl.images;
-          }
-        }
 
-        // Sanitize image URLs; keep only http(s) to avoid blob/file errors
-        images = images.filter((url) => typeof url === 'string' && /^https?:\/\//i.test(url));
-        
-        // Use first image as avatar if available
-        const avatar = images[0] || girl.avatarUrl || mockImages[index % mockImages.length];
-        
-        return {
-          id: girl.id,
-          email: girl.user?.email || girl.email || '',
-          username: girl.name || '',
-          fullName: girl.name || girl.user?.fullName || 'N/A',
-          role: 'GIRL' as any,
-          avatar,
-          images: images.length > 0 ? images : [avatar],
-          isActive: girl.isActive !== false,
-          createdAt: girl.createdAt || new Date().toISOString(),
-          updatedAt: girl.updatedAt || new Date().toISOString(),
-          bio: girl.bio || '',
-          verified: girl.verificationStatus === 'VERIFIED',
-          rating: girl.ratingAverage || 0,
-          totalReviews: girl.totalReviews || 0,
-          totalBookings: girl._count?.bookings || 0,
-          isAvailable: girl.isAvailable !== false,
-          districtId: girl.districtId,
-          district: girl.district,
-          province: girl.province || (girl.location ? String(girl.location).split('/')[0] : undefined),
-          location: girl.location,
-          tags: Array.isArray(girl.tags) ? girl.tags : (typeof girl.tags === 'string' ? JSON.parse(girl.tags || '[]') : []),
-          slug: girl.slug || null,
-          price: girl.price || null,
-          viewCount: girl.viewCount || 0,
-          age: girl.age || null,
-          height: girl.height || null,
-          weight: girl.weight || null,
-          origin: girl.origin || null,
-        } as Girl & { age?: number | null; height?: string | null; weight?: string | null; origin?: string | null };
-      });
+    return (data.data || []).map((girl: any, index: number) => {
+      // Handle images - can be JSON string or array
+      let images: string[] = [];
+      if (girl.images) {
+        if (typeof girl.images === 'string') {
+          try {
+            images = JSON.parse(girl.images);
+          } catch {
+            images = [girl.images];
+          }
+        } else if (Array.isArray(girl.images)) {
+          images = girl.images;
+        }
+      }
+
+      // Sanitize image URLs; keep only http(s) to avoid blob/file errors
+      images = images.filter((url) => typeof url === 'string' && /^https?:\/\//i.test(url));
+
+      // Use first image as avatar if available
+      const avatar = images[0] || girl.avatarUrl || mockImages[index % mockImages.length];
+
+      return {
+        id: girl.id,
+        email: girl.user?.email || girl.email || '',
+        username: girl.name || '',
+        fullName: girl.name || girl.user?.fullName || 'N/A',
+        role: 'GIRL' as any,
+        avatar,
+        images: images.length > 0 ? images : [avatar],
+        isActive: girl.isActive !== false,
+        createdAt: girl.createdAt || new Date().toISOString(),
+        updatedAt: girl.updatedAt || new Date().toISOString(),
+        bio: girl.bio || '',
+        verified: girl.verificationStatus === 'VERIFIED',
+        rating: girl.ratingAverage || 0,
+        totalReviews: girl.totalReviews || 0,
+        totalBookings: girl._count?.bookings || 0,
+        isAvailable: girl.isAvailable !== false,
+        districtId: girl.districtId,
+        district: girl.district,
+        province: girl.province || (girl.location ? String(girl.location).split('/')[0] : undefined),
+        location: girl.location,
+        tags: Array.isArray(girl.tags) ? girl.tags : (typeof girl.tags === 'string' ? JSON.parse(girl.tags || '[]') : []),
+        slug: girl.slug || null,
+        price: girl.price || null,
+        viewCount: girl.viewCount || 0,
+        age: girl.age || null,
+        height: girl.height || null,
+        weight: girl.weight || null,
+        origin: girl.origin || null,
+      } as Girl & { age?: number | null; height?: string | null; weight?: string | null; origin?: string | null };
+    });
   }, [data]);
 
   // Calculate pagination
@@ -249,7 +248,7 @@ export default function GirlList({ filters = {}, selectedProvince = null, search
           </div>
         </div>
       )}
-      
+
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3 lg:gap-4">
         {girls.map((girl, index) => (
           <GirlCard key={girl.id} girl={girl} index={index} />
@@ -297,7 +296,7 @@ export default function GirlList({ filters = {}, selectedProvince = null, search
                 // Show 3 pages before and after current page
                 const startPage = Math.max(1, Math.min(pagination.page - 3, pagination.totalPages - 6));
                 const page = startPage + i;
-                
+
                 if (page > pagination.totalPages) return null;
 
                 const isActive = pagination.page === page;
@@ -310,11 +309,10 @@ export default function GirlList({ filters = {}, selectedProvince = null, search
                       setParams({ ...params, page });
                     }}
                     disabled={isFetching || isActive}
-                    className={`px-3.5 py-2.5 text-sm font-bold transition-all border-r border-[#2a2a2a] min-w-[44px] ${
-                      isActive
+                    className={`px-3.5 py-2.5 text-sm font-bold transition-all border-r border-[#2a2a2a] min-w-[44px] ${isActive
                         ? 'bg-primary text-white cursor-default'
                         : 'text-white/70 hover:text-white hover:bg-[#2a2a2a] disabled:opacity-50'
-                    }`}
+                      }`}
                   >
                     {page}
                   </button>

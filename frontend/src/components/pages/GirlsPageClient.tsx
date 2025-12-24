@@ -50,6 +50,35 @@ export default function GirlsPageClient() {
     }));
   };
 
+  const handlePhoneSearch = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      setSearchQuery('');
+      // Xóa param search khỏi URL nhưng giữ province nếu có
+      if (provinceParamValue) {
+        router.push(`/girls?province=${encodeURIComponent(provinceParamValue)}`);
+      } else {
+        router.push('/girls');
+      }
+      return;
+    }
+
+    setSearchQuery(trimmed);
+
+    // Khi tìm theo số điện thoại hoặc từ khóa, chúng ta CÓ THỂ giữ tỉnh nếu muốn tìm trong tỉnh đó
+    // Tuy nhiên theo thiết kế hiện tại, thường người dùng muốn tìm toàn cục khi nhập SĐT
+    // Nếu muốn tìm toàn cục:
+    // setSelectedProvince(null); 
+    // router.push(`/girls?search=${encodeURIComponent(trimmed)}`);
+
+    // Nếu muốn tìm trong tỉnh hiện tại (nếu có):
+    if (selectedProvince && provinceParamValue) {
+      router.push(`/girls?province=${encodeURIComponent(provinceParamValue)}&search=${encodeURIComponent(trimmed)}`);
+    } else {
+      router.push(`/girls?search=${encodeURIComponent(trimmed)}`);
+    }
+  };
+
   return (
     <>
       <Header />
@@ -71,6 +100,68 @@ export default function GirlsPageClient() {
                 )}
               </p>
             </div>
+
+            {/* Tìm nhanh theo số điện thoại */}
+            <div className="w-full sm:w-80">
+              <label className="block text-xs font-semibold text-text mb-1.5">
+                Tìm gái theo số điện thoại
+              </label>
+              <div className="flex items-center gap-2 rounded-2xl bg-background-light/80 border border-secondary/40 px-2 py-1 shadow-sm">
+                <div className="hidden sm:flex items-center justify-center w-8 h-8 rounded-xl bg-primary/10 text-primary flex-shrink-0">
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.8}
+                      d="M3 5a2 2 0 012-2h2.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-1.516.758a11.042 11.042 0 005.516 5.516l.758-1.516a1 1 0 011.21-.502l4.493 1.498A1 1 0 0121 17.72V20a2 2 0 01-2 2h-.25C9.304 22 3 15.696 3 7.25V7a2 2 0 012-2z"
+                    />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  inputMode="tel"
+                  pattern="[0-9\\s+]*"
+                  className="flex-1 px-3 py-2 rounded-xl bg-transparent text-sm text-text placeholder:text-text-muted/60 focus:outline-none"
+                  placeholder="Nhập số điện thoại (ít nhất 6 số)..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handlePhoneSearch(searchQuery);
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => handlePhoneSearch(searchQuery)}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-white text-xs sm:text-sm font-semibold hover:bg-primary-hover active:scale-[0.98] transition-all whitespace-nowrap shadow-sm"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z"
+                    />
+                  </svg>
+                  <span>Tìm</span>
+                </button>
+              </div>
+              <p className="mt-1 text-[11px] text-text-muted">
+                Gõ số điện thoại gái (ví dụ 09xx...) để lọc nhanh đúng profile.
+              </p>
+            </div>
           </div>
         </div>
 
@@ -84,18 +175,26 @@ export default function GirlsPageClient() {
         <div className="mb-6">
           <h2 className="text-sm font-semibold text-text-muted mb-3 uppercase tracking-wide">Tỉnh thành</h2>
           <LocationFilters
-            selectedLocation={selectedProvince || searchQuery || null}
+            selectedLocation={selectedProvince}
             onLocationChange={(location) => {
               if (location) {
                 setSelectedProvince(location);
-                setSearchQuery(location);
                 // Dùng slug cho URL chuẩn SEO
                 const slug = provinceToSlug(location) || encodeURIComponent(location);
-                router.push(`/girls?province=${slug}`);
+
+                // Giữ lại search query nếu có
+                if (searchQuery) {
+                  router.push(`/girls?province=${slug}&search=${encodeURIComponent(searchQuery)}`);
+                } else {
+                  router.push(`/girls?province=${slug}`);
+                }
               } else {
                 setSelectedProvince(null);
-                setSearchQuery('');
-                router.push('/girls');
+                if (searchQuery) {
+                  router.push(`/girls?search=${encodeURIComponent(searchQuery)}`);
+                } else {
+                  router.push('/girls');
+                }
               }
             }}
           />
@@ -129,7 +228,7 @@ export default function GirlsPageClient() {
           <div className="flex-1 min-w-0">
             <GirlList
               filters={filters}
-              selectedProvince={selectedProvince || (searchQuery ? searchQuery : null)}
+              selectedProvince={selectedProvince}
               searchQuery={searchQuery || undefined}
               selectedTag={selectedTag}
               onTotalChange={(total, isLoading) => {

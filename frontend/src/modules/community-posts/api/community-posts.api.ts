@@ -3,7 +3,6 @@ import { ApiResponse } from '@/lib/api/types';
 
 export interface CommunityPost {
   id: string;
-  title?: string | null;
   content: string;
   images: string[];
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
@@ -48,7 +47,6 @@ export interface CommunityPostComment {
 }
 
 export interface CreateCommunityPostDto {
-  title?: string;
   content: string;
   girlId?: string;
   images?: string[];

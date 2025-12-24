@@ -41,7 +41,6 @@ export class CommunityPostsService {
       data: {
         authorId: userId,
         girlId: girlId || createPostDto.girlId || null,
-        title: createPostDto.title || null,
         content: createPostDto.content,
         images: createPostDto.images || [],
         status: PostStatus.PENDING,
