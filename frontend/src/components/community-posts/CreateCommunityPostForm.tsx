@@ -17,37 +17,22 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
   const { isAuthenticated, user } = useAuthStore();
   const router = useRouter();
   const [content, setContent] = useState('');
-  const [title, setTitle] = useState('');
   const [selectedGirlId, setSelectedGirlId] = useState<string | undefined>();
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<{
-    title?: string;
     content?: string;
     images?: string;
   }>({});
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Validation constants
-  const MAX_TITLE_LENGTH = 100;
   const MAX_CONTENT_LENGTH = 1000;
   const MIN_CONTENT_WORDS = 5;
   const MAX_IMAGES = 4;
   const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
   const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
-
-  // Validation functions
-  const validateTitle = (value: string): string | undefined => {
-    const trimmed = value.trim();
-    if (trimmed.length > 0 && trimmed.length < 3) {
-      return 'Tiêu đề phải có ít nhất 3 ký tự';
-    }
-    if (trimmed.length > MAX_TITLE_LENGTH) {
-      return `Tiêu đề không được vượt quá ${MAX_TITLE_LENGTH} ký tự`;
-    }
-    return undefined;
-  };
 
   const validateContent = (value: string, hasImages: boolean): string | undefined => {
     const trimmed = value.trim();
@@ -147,19 +132,6 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
     });
   };
 
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setTitle(value);
-
-    // Real-time validation
-    if (value.trim().length > 0) {
-      const error = validateTitle(value);
-      setFieldError('title', error);
-    } else {
-      setFieldError('title', undefined);
-    }
-  };
-
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     setContent(value);
@@ -176,14 +148,12 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
 
     // Validate all fields
     const hasImages = selectedImages.length > 0 || imageFiles.length > 0;
-    const titleError = title.trim() ? validateTitle(title) : undefined;
     const contentError = validateContent(content, hasImages);
     const imagesError = imageFiles.length > MAX_IMAGES
       ? `Chỉ được upload tối đa ${MAX_IMAGES} ảnh`
       : undefined;
 
     const newErrors: typeof errors = {};
-    if (titleError) newErrors.title = titleError;
     if (contentError) newErrors.content = contentError;
     if (imagesError) newErrors.images = imagesError;
 
@@ -235,7 +205,6 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
 
       // Submit post to API
       const postData = {
-        title: title.trim() || undefined,
         content: content.trim(),
         images: imageUrls.length > 0 ? imageUrls : undefined,
         girlId: selectedGirlId || undefined,
@@ -247,7 +216,6 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
 
       // Reset form
       setContent('');
-      setTitle('');
       setSelectedGirlId(undefined);
       setSelectedImages([]);
       setImageFiles([]);
@@ -345,9 +313,8 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
 
   const hasImages = selectedImages.length > 0 || imageFiles.length > 0;
   const isContentValid = !validateContent(content, hasImages);
-  const isTitleValid = title.trim() ? !validateTitle(title) : true;
   const isImagesValid = imageFiles.length <= MAX_IMAGES && !errors.images;
-  const canSubmit = !submitting && isContentValid && isTitleValid && isImagesValid;
+  const canSubmit = !submitting && isContentValid && isImagesValid;
 
   if (!isAuthenticated || !user) {
     return (
@@ -373,53 +340,18 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
         <p className="text-sm text-text-muted">Chia sẻ với cộng đồng và đợi admin duyệt</p>
       </div>
 
-      {/* Title (optional) */}
-      <div>
-        <label htmlFor="post-title" className="block text-sm font-semibold text-text mb-2.5">
-          Tiêu đề <span className="text-text-muted font-normal">(tùy chọn)</span>
-        </label>
-        <input
-          id="post-title"
-          type="text"
-          value={title}
-          onChange={handleTitleChange}
-          onBlur={() => {
-            if (title.trim()) {
-              const error = validateTitle(title);
-              setFieldError('title', error);
-            }
-          }}
-          placeholder="Nhập tiêu đề bài viết..."
-          maxLength={MAX_TITLE_LENGTH}
-          className={`w-full px-4 py-3 bg-background-light border rounded-xl text-text placeholder:text-text-muted/60 focus:outline-none focus:ring-2 transition-all duration-200 cursor-text ${errors.title
-            ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/20'
-            : 'border-secondary/30 focus:border-primary/60 focus:ring-primary/20'
-            }`}
-        />
-        <div className="mt-2 flex items-center justify-between text-xs">
-          {errors.title ? (
-            <span className="text-red-500">{errors.title}</span>
-          ) : (
-            <span className="text-text-muted">Tối thiểu 3 ký tự nếu có tiêu đề</span>
-          )}
-          <span className={`text-right ${title.length > MAX_TITLE_LENGTH ? 'text-red-500' : 'text-text-muted'}`}>
-            {title.length}/{MAX_TITLE_LENGTH}
-          </span>
-        </div>
-      </div>
-
       {/* Tag Girl (optional) */}
       <div>
         <label className="block text-sm font-semibold text-text mb-2.5">
-          Tag gái gọi <span className="text-text-muted font-normal">(tùy chọn)</span>
+          Điền số điện thoại gái bạn muốn đánh giá <span className="text-text-muted font-normal">(tùy chọn)</span>
         </label>
         <p className="text-xs text-text-muted mb-2">
-          Tìm và tag gái gọi vào bài viết để người đọc có thể click vào và xem chi tiết
+          Nhập số điện thoại để hệ thống tự tìm và gắn đúng gái vào bài viết đánh giá của bạn
         </p>
         <GirlSearchSelect
           value={selectedGirlId}
           onChange={setSelectedGirlId}
-          placeholder="Tìm kiếm gái gọi (tên, số điện thoại)..."
+          placeholder="Nhập số điện thoại của gái bạn muốn đánh giá..."
         />
       </div>
 

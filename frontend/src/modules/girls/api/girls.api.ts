@@ -4,15 +4,44 @@ import { Girl, GirlListParams, CreateGirlProfileDto, UpdateGirlProfileDto } from
 import { unwrapResponse, getPaginatedData } from '@/lib/api/response-helper';
 
 export const girlsApi = {
-  // Get girls list
+  // Get girls list (with optional phone-aware search)
   getGirls: async (params?: GirlListParams): Promise<PaginatedResponse<Girl>> => {
+    // Nếu search giống số điện thoại (>= 6 chữ số) → dùng API chuyên cho phone để tránh bị cache/lọc khác
+    if (params?.search) {
+      const raw = params.search.trim();
+      const digitsOnly = raw.replace(/\D/g, '');
+      const isPhoneSearch = digitsOnly.length >= 6;
+
+      if (isPhoneSearch) {
+        const phoneParams = new URLSearchParams();
+        phoneParams.append('q', raw);
+        if (params.page) phoneParams.append('page', params.page.toString());
+        if (params.limit) phoneParams.append('limit', params.limit.toString());
+
+        const response = await apiClient.get<any>(`/girls/search/by-phone?${phoneParams.toString()}`);
+        const result = getPaginatedData<Girl>(response.data);
+        return result;
+      }
+    }
+
     const searchParams = new URLSearchParams();
     if (params?.page) searchParams.append('page', params.page.toString());
     if (params?.limit) searchParams.append('limit', params.limit.toString());
     if (params?.districtId) searchParams.append('districtId', params.districtId);
     if (params?.verified !== undefined) searchParams.append('verified', params.verified.toString());
     if (params?.minRating) searchParams.append('rating', params.minRating.toString());
-    if (params?.search) searchParams.append('search', params.search);
+    
+    // Nếu search giống số điện thoại (>=6 chữ số) thì gửi cả bản gốc và bản chỉ chứa số cho backend
+    if (params?.search) {
+      const rawSearch = params.search;
+      const digitsOnly = rawSearch.replace(/\D/g, '');
+      const isPhoneSearch = digitsOnly.length >= 6;
+      searchParams.append('search', rawSearch);
+      if (isPhoneSearch && digitsOnly !== rawSearch) {
+        // Backend đã tự xử lý digits, nhưng gửi thêm giúp rõ ràng hơn nếu sau này muốn dùng
+        searchParams.append('digits', digitsOnly);
+      }
+    }
     if (params?.sortBy) searchParams.append('sortBy', params.sortBy);
     if (params?.sortOrder) searchParams.append('sortOrder', params.sortOrder);
     
@@ -40,20 +69,7 @@ export const girlsApi = {
     }
     
     const response = await apiClient.get<any>(`/girls?${searchParams.toString()}`);
-    
-    console.log('[girlsApi] Raw response.data:', response.data);
-    
-    // Backend returns: { success: true, data: { data: [...], meta: {...} } }
-    // getPaginatedData will handle unwrapping
     const result = getPaginatedData<Girl>(response.data);
-    console.log('[girlsApi] Final result:', {
-      dataLength: result.data.length,
-      total: result.total,
-      page: result.page,
-      limit: result.limit,
-      totalPages: result.totalPages,
-    });
-    
     return result;
   },
 

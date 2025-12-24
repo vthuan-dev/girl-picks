@@ -251,7 +251,7 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
 
     if (display.length === 1) {
       return (
-        <div className="relative aspect-[3/4] md:aspect-[4/5] min-h-[420px] md:min-h-[520px] overflow-hidden bg-background-light">
+        <div className="relative aspect-[3/4] md:aspect-[4/5] min-h-[420px] md:min-h-[520px] overflow-hidden">
           {renderImage(display[0], 0)}
         </div>
       );
@@ -261,7 +261,7 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
       return (
         <div className="grid grid-cols-2 gap-0 overflow-hidden">
           {display.map((img, idx) => (
-            <div key={idx} className="relative aspect-[4/5] min-h-[260px] bg-background-light overflow-hidden">
+            <div key={idx} className="relative aspect-[4/5] min-h-[260px] overflow-hidden">
               {renderImage(img, idx)}
             </div>
           ))}
@@ -272,14 +272,14 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
     if (display.length === 3) {
       return (
         <div className="grid grid-cols-2 gap-0 overflow-hidden">
-          <div className="relative col-span-1 aspect-[3/4] md:aspect-[4/5] min-h-[380px] bg-background-light overflow-hidden">
+          <div className="relative col-span-1 aspect-[3/4] md:aspect-[4/5] min-h-[380px] overflow-hidden">
             {renderImage(display[0], 0)}
           </div>
           <div className="flex flex-col gap-0">
-            <div className="relative flex-1 min-h-[190px] bg-background-light overflow-hidden">
+            <div className="relative flex-1 min-h-[190px] overflow-hidden">
               {renderImage(display[1], 1)}
             </div>
-            <div className="relative flex-1 min-h-[190px] bg-background-light overflow-hidden">
+            <div className="relative flex-1 min-h-[190px] overflow-hidden">
               {renderImage(display[2], 2)}
             </div>
           </div>
@@ -293,7 +293,7 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
 
     return (
       <div className="flex gap-0 overflow-hidden">
-        <div className="relative flex-[2.2] min-h-[420px] md:min-h-[520px] aspect-[3/4] md:aspect-[4/5] bg-background-light overflow-hidden">
+        <div className="relative flex-[2.2] min-h-[420px] md:min-h-[520px] aspect-[3/4] md:aspect-[4/5] overflow-hidden">
           {renderImage(imgs[0], 0)}
         </div>
         <div className="flex flex-col gap-0 flex-1 min-h-[380px]">
@@ -302,7 +302,7 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
             return (
               <div
                 key={idx + 1}
-                className="relative flex-1 min-h-[124px] bg-background-light overflow-hidden"
+                className="relative flex-1 min-h-[124px] overflow-hidden"
               >
                 {renderImage(img, idx + 1)}
                 {isLast && extra > 0 && (
@@ -557,11 +557,6 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
         )}
       </div>
 
-      {/* Title (if exists) */}
-      {post.title && (
-        <h3 className="text-text font-semibold text-lg mb-3">{post.title}</h3>
-      )}
-
       {/* Content */}
       <p className="text-text text-base mb-3 leading-relaxed whitespace-pre-wrap">{post.content}</p>
 
@@ -595,7 +590,7 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
 
       {/* Images collage */}
       {displayImages.length > 0 && (
-        <div className="mt-2 rounded-2xl overflow-hidden">
+        <div className="mt-3 -mx-5 -mb-5 rounded-b-xl overflow-hidden">
           {renderCollage()}
         </div>
       )}

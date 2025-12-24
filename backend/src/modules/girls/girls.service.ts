@@ -14,7 +14,7 @@ export class GirlsService {
   constructor(
     private prisma: PrismaService,
     private cacheService: CacheService,
-  ) {}
+  ) { }
 
   async searchByPhone(query: string, page = 1, limit = 20) {
     if (!query || !query.trim()) {
@@ -48,14 +48,14 @@ export class GirlsService {
         },
         ...(digits
           ? [
-              {
-                user: {
-                  is: {
-                    phone: { contains: digits },
-                  },
+            {
+              user: {
+                is: {
+                  phone: { contains: digits },
                 },
               },
-            ]
+            },
+          ]
           : []),
         { name: { contains: normalizedSearch } },
         { bio: { contains: normalizedSearch } },
@@ -292,14 +292,14 @@ export class GirlsService {
           },
           ...(digits
             ? [
-                {
-                  user: {
-                    is: {
-                      phone: { contains: digits },
-                    },
+              {
+                user: {
+                  is: {
+                    phone: { contains: digits },
                   },
                 },
-              ]
+              },
+            ]
             : []),
         ],
       };
@@ -605,7 +605,39 @@ export class GirlsService {
     // because MySQL JSON array filtering is complex
     let allGirls = await this.prisma.girl.findMany({
       where,
-      include: {
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        age: true,
+        bio: true,
+        phone: true,
+        birthYear: true,
+        height: true,
+        weight: true,
+        measurements: true,
+        origin: true,
+        districts: true,
+        address: true,
+        location: true,
+        province: true,
+        price: true,
+        ratingAverage: true,
+        totalReviews: true,
+        verificationStatus: true,
+        viewCount: true,
+        favoriteCount: true,
+        isFeatured: true,
+        isPremium: true,
+        isActive: true,
+        isAvailable: true,
+        images: true,
+        tags: true,
+        services: true,
+        lastActiveAt: true,
+        workingHours: true,
+        createdAt: true,
+        updatedAt: true,
         user: {
           select: {
             id: true,
