@@ -35,7 +35,7 @@ import {
 export class ReviewsController {
   private readonly logger = new Logger(ReviewsController.name);
 
-  constructor(private readonly reviewsService: ReviewsService) {}
+  constructor(private readonly reviewsService: ReviewsService) { }
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -52,6 +52,7 @@ export class ReviewsController {
 
   @Get()
   @Public()
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get all reviews (public - approved only)' })
   @ApiQuery({ name: 'status', required: false, enum: ReviewStatus })
   @ApiQuery({ name: 'girlId', required: false })
@@ -63,12 +64,14 @@ export class ReviewsController {
     @Query('girlId') girlId?: string,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page?: number,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
+    @CurrentUser('id') userId?: string,
   ) {
     return this.reviewsService.findAll({
       status: status || ReviewStatus.APPROVED,
       girlId,
       page,
       limit,
+      userId,
     });
   }
 
@@ -87,10 +90,14 @@ export class ReviewsController {
 
   @Get('girl/:girlId')
   @Public()
+  @UseGuards(JwtAuthGuard) // Run the guard to populate CurrentUser if token is present
   @ApiOperation({ summary: 'Get reviews by girl ID (public - approved only)' })
   @ApiResponse({ status: 200, description: 'List of reviews' })
-  findByGirl(@Param('girlId') girlId: string) {
-    return this.reviewsService.findByGirl(girlId, ReviewStatus.APPROVED);
+  findByGirl(
+    @Param('girlId') girlId: string,
+    @CurrentUser('id') userId?: string,
+  ) {
+    return this.reviewsService.findByGirl(girlId, ReviewStatus.APPROVED, userId);
   }
 
   @Get(':id')
@@ -187,6 +194,25 @@ export class ReviewsController {
   @ApiOperation({ summary: 'Get like status (liked & count) for current user' })
   getLikeStatus(@Param('id') id: string, @CurrentUser('id') userId: string) {
     return this.reviewsService.getLikeStatus(id, userId);
+  }
+
+  @Post(':id/comments')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(
+    UserRole.CUSTOMER,
+    UserRole.GIRL,
+    UserRole.ADMIN,
+    UserRole.STAFF_UPLOAD,
+  )
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create comment or reply for a review' })
+  @ApiResponse({ status: 201, description: 'Comment created' })
+  addComment(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Body() body: CreateReviewCommentDto,
+  ) {
+    return this.reviewsService.addComment(id, userId, body);
   }
 
   @Post('comments/:id/approve')

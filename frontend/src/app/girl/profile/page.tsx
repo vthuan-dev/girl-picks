@@ -31,7 +31,12 @@ export default function GirlProfilePage() {
       // Backend returns { success: true, data: {...} }
       const girlData = (response as any).data || response;
       if (girlData) {
-        setGirl(girlData as Girl);
+        // Đảm bảo có phone từ DB hoặc fallback từ user
+        const mergedGirl = {
+          ...girlData,
+          phone: girlData.phone || user?.phone || '',
+        } as Girl;
+        setGirl(mergedGirl);
       } else {
         toast.error('Không thể tải thông tin hồ sơ');
       }

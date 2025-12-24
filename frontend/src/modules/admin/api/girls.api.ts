@@ -7,6 +7,15 @@ export interface Girl {
   name?: string;
   age?: number;
   bio?: string;
+  phone?: string;
+  price?: string | null;
+  workingHours?: string | null;
+  height?: string | number | null;
+  weight?: string | number | null;
+  measurements?: string | null;
+  location?: string | null;
+  province?: string | null;
+  address?: string | null;
   districts: string[];
   ratingAverage: number;
   totalReviews: number;
@@ -17,6 +26,8 @@ export interface Girl {
   isPremium: boolean;
   isActive: boolean;
   images: string[];
+  services?: string[];
+  tags?: string[];
   createdAt: string;
   updatedAt: string;
   idCardFrontUrl?: string | null;

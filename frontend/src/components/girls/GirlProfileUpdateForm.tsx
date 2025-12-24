@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { girlsApi } from '@/modules/girls/api/girls.api';
 import { Girl } from '@/types/girl';
 import toast from 'react-hot-toast';
@@ -12,18 +12,62 @@ interface GirlProfileUpdateFormProps {
 
 export default function GirlProfileUpdateForm({ girl, onUpdate }: GirlProfileUpdateFormProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [locations, setLocations] = useState<string[]>([]);
+
+  // Ưu tiên điền sẵn địa chỉ/khu vực từ dữ liệu hiện có
+  const initialAddress = (() => {
+    if (girl.address && girl.address.trim()) return girl.address;
+    if (girl.location && girl.location.trim()) return girl.location;
+    const districtName = (girl as any).district?.name || '';
+    const provinceName = (girl as any).province || '';
+    if (districtName && provinceName) return `${districtName}, ${provinceName}`;
+    if (districtName) return districtName;
+    if (provinceName) return provinceName;
+    return '';
+  })();
   const [formData, setFormData] = useState({
+    phone: girl.phone || '',
     bio: girl.bio || '',
     age: girl.age || '',
     height: girl.height || '',
     weight: girl.weight || '',
     measurements: girl.measurements || '',
     origin: girl.origin || '',
-    address: girl.address || '',
+    address: initialAddress,
     price: girl.price || '',
     workingHours: girl.workingHours || '',
     services: (girl.services || []).join(', '),
   });
+
+  // Fallback danh sách tỉnh/thành
+  const defaultLocations = [
+    'Sài Gòn', 'Hà Nội', 'Bình Dương', 'Đà Nẵng', 'Đồng Nai', 'Lâm Đồng',
+    'Bà Rịa Vũng Tàu', 'Khánh Hòa', 'Long An', 'Cần Thơ', 'Đắk Lắk', 'Bình Thuận',
+    'Thừa Thiên Huế', 'Bình Phước', 'Bình Định', 'Đồng Tháp', 'Bến Tre', 'Kiên Giang',
+    'Tiền Giang', 'An Giang', 'Trà Vinh', 'Vĩnh Long', 'Phú Yên', 'Bạc Liêu',
+    'Hải Phòng', 'Hậu Giang', 'Sóc Trăng', 'Ninh Thuận', 'Nghệ An',
+  ];
+
+  // Load danh sách tỉnh có gái từ API (có count)
+  useEffect(() => {
+    let mounted = true;
+    const fetchLocations = async () => {
+      try {
+        const provinceCounts = await girlsApi.getCountByProvince();
+        const list = (provinceCounts || [])
+          .filter(({ count }) => count > 0)
+          .sort((a, b) => b.count - a.count)
+          .map(({ province }) => province);
+        if (!mounted) return;
+        setLocations(list.length > 0 ? list : defaultLocations);
+      } catch (err) {
+        console.error('Load provinces error:', err);
+        if (mounted) setLocations(defaultLocations);
+      }
+    };
+    fetchLocations();
+    return () => { mounted = false; };
+  }, []);
 
   // CCCD upload states
   const [idCardFront, setIdCardFront] = useState<File | null>(null);
@@ -93,6 +137,12 @@ export default function GirlProfileUpdateForm({ girl, onUpdate }: GirlProfileUpd
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validate required fields
+    if (!formData.phone.trim()) {
+      toast.error('Vui lòng nhập số điện thoại');
+      return;
+    }
+
     // Validate required CCCD fields
     if (!idCardFront && !idCardFrontPreview) {
       toast.error('Vui lòng upload ảnh CCCD mặt trước');
@@ -139,8 +189,18 @@ export default function GirlProfileUpdateForm({ girl, onUpdate }: GirlProfileUpd
         }
       }
 
+      // Chuẩn hóa dịch vụ thành mảng
+      const servicesArray =
+        typeof formData.services === 'string'
+          ? formData.services
+              .split(',')
+              .map((item) => item.trim())
+              .filter((item) => item.length > 0)
+          : [];
+
       // Prepare update data - only include fields allowed by backend DTO
       const updateData: any = {
+        phone: formData.phone || undefined,
         bio: formData.bio || undefined,
         age: formData.age ? parseInt(formData.age.toString()) : undefined,
         height: formData.height || undefined,
@@ -149,6 +209,7 @@ export default function GirlProfileUpdateForm({ girl, onUpdate }: GirlProfileUpd
         origin: formData.origin || undefined,
         address: formData.address || undefined,
         price: formData.price || undefined,
+        services: servicesArray.length > 0 ? servicesArray : undefined,
         images: imageUrls.length > 0 ? imageUrls : undefined,
         idCardFrontUrl: idCardFrontUrl!,
         idCardBackUrl: idCardBackUrl!,
@@ -324,6 +385,18 @@ export default function GirlProfileUpdateForm({ girl, onUpdate }: GirlProfileUpd
         <h3 className="text-lg font-bold text-text">Thông tin hồ sơ</h3>
 
         <div>
+          <label className="block text-sm font-medium text-text mb-2">Số điện thoại (bắt buộc)</label>
+          <input
+            type="tel"
+            value={formData.phone}
+            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            placeholder="Nhập số điện thoại"
+            className="w-full px-4 py-2 bg-background-light border border-secondary rounded text-text focus:outline-none focus:ring-2 focus:ring-primary"
+            required
+          />
+        </div>
+
+        <div>
           <label className="block text-sm font-medium text-text mb-2">Bio/Giới thiệu</label>
           <textarea
             value={formData.bio}
@@ -375,6 +448,32 @@ export default function GirlProfileUpdateForm({ girl, onUpdate }: GirlProfileUpd
               placeholder="89-64-92"
               className="w-full px-4 py-2 bg-background-light border border-secondary rounded text-text focus:outline-none focus:ring-2 focus:ring-primary"
             />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-text mb-2">
+              Địa chỉ / Khu vực / Tỉnh
+            </label>
+            <select
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              className="w-full px-4 py-2 bg-background-light border border-secondary rounded text-text focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">Chọn khu vực/tỉnh</option>
+              {/* Nếu giá trị hiện tại không có trong danh sách options (ví dụ địa chỉ cũ), vẫn hiển thị */}
+              {formData.address && !locations.includes(formData.address) && (
+                <option value={formData.address}>{formData.address}</option>
+              )}
+              {(locations.length > 0 ? locations : defaultLocations).map((loc) => (
+                <option key={loc} value={loc}>{loc}</option>
+              ))}
+              <option value="Khác">Khác</option>
+            </select>
+            {formData.address === 'Khác' && (
+              <p className="mt-2 text-xs text-text-muted">
+                Liên hệ admin để được thêm tỉnh/thành phù hợp với khu vực của bạn nhé baby.
+              </p>
+            )}
           </div>
 
           <div>

@@ -44,7 +44,7 @@ export default function ClientLayout({
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      <main id="main-content" className="flex-1 bg-background pb-24" tabIndex={-1}>
+      <main id="main-content" className="flex-1 bg-background pb-24 pt-14 sm:pt-16 lg:pt-[72px]" tabIndex={-1}>
         {children}
       </main>
       <Footer />

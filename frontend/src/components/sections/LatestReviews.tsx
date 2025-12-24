@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 import { reviewsApi } from '@/modules/reviews/api/reviews.api';
 import type { Review, ReviewComment } from '@/modules/reviews/api/reviews.api';
 import { getFullImageUrl } from '@/lib/utils/image';
+import apiClient from '@/lib/api/client';
 
 interface LatestReviewsProps {
   limit?: number;
@@ -155,9 +156,8 @@ export default function LatestReviews({ limit = 6 }: LatestReviewsProps) {
   const { data, isLoading, isFetching, error, refetch } = useQuery(
     ['reviews', 'latest', page],
     async () => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/reviews?limit=${pageSize}&page=${page}&status=APPROVED`);
-      if (!response.ok) throw new Error('Không thể tải đánh giá');
-      const result = await response.json();
+      const response = await apiClient.get(`/reviews?limit=${pageSize}&page=${page}&status=APPROVED`);
+      const result = response.data;
       return result.data?.data || result.data || [];
     },
     {
@@ -322,24 +322,12 @@ function ReviewCard({ review }: { review: Review }) {
     });
   };
 
-  const loadLikeStatus = useCallback(async () => {
-    if (!isAuthenticated) return;
-    try {
-      const status = await reviewsApi.getLikeStatus(review.id);
-      if (typeof status?.liked === 'boolean') {
-        setLiked(status.liked);
-      }
-      if (typeof status?.likesCount === 'number') {
-        setLikesCount(status.likesCount);
-      }
-    } catch (error) {
-      console.error('Error loading like status:', error);
-    }
-  }, [isAuthenticated, review.id]);
-
+  // Initialize liked state from review prop (pre-calculated by optimized backend API)
   useEffect(() => {
-    loadLikeStatus();
-  }, [loadLikeStatus]);
+    if (typeof review.liked === 'boolean') {
+      setLiked(review.liked);
+    }
+  }, [review.liked]);
 
   const handleLike = async () => {
     if (!isAuthenticated) {

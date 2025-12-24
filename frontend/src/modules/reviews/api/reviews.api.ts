@@ -23,6 +23,7 @@ export interface Review {
     likes: number;
     comments: number;
   };
+  liked?: boolean;
 }
 
 export interface ReviewComment {
@@ -69,15 +70,15 @@ export const reviewsApi = {
   getByGirlId: async (girlId: string): Promise<Review[]> => {
     const response = await apiClient.get<any>(`/reviews/girl/${girlId}`);
     const responseData = response.data;
-    
+
     if (responseData.success && responseData.data) {
       return Array.isArray(responseData.data) ? responseData.data : [];
     }
-    
+
     if (Array.isArray(responseData)) {
       return responseData;
     }
-    
+
     return [];
   },
 
@@ -85,15 +86,15 @@ export const reviewsApi = {
   create: async (data: CreateReviewDto): Promise<Review> => {
     const response = await apiClient.post<any>('/reviews', data);
     const responseData = response.data;
-    
+
     if (responseData.success && responseData.data) {
       return responseData.data;
     }
-    
+
     if (responseData.id) {
       return responseData;
     }
-    
+
     throw new Error('Định dạng phản hồi từ server không hợp lệ');
   },
 
@@ -101,11 +102,11 @@ export const reviewsApi = {
   toggleLike: async (reviewId: string): Promise<{ liked: boolean; likesCount: number }> => {
     const response = await apiClient.post<any>(`/reviews/${reviewId}/like`);
     const responseData = response.data;
-    
+
     if (responseData.success && responseData.data) {
       return responseData.data;
     }
-    
+
     return responseData;
   },
 
@@ -125,11 +126,11 @@ export const reviewsApi = {
   getLikes: async (reviewId: string): Promise<number> => {
     const response = await apiClient.get<any>(`/reviews/${reviewId}/likes`);
     const responseData = response.data;
-    
+
     if (responseData.success && responseData.data) {
       return responseData.data.count || 0;
     }
-    
+
     return responseData.count || 0;
   },
 
@@ -137,15 +138,15 @@ export const reviewsApi = {
   addComment: async (reviewId: string, data: CreateReviewCommentDto): Promise<ReviewComment> => {
     const response = await apiClient.post<any>(`/reviews/${reviewId}/comments`, data);
     const responseData = response.data;
-    
+
     if (responseData.success && responseData.data) {
       return responseData.data;
     }
-    
+
     if (responseData.id) {
       return responseData;
     }
-    
+
     throw new Error('Định dạng phản hồi từ server không hợp lệ');
   },
 
@@ -153,18 +154,18 @@ export const reviewsApi = {
   getComments: async (reviewId: string, page = 1, limit = 20): Promise<{ data: ReviewComment[]; total: number }> => {
     const response = await apiClient.get<any>(`/reviews/${reviewId}/comments?page=${page}&limit=${limit}`);
     const responseData = response.data;
-    
+
     if (responseData.success && responseData.data) {
       return {
         data: Array.isArray(responseData.data) ? responseData.data : [],
         total: responseData.meta?.total ?? Array.isArray(responseData.data) ? responseData.data.length : 0,
       };
     }
-    
+
     if (Array.isArray(responseData)) {
       return { data: responseData, total: responseData.length };
     }
-    
+
     return { data: [], total: 0 };
   },
 
@@ -172,15 +173,15 @@ export const reviewsApi = {
   approveComment: async (commentId: string): Promise<ReviewComment> => {
     const response = await apiClient.post<any>(`/reviews/comments/${commentId}/approve`);
     const responseData = response.data;
-    
+
     if (responseData.success && responseData.data) {
       return responseData.data;
     }
-    
+
     if (responseData.id) {
       return responseData;
     }
-    
+
     throw new Error('Định dạng phản hồi từ server không hợp lệ');
   },
 
@@ -188,15 +189,15 @@ export const reviewsApi = {
   rejectComment: async (commentId: string, reason?: string): Promise<ReviewComment> => {
     const response = await apiClient.post<any>(`/reviews/comments/${commentId}/reject`, { reason });
     const responseData = response.data;
-    
+
     if (responseData.success && responseData.data) {
       return responseData.data;
     }
-    
+
     if (responseData.id) {
       return responseData;
     }
-    
+
     throw new Error('Định dạng phản hồi từ server không hợp lệ');
   },
 
@@ -204,7 +205,7 @@ export const reviewsApi = {
   getPendingComments: async (page = 1, limit = 20): Promise<{ data: ReviewComment[]; total: number; meta?: any }> => {
     const response = await apiClient.get<any>(`/admin/pending/review-comments?page=${page}&limit=${limit}`);
     const responseData = response.data;
-    
+
     if (responseData.success && responseData.data) {
       return {
         data: Array.isArray(responseData.data) ? responseData.data : [],
@@ -212,11 +213,11 @@ export const reviewsApi = {
         meta: responseData.meta,
       };
     }
-    
+
     if (Array.isArray(responseData)) {
       return { data: responseData, total: responseData.length };
     }
-    
+
     return { data: [], total: 0 };
   },
 };
