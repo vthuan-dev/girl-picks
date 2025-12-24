@@ -136,7 +136,8 @@ export default async function GirlDetailBySlugPage({ params }: PageProps) {
     }
 
     const canonicalSlug = girl.slug || generateSlug(girl.fullName || (girl as any).name || '');
-    if (canonicalSlug && slug !== canonicalSlug) {
+    // Compare slugs case-insensitively to avoid unnecessary redirects/loops
+    if (canonicalSlug && slug.toLowerCase() !== canonicalSlug.toLowerCase()) {
       redirect(`/girls/${canonicalSlug}`);
     }
   } catch (error: any) {

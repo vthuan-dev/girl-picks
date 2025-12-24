@@ -30,14 +30,15 @@ export default function ViewTracker({ type, id }: ViewTrackerProps) {
     // Check if already tracked in this session (with timestamp check)
     const storageKey = `viewed_${type}_${id}`;
     const trackedData = sessionStorage.getItem(storageKey);
-    
+
+    // Only allow tracking again after 2 minutes (120000ms)
+    const COOLDOWN_MS = 120000;
+
     if (trackedData) {
       try {
         const { timestamp } = JSON.parse(trackedData);
         const now = Date.now();
-        // Only allow tracking again after 5 minutes (300000ms)
-        // This prevents duplicate tracking on rapid navigation/reload
-        if (now - timestamp < 300000) {
+        if (now - timestamp < COOLDOWN_MS) {
           return;
         }
       } catch {
@@ -57,7 +58,21 @@ export default function ViewTracker({ type, id }: ViewTrackerProps) {
         return;
       }
 
+      // Check storage again right before calling API to handle rapid navigation/reload
+      const latestTrackedData = sessionStorage.getItem(storageKey);
+      if (latestTrackedData) {
+        try {
+          const { timestamp } = JSON.parse(latestTrackedData);
+          if (Date.now() - timestamp < COOLDOWN_MS) return;
+        } catch { }
+      }
+
+      // Mark as tracked IMMEDIATELY to prevent race conditions
       hasTrackedRef.current = true;
+      sessionStorage.setItem(storageKey, JSON.stringify({
+        tracked: true,
+        timestamp: Date.now(),
+      }));
 
       try {
         if (type === 'girl') {
@@ -65,19 +80,13 @@ export default function ViewTracker({ type, id }: ViewTrackerProps) {
         } else if (type === 'post') {
           await postsApi.incrementView(id);
         }
-        
-        // Mark as tracked with timestamp
-        sessionStorage.setItem(storageKey, JSON.stringify({
-          tracked: true,
-          timestamp: Date.now(),
-        }));
       } catch (error) {
         // Silently fail - view tracking should not break the page
         console.error('Failed to track view:', error);
-        // Reset on error so it can retry
-        hasTrackedRef.current = false;
+        // We don't reset sessionStorage here to prevent spamming failed retries
+        // hasTrackedRef is local to the component instance so it's fine
       }
-    }, 1000); // 1 second delay to prevent tracking on rapid navigation
+    }, 1000); // 1 second delay to prevent tracking on unintentional navigation
 
     // Cleanup function
     return () => {
