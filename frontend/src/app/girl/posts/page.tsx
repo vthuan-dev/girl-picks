@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/auth.store';
 import { postsApi, Post } from '@/modules/posts/api/posts.api';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
+import Cookies from 'js-cookie';
 
 export default function GirlPostsPage() {
   const { user, isAuthenticated } = useAuthStore();
@@ -53,6 +54,9 @@ export default function GirlPostsPage() {
 
     const response = await fetch('/api/upload/image', {
       method: 'POST',
+      headers: {
+        Authorization: `Bearer ${Cookies.get('accessToken')}`,
+      },
       body: formData,
     });
 
@@ -375,10 +379,10 @@ export default function GirlPostsPage() {
                       <span>{formatDate(post.createdAt)}</span>
                       <span
                         className={`px-2 py-1 rounded-full text-xs font-medium ${post.status === 'APPROVED'
-                            ? 'bg-green-500/20 text-green-500'
-                            : post.status === 'PENDING'
-                              ? 'bg-yellow-500/20 text-yellow-500'
-                              : 'bg-red-500/20 text-red-500'
+                          ? 'bg-green-500/20 text-green-500'
+                          : post.status === 'PENDING'
+                            ? 'bg-yellow-500/20 text-yellow-500'
+                            : 'bg-red-500/20 text-red-500'
                           }`}
                       >
                         {post.status === 'APPROVED' ? 'Đã duyệt' : post.status === 'PENDING' ? 'Chờ duyệt' : 'Từ chối'}
