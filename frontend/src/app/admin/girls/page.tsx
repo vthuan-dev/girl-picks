@@ -242,29 +242,32 @@ export default function AdminGirlsPage() {
 
   // Upload image helper function
   const uploadImage = async (file: File): Promise<string> => {
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
+    const fileToBase64 = (file: File): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (error) => reject(error);
+      });
+    };
 
+    try {
+      const base64Data = await fileToBase64(file);
       const response = await fetch('/api/upload/image', {
         method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${Cookies.get('accessToken')}`,
         },
-        body: formData,
+        body: JSON.stringify({ url: base64Data }),
       });
 
       if (!response.ok) {
-        throw new Error('Upload failed');
+        throw new Error('Tải ảnh thất bại');
       }
 
       const data = await response.json();
-      if (data.success && data.url) {
-        // Convert relative URL to absolute URL
-        const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-        return `${baseUrl}${data.url}`;
-      }
-      throw new Error('Invalid response from upload');
+      return data.url;
     } catch (error) {
       console.error('Error uploading image:', error);
       throw error;

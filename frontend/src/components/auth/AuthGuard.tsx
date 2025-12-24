@@ -19,13 +19,16 @@ export default function AuthGuard({
   redirectTo = '/auth/login',
   showLoading = true,
 }: AuthGuardProps) {
-  const { user, isAuthenticated, setUser, logout } = useAuthStore();
+  const { user, isAuthenticated, hasHydrated, setUser, logout } = useAuthStore();
   const router = useRouter();
   const [isChecking, setIsChecking] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
+      // Don't do anything until store is hydrated
+      if (!hasHydrated) return;
+
       try {
         // If already authenticated and user exists, check role
         if (isAuthenticated && user) {
@@ -102,7 +105,7 @@ export default function AuthGuard({
     };
 
     checkAuth();
-  }, [isAuthenticated, user, allowedRoles, redirectTo, router, setUser, logout]);
+  }, [hasHydrated, isAuthenticated, user, allowedRoles, redirectTo, router, setUser, logout]);
 
   if (isChecking && showLoading) {
     return (

@@ -182,15 +182,24 @@ export default function MovieFormModal({ isOpen, onClose, onSuccess, movie }: Mo
       return;
     }
     setIsUploadingPoster(true);
+    const fileToBase64 = (file: File): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (error) => reject(error);
+      });
+    };
+
     try {
-      const formData = new FormData();
-      formData.append('file', file);
+      const base64Data = await fileToBase64(file);
       const res = await fetch('/api/upload/image', {
         method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${Cookies.get('accessToken')}`,
         },
-        body: formData,
+        body: JSON.stringify({ url: base64Data }),
       });
       const data = await res.json();
       if (!res.ok || !data?.url) {

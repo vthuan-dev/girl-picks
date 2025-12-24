@@ -9,8 +9,10 @@ interface AuthState {
   refreshToken: string | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  hasHydrated: boolean;
   setAuth: (authData: AuthResponse) => void;
   setUser: (user: User) => void;
+  setHasHydrated: (state: boolean) => void;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
 }
@@ -23,6 +25,11 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       isAuthenticated: false,
       isAdmin: false,
+      hasHydrated: false,
+
+      setHasHydrated: (state: boolean) => {
+        set({ hasHydrated: state });
+      },
 
       setAuth: (authData: AuthResponse) => {
         try {
@@ -47,13 +54,13 @@ export const useAuthStore = create<AuthState>()(
             sameSite: 'lax' as const,
             secure: process.env.NODE_ENV === 'production', // Only secure in production (HTTPS)
           };
-          
+
           Cookies.set('accessToken', authData.accessToken, cookieOptions);
-          Cookies.set('refreshToken', authData.refreshToken, { 
-            ...cookieOptions, 
+          Cookies.set('refreshToken', authData.refreshToken, {
+            ...cookieOptions,
             expires: 7 // 7 days for refresh token
           });
-          
+
           // Verify tokens were stored (for debugging)
           if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
             const verifyToken = Cookies.get('accessToken');
@@ -93,8 +100,8 @@ export const useAuthStore = create<AuthState>()(
       },
 
       setUser: (user: User) => {
-        set({ 
-          user, 
+        set({
+          user,
           isAuthenticated: true,
           isAdmin: user.role === UserRole.ADMIN,
         });
@@ -129,6 +136,9 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );
