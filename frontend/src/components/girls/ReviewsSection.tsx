@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 import { reviewsApi, type Review as ApiReview, type ReviewComment } from '@/modules/reviews/api/reviews.api';
 import ExpandableText from '@/components/common/ExpandableText';
 import { getFullImageUrl } from '@/lib/utils/image';
+import apiClient from '@/lib/api/client';
 
 interface Review {
   id: string;
@@ -305,48 +306,34 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
     }
   };
 
-  const uploadImage = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append('file', file);
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  };
 
+  const uploadImage = async (file: File): Promise<string> => {
     try {
-      const response = await fetch('/api/upload/review', {
-        method: 'POST',
-        body: formData,
+      const base64Data = await fileToBase64(file);
+
+      const response = await apiClient.post('/upload/image', {
+        url: base64Data,
+        folder: 'reviews'
       });
 
-      if (!response.ok) {
-        let errorMessage = 'Không thể tải ảnh lên';
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorData.message || errorMessage;
-
-          // Handle specific error codes
-          if (response.status === 403) {
-            errorMessage = 'Bạn không có quyền upload ảnh. Vui lòng đăng nhập lại.';
-          } else if (response.status === 413) {
-            errorMessage = 'File quá lớn. Vui lòng chọn file nhỏ hơn 5MB.';
-          } else if (response.status === 400) {
-            errorMessage = errorData.error || 'File không hợp lệ. Vui lòng chọn file ảnh.';
-          }
-        } catch (parseError) {
-          // If response is not JSON, use status text
-          errorMessage = response.statusText || errorMessage;
-        }
-        throw new Error(errorMessage);
-      }
-
-      const data = await response.json();
-      if (!data.url) {
-        throw new Error('Phản hồi từ server không hợp lệ');
+      const data = response.data;
+      // Backend returns { success: true, data: { url: '...' } } or just { url: '...' }
+      if (data.success && data.data) {
+        return data.data.url;
       }
       return data.url;
     } catch (error: any) {
-      // Re-throw with better error message
-      if (error.message) {
-        throw error;
-      }
-      throw new Error(error.message || 'Không thể tải ảnh lên. Vui lòng thử lại.');
+      console.error('Error in uploadImage:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Không thể tải ảnh lên. Vui lòng thử lại.';
+      throw new Error(errorMessage);
     }
   };
 
@@ -430,7 +417,7 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
 
       await reviewsApi.create(reviewData);
 
-      toast.success('Đánh giá của bạn đã được gửi và đang chờ duyệt!');
+      toast.success('Đánh giá của bạn đã được gửi thành công!');
 
       // Reset form
       setRating(0);

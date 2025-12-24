@@ -231,7 +231,6 @@ export default async function GirlDetailBySlugPage({ params }: PageProps) {
               return (
                 <>
                   <GirlBioSection bio={cleanedBio} />
-                  <ExpandableText text={cleanedBio} maxLength={300} />
                 </>
               );
             })()}
