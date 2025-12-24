@@ -103,17 +103,25 @@ export default function GirlProfileUpdateForm({ girl, onUpdate }: GirlProfileUpd
     }
   };
 
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
   const uploadImage = async (file: File): Promise<string> => {
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-
+      const base64Data = await fileToBase64(file);
       const response = await fetch('/api/upload/image', {
         method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${Cookies.get('accessToken')}`,
         },
-        body: formData,
+        body: JSON.stringify({ url: base64Data }),
       });
 
       if (!response.ok) {
@@ -121,20 +129,15 @@ export default function GirlProfileUpdateForm({ girl, onUpdate }: GirlProfileUpd
       }
 
       const data = await response.json();
-      if (data.success && data.url) {
-        // Convert relative URL to absolute URL
-        const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-        return `${baseUrl}${data.url}`;
+      // Backend returns results like { url: '/api/uploads/...' }
+      if (data.url) {
+        return data.url;
       }
       throw new Error('Invalid response');
     } catch (error) {
       console.error('Upload error:', error);
-      // Fallback: convert to base64 data URL
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.readAsDataURL(file);
-      });
+      // Fallback: convert to base64 data URL if upload fails (for preview)
+      return fileToBase64(file);
     }
   };
 
