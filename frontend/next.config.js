@@ -169,6 +169,23 @@ const nextConfig = {
       // Add any redirects here if needed
     ];
   },
+  // API and Upload Rewrites
+  async rewrites() {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:8000';
+    // Remove trailing slash if present
+    const backendUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
+
+    return [
+      {
+        source: '/api/uploads/:path*',
+        destination: `${backendUrl}/uploads/:path*`,
+      },
+      {
+        source: '/uploads/:path*',
+        destination: `${backendUrl}/uploads/:path*`,
+      },
+    ];
+  },
 }
 
 module.exports = nextConfig

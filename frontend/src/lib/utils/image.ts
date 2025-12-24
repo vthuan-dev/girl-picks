@@ -27,15 +27,15 @@ export function getFullImageUrl(url: string | undefined | null, forceAbsolute: b
     // Ensure the URL starts with a slash
     let cleanUrl = url.startsWith('/') ? url : `/${url}`;
 
-    // Fix for proxy issues on production: standardize all upload paths to /api/uploads/
-    // This handles both old paths (/public/uploads or /api/public/uploads) and the new path (/api/uploads)
+    // Standardize all upload paths to /uploads/
+    // This allows Next.js to check the public folder first, then use rewrites for the backend.
     if (cleanUrl.includes('/uploads/')) {
         if (cleanUrl.startsWith('/public/uploads/')) {
-            cleanUrl = `/api${cleanUrl.replace('/public', '')}`;
-        } else if (cleanUrl.startsWith('/api/public/uploads/')) {
             cleanUrl = cleanUrl.replace('/public', '');
-        } else if (cleanUrl.startsWith('/uploads/')) {
-            cleanUrl = `/api${cleanUrl}`;
+        } else if (cleanUrl.startsWith('/api/public/uploads/')) {
+            cleanUrl = cleanUrl.replace('/api/public', '');
+        } else if (cleanUrl.startsWith('/api/uploads/')) {
+            cleanUrl = cleanUrl.replace('/api', '');
         }
     }
 
