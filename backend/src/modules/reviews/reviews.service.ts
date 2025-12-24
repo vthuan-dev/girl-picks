@@ -53,7 +53,7 @@ export class ReviewsService {
         FROM INFORMATION_SCHEMA.COLUMNS 
         WHERE TABLE_SCHEMA = DATABASE()
           AND TABLE_NAME = 'review_comments'
-          AND COLUMN_NAME = 'parent_id'
+          AND COLUMN_NAME = 'parentId'
         LIMIT 1
       `;
 
@@ -67,7 +67,7 @@ export class ReviewsService {
           FROM INFORMATION_SCHEMA.COLUMNS 
           WHERE TABLE_SCHEMA = 'girl_pick_db'
             AND TABLE_NAME = 'review_comments'
-            AND COLUMN_NAME = 'parent_id'
+            AND COLUMN_NAME = 'parentId'
           LIMIT 1
         `;
       }
@@ -243,8 +243,9 @@ export class ReviewsService {
     customerId?: string;
     page?: number;
     limit?: number;
+    userId?: string;
   }) {
-    const { status, girlId, customerId, page = 1, limit = 20 } = filters || {};
+    const { status, girlId, customerId, page = 1, limit = 20, userId } = filters || {};
 
     const where: Prisma.ReviewWhereInput = {};
 
@@ -288,6 +289,20 @@ export class ReviewsService {
               fullName: true,
             },
           },
+          _count: {
+            select: {
+              likes: true,
+              comments: {
+                where: { status: ReviewCommentStatus.APPROVED },
+              },
+            },
+          },
+          likes: userId
+            ? {
+              where: { userId },
+              select: { id: true },
+            }
+            : false,
         },
         skip: (page - 1) * limit,
         take: limit,
@@ -298,8 +313,16 @@ export class ReviewsService {
       this.prisma.review.count({ where }),
     ]);
 
+    const transformedReviews = userId
+      ? reviews.map((review: any) => ({
+        ...review,
+        liked: review.likes.length > 0,
+        likes: undefined,
+      }))
+      : reviews;
+
     return {
-      data: reviews,
+      data: transformedReviews,
       meta: {
         total,
         page,
@@ -353,14 +376,14 @@ export class ReviewsService {
     return review;
   }
 
-  async findByGirl(girlId: string, status?: ReviewStatus) {
+  async findByGirl(girlId: string, status?: ReviewStatus, userId?: string) {
     const where: Prisma.ReviewWhereInput = { girlId };
 
     if (status) {
       where.status = status;
     }
 
-    return this.prisma.review.findMany({
+    const reviews = await this.prisma.review.findMany({
       where,
       include: {
         customer: {
@@ -373,14 +396,32 @@ export class ReviewsService {
         _count: {
           select: {
             likes: true,
-            comments: true,
+            comments: {
+              where: { status: ReviewCommentStatus.APPROVED },
+            },
           },
         },
+        likes: userId
+          ? {
+            where: { userId },
+            select: { id: true },
+          }
+          : false,
       },
       orderBy: {
         createdAt: 'desc',
       },
     });
+
+    if (userId) {
+      return reviews.map((review: any) => ({
+        ...review,
+        liked: review.likes.length > 0,
+        likes: undefined, // Remove the raw likes array from response
+      }));
+    }
+
+    return reviews;
   }
 
   async findMyReviews(userId: string, status?: ReviewStatus) {
@@ -813,19 +854,19 @@ export class ReviewsService {
           const commentId = randomUUID();
           const now = new Date();
 
-          // Insert comment bằng raw SQL với status PENDING
+          // Insert comment bằng raw SQL với status APPROVED
           if (
             createReviewCommentDto.parentId &&
             createReviewCommentDto.parentId.trim() !== ''
           ) {
             await this.prisma.$executeRaw`
-              INSERT INTO review_comments (id, reviewId, userId, content, parent_id, status, createdAt)
-              VALUES (${commentId}, ${reviewId}, ${userId}, ${createReviewCommentDto.content}, ${createReviewCommentDto.parentId}, 'PENDING', ${now})
+              INSERT INTO review_comments (id, reviewId, userId, content, parentId, status, createdAt)
+              VALUES (${commentId}, ${reviewId}, ${userId}, ${createReviewCommentDto.content}, ${createReviewCommentDto.parentId}, 'APPROVED', ${now})
             `;
           } else {
             await this.prisma.$executeRaw`
               INSERT INTO review_comments (id, reviewId, userId, content, status, createdAt)
-              VALUES (${commentId}, ${reviewId}, ${userId}, ${createReviewCommentDto.content}, 'PENDING', ${now})
+              VALUES (${commentId}, ${reviewId}, ${userId}, ${createReviewCommentDto.content}, 'APPROVED', ${now})
             `;
           }
 
@@ -838,7 +879,7 @@ export class ReviewsService {
               rc.content,
               rc.status,
               rc.createdAt,
-              u.id as user_id,
+              u.id as userIdRaw,
               u.fullName,
               u.avatarUrl
             FROM review_comments rc
@@ -854,10 +895,10 @@ export class ReviewsService {
               reviewId: comment.reviewId,
               userId: comment.userId,
               content: comment.content,
-              status: comment.status || 'PENDING',
+              status: comment.status || 'APPROVED',
               createdAt: comment.createdAt,
               user: {
-                id: comment.user_id,
+                id: comment.userIdRaw || comment.userId,
                 fullName: comment.fullName,
                 avatarUrl: comment.avatarUrl,
               },
@@ -912,7 +953,7 @@ export class ReviewsService {
                 rc.content,
                 rc.status,
                 rc.createdAt,
-                u.id as user_id,
+                u.id as userIdRaw,
                 u.fullName,
                 u.avatarUrl
               FROM review_comments rc
@@ -937,7 +978,7 @@ export class ReviewsService {
             status: row.status || 'APPROVED',
             createdAt: row.createdAt,
             user: {
-              id: row.user_id,
+              id: row.userIdRaw || row.userId,
               fullName: row.fullName,
               avatarUrl: row.avatarUrl,
             },
@@ -1053,7 +1094,7 @@ export class ReviewsService {
                   rc.content,
                   rc.status,
                   rc.createdAt,
-                  u.id as user_id,
+                  u.id as userIdRaw,
                   u.fullName,
                   u.avatarUrl
                 FROM review_comments rc
@@ -1078,7 +1119,7 @@ export class ReviewsService {
               status: row.status || 'APPROVED',
               createdAt: row.createdAt,
               user: {
-                id: row.user_id,
+                id: row.userIdRaw || row.userId,
                 fullName: row.fullName,
                 avatarUrl: row.avatarUrl,
               },

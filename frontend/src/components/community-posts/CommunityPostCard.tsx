@@ -596,7 +596,7 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
       )}
 
       {/* Stats */}
-      <div className="flex items-center gap-6 mt-4 pt-4 border-t border-secondary/20">
+      <div className="flex items-center gap-6 mt-6 pt-5 border-t border-secondary/20">
         <button
           type="button"
           onClick={(e) => {

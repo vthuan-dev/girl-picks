@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Button from '@/components/admin/Button';
 import IconButton from '@/components/admin/IconButton';
-import { girlsApi, Girl } from '@/modules/admin/api/girls.api';
+import { girlsApi, Girl as AdminGirl } from '@/modules/admin/api/girls.api';
 import { adminApi } from '@/modules/admin/api/admin.api';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
@@ -14,7 +14,21 @@ export default function AdminGirlsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('Tất cả');
   const [verificationFilter, setVerificationFilter] = useState('Tất cả');
-  const [girls, setGirls] = useState<Girl[]>([]);
+  type ExtendedGirl = AdminGirl & {
+    phone?: string;
+    price?: string | null;
+    workingHours?: string | null;
+    height?: string | number | null;
+    weight?: string | number | null;
+    measurements?: string | null;
+    location?: string | null;
+    province?: string | null;
+    address?: string | null;
+    services?: string[];
+    tags?: string[];
+  };
+
+  const [girls, setGirls] = useState<ExtendedGirl[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -35,7 +49,7 @@ export default function AdminGirlsPage() {
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
   const [selectedImageTitle, setSelectedImageTitle] = useState<string>('');
   const [selectedUser, setSelectedUser] = useState<{ id: string; email: string; fullName: string } | null>(null);
-  const [selectedGirl, setSelectedGirl] = useState<Girl | null>(null);
+  const [selectedGirl, setSelectedGirl] = useState<ExtendedGirl | null>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -377,7 +391,7 @@ export default function AdminGirlsPage() {
     setViewModalOpen(true);
     try {
       const girl = await girlsApi.getDetailsAdmin(id);
-      setSelectedGirl(girl);
+      setSelectedGirl(girl as ExtendedGirl);
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Không thể tải chi tiết');
       setViewModalOpen(false);
@@ -391,7 +405,7 @@ export default function AdminGirlsPage() {
     setEditModalOpen(true);
     try {
       const girl = await girlsApi.getDetailsAdmin(id);
-      setSelectedGirl(girl);
+      setSelectedGirl(girl as ExtendedGirl);
       setEditForm({
         name: girl.name || '',
         bio: girl.bio || '',
@@ -692,7 +706,7 @@ export default function AdminGirlsPage() {
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-text-muted mb-2 block">Số điện thoại</label>
-                      <p className="text-text font-medium">{selectedGirl.user?.phone || 'N/A'}</p>
+                      <p className="text-text font-medium">{selectedGirl.phone || selectedGirl.user?.phone || 'N/A'}</p>
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-text-muted mb-2 block">Xác thực</label>
@@ -716,6 +730,36 @@ export default function AdminGirlsPage() {
                     </div>
                   </div>
 
+                  {/* Extra Info */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="text-sm font-semibold text-text-muted mb-2 block">Giá</label>
+                      <p className="text-text font-medium">{selectedGirl.price || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-text-muted mb-2 block">Giờ làm việc</label>
+                      <p className="text-text font-medium">{selectedGirl.workingHours || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-text-muted mb-2 block">Chiều cao</label>
+                      <p className="text-text font-medium">{selectedGirl.height || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-text-muted mb-2 block">Cân nặng</label>
+                      <p className="text-text font-medium">{selectedGirl.weight || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-text-muted mb-2 block">Số đo</label>
+                      <p className="text-text font-medium">{selectedGirl.measurements || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-text-muted mb-2 block">Khu vực / Tỉnh</label>
+                      <p className="text-text font-medium">
+                        {selectedGirl.location || selectedGirl.province || selectedGirl.address || 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+
                   {/* Bio */}
                   {selectedGirl.bio && (
                     <div>
@@ -723,6 +767,22 @@ export default function AdminGirlsPage() {
                       <p className="text-text bg-background p-4 rounded-lg border border-secondary/30">{selectedGirl.bio}</p>
                     </div>
                   )}
+
+                  {/* Services */}
+                  <div>
+                    <label className="text-sm font-semibold text-text-muted mb-2 block">Dịch vụ</label>
+                    {selectedGirl.services && selectedGirl.services.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {selectedGirl.services.map((service, idx) => (
+                          <span key={idx} className="px-3 py-1 bg-primary/10 text-primary rounded-lg text-sm">
+                            {service}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-text-muted text-sm">N/A</p>
+                    )}
+                  </div>
 
                   {/* Districts */}
                   {selectedGirl.districts && selectedGirl.districts.length > 0 && (
