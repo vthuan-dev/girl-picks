@@ -3,6 +3,7 @@ import { ApiResponse } from '@/lib/api/types';
 
 export interface CommunityPost {
   id: string;
+  title?: string;
   content: string;
   images: string[];
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
@@ -92,15 +93,15 @@ export const communityPostsApi = {
   create: async (data: CreateCommunityPostDto): Promise<CommunityPost> => {
     const response = await apiClient.post<any>('/community-posts', data);
     const responseData = response.data;
-    
+
     if (responseData.success && responseData.data) {
       return responseData.data;
     }
-    
+
     if (responseData.id) {
       return responseData;
     }
-    
+
     throw new Error('Định dạng phản hồi từ server không hợp lệ');
   },
 
@@ -119,7 +120,7 @@ export const communityPostsApi = {
 
     const response = await apiClient.get<any>(`/community-posts?${queryParams.toString()}`);
     const responseData = response.data;
-    
+
     // Handle nested structure: { success: true, data: { data: [...], meta: {...} } }
     if (responseData.success && responseData.data) {
       // Check if data.data exists (nested structure)
@@ -147,7 +148,7 @@ export const communityPostsApi = {
         };
       }
     }
-    
+
     // Handle direct array response
     if (responseData.data && Array.isArray(responseData.data)) {
       return {
@@ -160,7 +161,7 @@ export const communityPostsApi = {
         },
       };
     }
-    
+
     return {
       data: [],
       meta: {
@@ -176,15 +177,15 @@ export const communityPostsApi = {
   getById: async (id: string): Promise<CommunityPost> => {
     const response = await apiClient.get<any>(`/community-posts/${id}`);
     const responseData = response.data;
-    
+
     if (responseData.success && responseData.data) {
       return responseData.data;
     }
-    
+
     if (responseData.id) {
       return responseData;
     }
-    
+
     throw new Error('Định dạng phản hồi từ server không hợp lệ');
   },
 
@@ -193,15 +194,15 @@ export const communityPostsApi = {
     const queryParams = status ? `?status=${status}` : '';
     const response = await apiClient.get<any>(`/community-posts/me${queryParams}`);
     const responseData = response.data;
-    
+
     if (responseData.success && responseData.data) {
       return Array.isArray(responseData.data) ? responseData.data : [];
     }
-    
+
     if (Array.isArray(responseData)) {
       return responseData;
     }
-    
+
     return [];
   },
 
@@ -209,15 +210,15 @@ export const communityPostsApi = {
   update: async (id: string, data: Partial<CreateCommunityPostDto>): Promise<CommunityPost> => {
     const response = await apiClient.patch<any>(`/community-posts/${id}`, data);
     const responseData = response.data;
-    
+
     if (responseData.success && responseData.data) {
       return responseData.data;
     }
-    
+
     if (responseData.id) {
       return responseData;
     }
-    
+
     throw new Error('Định dạng phản hồi từ server không hợp lệ');
   },
 
@@ -230,11 +231,11 @@ export const communityPostsApi = {
   toggleLike: async (id: string): Promise<{ liked: boolean; likesCount: number }> => {
     const response = await apiClient.post<any>(`/community-posts/${id}/like`);
     const responseData = response.data;
-    
+
     if (responseData.success && responseData.data) {
       return responseData.data;
     }
-    
+
     return responseData;
   },
 
@@ -242,11 +243,11 @@ export const communityPostsApi = {
   getLikes: async (id: string): Promise<number> => {
     const response = await apiClient.get<any>(`/community-posts/${id}/likes`);
     const responseData = response.data;
-    
+
     if (responseData.success && responseData.data) {
       return responseData.data.likesCount || 0;
     }
-    
+
     return responseData.likesCount || 0;
   },
 
@@ -254,11 +255,11 @@ export const communityPostsApi = {
   getLikeStatus: async (id: string): Promise<{ liked: boolean; likesCount: number }> => {
     const response = await apiClient.get<any>(`/community-posts/${id}/like-status`);
     const responseData = response.data;
-    
+
     if (responseData.success && responseData.data) {
       return responseData.data;
     }
-    
+
     return responseData;
   },
 
@@ -266,15 +267,15 @@ export const communityPostsApi = {
   addComment: async (id: string, data: CreateCommunityPostCommentDto): Promise<CommunityPostComment> => {
     const response = await apiClient.post<any>(`/community-posts/${id}/comments`, data);
     const responseData = response.data;
-    
+
     if (responseData.success && responseData.data) {
       return responseData.data;
     }
-    
+
     if (responseData.id) {
       return responseData;
     }
-    
+
     throw new Error('Định dạng phản hồi từ server không hợp lệ');
   },
 
