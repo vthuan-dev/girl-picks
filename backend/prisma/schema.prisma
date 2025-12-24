@@ -192,9 +192,9 @@ model Girl {
   verificationRequestedAt DateTime?
   verificationVerifiedAt  DateTime?
   // Reverification & identity
-  idCardFrontUrl          String?
-  idCardBackUrl           String?
-  selfieUrl               String?
+  idCardFrontUrl          String?            @db.LongText
+  idCardBackUrl           String?            @db.LongText
+  selfieUrl               String?            @db.LongText
   needsReverify           Boolean            @default(false)
 
   // Statistics
