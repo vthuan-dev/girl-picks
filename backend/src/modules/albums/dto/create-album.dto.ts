@@ -1,4 +1,10 @@
-import { IsArray, IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 
 export class CreateAlbumDto {
   @IsString()
@@ -29,4 +35,3 @@ export class CreateAlbumDto {
   @IsString({ each: true })
   images: string[];
 }
-

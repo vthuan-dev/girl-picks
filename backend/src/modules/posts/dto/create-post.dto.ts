@@ -10,7 +10,9 @@ export class CreatePostDto {
   @IsString()
   content: string;
 
-  @ApiPropertyOptional({ description: 'Girl ID (optional, for GIRL role posts)' })
+  @ApiPropertyOptional({
+    description: 'Girl ID (optional, for GIRL role posts)',
+  })
   @IsOptional()
   @IsString()
   girlId?: string;

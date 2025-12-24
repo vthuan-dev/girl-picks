@@ -12,17 +12,24 @@ export class TagsService {
   /**
    * Get popular tags with count from girls
    */
-  async getPopularTags(limit: number = 20): Promise<Array<{ name: string; count: number }>> {
+  async getPopularTags(
+    limit: number = 20,
+  ): Promise<Array<{ name: string; count: number }>> {
     const cacheKey = this.cacheService.generateKey('tags:popular', limit);
-    
+
     // Try to get from cache first
-    const cachedData = await this.cacheService.get<Array<{ name: string; count: number }>>(cacheKey);
+    const cachedData =
+      await this.cacheService.get<Array<{ name: string; count: number }>>(
+        cacheKey,
+      );
     if (cachedData && Array.isArray(cachedData)) {
       console.log('[TagsService] Cache hit for popular tags');
       return cachedData;
     }
 
-    console.log('[TagsService] Cache miss, fetching popular tags from database...');
+    console.log(
+      '[TagsService] Cache miss, fetching popular tags from database...',
+    );
 
     // Get all active girls with tags
     const girls = await this.prisma.girl.findMany({
@@ -68,10 +75,15 @@ export class TagsService {
   /**
    * Get popular tags from posts
    */
-  async getPopularTagsFromPosts(limit: number = 20): Promise<Array<{ name: string; count: number }>> {
+  async getPopularTagsFromPosts(
+    limit: number = 20,
+  ): Promise<Array<{ name: string; count: number }>> {
     const cacheKey = this.cacheService.generateKey('tags:popular:posts', limit);
-    
-    const cachedData = await this.cacheService.get<Array<{ name: string; count: number }>>(cacheKey);
+
+    const cachedData =
+      await this.cacheService.get<Array<{ name: string; count: number }>>(
+        cacheKey,
+      );
     if (cachedData && Array.isArray(cachedData)) {
       return cachedData;
     }
@@ -118,7 +130,7 @@ export class TagsService {
    */
   async getAllTags(): Promise<string[]> {
     const cacheKey = this.cacheService.generateKey('tags:all');
-    
+
     const cachedData = await this.cacheService.get<string[]>(cacheKey);
     if (cachedData && Array.isArray(cachedData)) {
       return cachedData;
@@ -155,4 +167,3 @@ export class TagsService {
     return allTags;
   }
 }
-

@@ -11,7 +11,9 @@ export class CreateCommunityPostDto {
   @IsString()
   content: string;
 
-  @ApiPropertyOptional({ description: 'Girl ID (optional, if post is about a specific girl)' })
+  @ApiPropertyOptional({
+    description: 'Girl ID (optional, if post is about a specific girl)',
+  })
   @IsOptional()
   @IsString()
   girlId?: string;
@@ -22,4 +24,3 @@ export class CreateCommunityPostDto {
   @IsString({ each: true })
   images?: string[];
 }
-

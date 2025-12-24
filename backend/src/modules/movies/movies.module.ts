@@ -11,5 +11,3 @@ import { CategoriesModule } from '../categories/categories.module';
   exports: [MoviesService],
 })
 export class MoviesModule {}
-
-

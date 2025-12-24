@@ -101,7 +101,7 @@ export class MessagesService {
         avatarUrl: string | null;
         role: string;
       };
-      lastMessage: typeof messages[number];
+      lastMessage: (typeof messages)[number];
       unreadCount: number;
     };
 

@@ -48,7 +48,10 @@ export class AdminController {
     private readonly adminService: AdminService,
     private readonly reviewsService: ReviewsService,
   ) {
-    console.log('[AdminController] Initialized with ReviewsService:', !!this.reviewsService);
+    console.log(
+      '[AdminController] Initialized with ReviewsService:',
+      !!this.reviewsService,
+    );
   }
 
   @Get('stats')
@@ -91,12 +94,19 @@ export class AdminController {
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page?: number,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
   ) {
-    console.log('[AdminController] getPendingReviewComments called with page:', page, 'limit:', limit);
+    console.log(
+      '[AdminController] getPendingReviewComments called with page:',
+      page,
+      'limit:',
+      limit,
+    );
     return this.reviewsService.getPendingComments(page, limit);
   }
 
   @Get('community-posts')
-  @ApiOperation({ summary: 'Get all community posts with filters (Admin only)' })
+  @ApiOperation({
+    summary: 'Get all community posts with filters (Admin only)',
+  })
   @ApiQuery({ name: 'status', required: false, enum: PostStatus })
   @ApiQuery({ name: 'search', required: false })
   @ApiQuery({ name: 'page', required: false, type: Number })
@@ -161,7 +171,10 @@ export class AdminController {
 
   @Post('girls')
   @Roles(UserRole.ADMIN, UserRole.STAFF_UPLOAD)
-  @ApiOperation({ summary: 'Create girl user account (Admin/Staff only) - Only creates user, not girl profile' })
+  @ApiOperation({
+    summary:
+      'Create girl user account (Admin/Staff only) - Only creates user, not girl profile',
+  })
   @ApiResponse({ status: 201, description: 'Girl user created' })
   createGirl(@Body() createGirlDto: CreateGirlDto) {
     return this.adminService.createGirl(createGirlDto);
@@ -169,11 +182,14 @@ export class AdminController {
 
   @Post('girls/:userId/profile')
   @Roles(UserRole.ADMIN, UserRole.STAFF_UPLOAD)
-  @ApiOperation({ summary: 'Create girl profile from existing user (Admin/Staff only)' })
+  @ApiOperation({
+    summary: 'Create girl profile from existing user (Admin/Staff only)',
+  })
   @ApiResponse({ status: 201, description: 'Girl profile created' })
   createGirlProfile(
     @Param('userId') userId: string,
-    @Body() profileDto: {
+    @Body()
+    profileDto: {
       bio?: string;
       districts?: string[];
       images?: string[];
@@ -186,7 +202,9 @@ export class AdminController {
 
   @Get('girls/without-profile')
   @Roles(UserRole.ADMIN, UserRole.STAFF_UPLOAD)
-  @ApiOperation({ summary: 'Get GIRL users without girl profile (Admin/Staff only)' })
+  @ApiOperation({
+    summary: 'Get GIRL users without girl profile (Admin/Staff only)',
+  })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'List of users without profiles' })
@@ -224,7 +242,11 @@ export class AdminController {
   @ApiOperation({ summary: 'Get all girls with filters (Admin/Staff only)' })
   @ApiQuery({ name: 'search', required: false, type: String })
   @ApiQuery({ name: 'isActive', required: false, type: Boolean })
-  @ApiQuery({ name: 'verificationStatus', required: false, enum: VerificationStatus })
+  @ApiQuery({
+    name: 'verificationStatus',
+    required: false,
+    enum: VerificationStatus,
+  })
   @ApiQuery({ name: 'isFeatured', required: false, type: Boolean })
   @ApiQuery({ name: 'isPremium', required: false, type: Boolean })
   @ApiQuery({ name: 'page', required: false, type: Number })

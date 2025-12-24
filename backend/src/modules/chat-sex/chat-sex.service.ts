@@ -33,7 +33,9 @@ export class ChatSexService {
         where: { slug: { startsWith: baseSlug } },
         select: { slug: true },
       });
-      const existingSlugs = existing.map((g) => g.slug).filter(Boolean) as string[];
+      const existingSlugs = existing
+        .map((g) => g.slug)
+        .filter(Boolean) as string[];
       slug = generateUniqueSlug(baseSlug, existingSlugs);
     }
 
@@ -53,7 +55,9 @@ export class ChatSexService {
       province: dto.province,
       address: dto.address,
       price: dto.price,
-      services: dto.services ? JSON.stringify(dto.services) : JSON.stringify([]),
+      services: dto.services
+        ? JSON.stringify(dto.services)
+        : JSON.stringify([]),
       workingHours: dto.workingHours,
       images: dto.images ? JSON.stringify(dto.images) : JSON.stringify([]),
       coverImage,
@@ -148,10 +152,22 @@ export class ChatSexService {
           const { telegram, ...itemWithoutTelegram } = item; // Exclude telegram for privacy
           return {
             ...itemWithoutTelegram,
-            images: typeof item.images === 'string' ? JSON.parse(item.images) : (item.images || []),
-            services: typeof item.services === 'string' ? JSON.parse(item.services) : (item.services || []),
-            tags: typeof item.tags === 'string' ? JSON.parse(item.tags) : (item.tags || []),
-            videos: typeof item.videos === 'string' ? JSON.parse(item.videos) : (item.videos || []),
+            images:
+              typeof item.images === 'string'
+                ? JSON.parse(item.images)
+                : item.images || [],
+            services:
+              typeof item.services === 'string'
+                ? JSON.parse(item.services)
+                : item.services || [],
+            tags:
+              typeof item.tags === 'string'
+                ? JSON.parse(item.tags)
+                : item.tags || [],
+            videos:
+              typeof item.videos === 'string'
+                ? JSON.parse(item.videos)
+                : item.videos || [],
           };
         } catch (error) {
           console.error('Error parsing JSON fields for item:', item.id, error);
@@ -174,7 +190,10 @@ export class ChatSexService {
       };
     } catch (error) {
       console.error('Error in ChatSexService.findAll:', error);
-      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      console.error(
+        'Error stack:',
+        error instanceof Error ? error.stack : 'No stack trace',
+      );
       throw error;
     }
   }
@@ -202,10 +221,22 @@ export class ChatSexService {
       const { telegram, ...girlWithoutTelegram } = girl; // Exclude telegram for privacy
       return {
         ...girlWithoutTelegram,
-        images: typeof girl.images === 'string' ? JSON.parse(girl.images) : (girl.images || []),
-        services: typeof girl.services === 'string' ? JSON.parse(girl.services) : (girl.services || []),
-        tags: typeof girl.tags === 'string' ? JSON.parse(girl.tags) : (girl.tags || []),
-        videos: typeof (girl as any).videos === 'string' ? JSON.parse((girl as any).videos) : ((girl as any).videos || []),
+        images:
+          typeof girl.images === 'string'
+            ? JSON.parse(girl.images)
+            : girl.images || [],
+        services:
+          typeof girl.services === 'string'
+            ? JSON.parse(girl.services)
+            : girl.services || [],
+        tags:
+          typeof girl.tags === 'string'
+            ? JSON.parse(girl.tags)
+            : girl.tags || [],
+        videos:
+          typeof (girl as any).videos === 'string'
+            ? JSON.parse((girl as any).videos)
+            : (girl as any).videos || [],
       };
     } catch (error) {
       console.error('Error parsing JSON fields for girl:', girl.id, error);
@@ -240,7 +271,9 @@ export class ChatSexService {
         },
         select: { slug: true },
       });
-      const existingSlugs = existingRecords.map((g) => g.slug).filter(Boolean) as string[];
+      const existingSlugs = existingRecords
+        .map((g) => g.slug)
+        .filter(Boolean) as string[];
       slug = generateUniqueSlug(baseSlug, existingSlugs);
     }
 
@@ -318,10 +351,7 @@ export class ChatSexService {
     });
   }
 
-  async bulkCreate(
-    dtos: CreateChatSexGirlDto[],
-    managedById: string,
-  ) {
+  async bulkCreate(dtos: CreateChatSexGirlDto[], managedById: string) {
     const results: any[] = [];
     const errors: Array<{ data: CreateChatSexGirlDto; error: string }> = [];
 
@@ -350,11 +380,7 @@ export class ChatSexService {
   /**
    * Get reviews for a chat sex girl with pagination
    */
-  async getReviews(
-    girlId: string,
-    page: number = 1,
-    limit: number = 10,
-  ) {
+  async getReviews(girlId: string, page: number = 1, limit: number = 10) {
     const skip = (page - 1) * limit;
 
     const [reviews, total] = await Promise.all([
@@ -466,4 +492,3 @@ export class ChatSexService {
     });
   }
 }
-

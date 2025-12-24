@@ -18,7 +18,8 @@ export async function downloadImageFromUrl(
       const protocol = url.protocol === 'https:' ? https : http;
       const tempPath = join(
         tmpdir(),
-        filename || `image_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`,
+        filename ||
+          `image_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`,
       );
 
       const file = createWriteStream(tempPath);
@@ -29,7 +30,9 @@ export async function downloadImageFromUrl(
           if (response.statusCode !== 200) {
             file.close();
             unlinkSync(tempPath);
-            reject(new Error(`Failed to download image: ${response.statusCode}`));
+            reject(
+              new Error(`Failed to download image: ${response.statusCode}`),
+            );
             return;
           }
 
@@ -76,7 +79,9 @@ export async function getImageBufferFromUrl(imageUrl: string): Promise<Buffer> {
       protocol
         .get(imageUrl, (response) => {
           if (response.statusCode !== 200) {
-            reject(new Error(`Failed to download image: ${response.statusCode}`));
+            reject(
+              new Error(`Failed to download image: ${response.statusCode}`),
+            );
             return;
           }
 
@@ -117,4 +122,3 @@ export function isValidImageUrl(url: string): boolean {
     return false;
   }
 }
-

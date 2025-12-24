@@ -18,8 +18,7 @@ export class GirlManagerGuard implements CanActivate {
 
     // ADMIN và STAFF_UPLOAD có quyền quản lý Girl
     const hasPermission =
-      user.role === UserRole.ADMIN ||
-      user.role === UserRole.STAFF_UPLOAD;
+      user.role === UserRole.ADMIN || user.role === UserRole.STAFF_UPLOAD;
 
     if (!hasPermission) {
       throw new ForbiddenException(
@@ -30,4 +29,3 @@ export class GirlManagerGuard implements CanActivate {
     return true;
   }
 }
-

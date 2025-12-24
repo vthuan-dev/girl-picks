@@ -12,8 +12,14 @@ export class SettingsController {
   @ApiResponse({ status: 200, description: 'Setting value' })
   async getPublicSetting(@Param('key') key: string) {
     // Only allow certain keys to be accessed publicly
-    const allowedKeys = ['rulesContent', 'termsContent', 'privacyContent', 'siteName', 'siteDescription'];
-    
+    const allowedKeys = [
+      'rulesContent',
+      'termsContent',
+      'privacyContent',
+      'siteName',
+      'siteDescription',
+    ];
+
     if (!allowedKeys.includes(key)) {
       return { value: null };
     }

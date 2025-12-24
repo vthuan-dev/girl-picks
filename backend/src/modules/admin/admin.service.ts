@@ -55,7 +55,9 @@ export class AdminService {
       // Pending items
       this.prisma.post.count({ where: { status: PostStatus.PENDING } }),
       this.prisma.review.count({ where: { status: ReviewStatus.PENDING } }),
-      this.prisma.communityPost.count({ where: { status: PostStatus.PENDING } }),
+      this.prisma.communityPost.count({
+        where: { status: PostStatus.PENDING },
+      }),
       this.prisma.girl.count({
         where: { verificationStatus: VerificationStatus.PENDING },
       }),
@@ -318,13 +320,18 @@ export class AdminService {
     } catch (error: any) {
       console.error('Error in getAllCommunityPosts:', error);
       // Provide more detailed error message
-      if (error.message?.includes('Unknown model') || error.message?.includes('does not exist')) {
+      if (
+        error.message?.includes('Unknown model') ||
+        error.message?.includes('does not exist')
+      ) {
         throw new Error(
           'Database table community_posts does not exist. Please run: npx prisma migrate deploy',
         );
       }
       if (error.code === 'P2001' || error.code === 'P2025') {
-        throw new Error('Community posts table not found. Please check database migration.');
+        throw new Error(
+          'Community posts table not found. Please check database migration.',
+        );
       }
       throw error;
     }
@@ -553,13 +560,16 @@ export class AdminService {
   }
 
   // Tạo girl record từ user đã có
-  async createGirlProfileFromUser(userId: string, dto: {
-    bio?: string;
-    districts?: string[];
-    images?: string[];
-    age?: number;
-    name?: string;
-  }) {
+  async createGirlProfileFromUser(
+    userId: string,
+    dto: {
+      bio?: string;
+      districts?: string[];
+      images?: string[];
+      age?: number;
+      name?: string;
+    },
+  ) {
     // Kiểm tra user có tồn tại và là GIRL
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -1000,7 +1010,9 @@ export class AdminService {
     }
 
     if (user.role !== UserRole.GIRL) {
-      throw new BadRequestException('Only GIRL accounts can be approved with this endpoint');
+      throw new BadRequestException(
+        'Only GIRL accounts can be approved with this endpoint',
+      );
     }
 
     return this.prisma.user.update({
@@ -1028,7 +1040,9 @@ export class AdminService {
     }
 
     if (user.role !== UserRole.GIRL) {
-      throw new BadRequestException('Only GIRL accounts can be rejected with this endpoint');
+      throw new BadRequestException(
+        'Only GIRL accounts can be rejected with this endpoint',
+      );
     }
 
     return this.prisma.user.update({
@@ -1048,7 +1062,7 @@ export class AdminService {
 
   async getSettings() {
     const settings = await this.prisma.setting.findMany();
-    
+
     // Convert array of settings to object
     const settingsObj: Record<string, any> = {};
     for (const setting of settings) {
@@ -1059,16 +1073,31 @@ export class AdminService {
     // Return with defaults
     return {
       siteName: settingsObj.siteName || 'Tìm Gái gọi',
-      siteDescription: settingsObj.siteDescription || 'Nền tảng đặt lịch dịch vụ giải trí',
-      maintenanceMode: settingsObj.maintenanceMode === true || settingsObj.maintenanceMode === 'true',
-      allowRegistration: settingsObj.allowRegistration !== false && settingsObj.allowRegistration !== 'false',
-      requireEmailVerification: settingsObj.requireEmailVerification === true || settingsObj.requireEmailVerification === 'true',
-      maxFileSize: typeof settingsObj.maxFileSize === 'number' ? settingsObj.maxFileSize : parseInt(String(settingsObj.maxFileSize)) || 5,
-      allowedFileTypes: Array.isArray(settingsObj.allowedFileTypes) 
-        ? settingsObj.allowedFileTypes 
-        : (typeof settingsObj.allowedFileTypes === 'string' ? settingsObj.allowedFileTypes.split(',') : ['jpg', 'png', 'jpeg']),
+      siteDescription:
+        settingsObj.siteDescription || 'Nền tảng đặt lịch dịch vụ giải trí',
+      maintenanceMode:
+        settingsObj.maintenanceMode === true ||
+        settingsObj.maintenanceMode === 'true',
+      allowRegistration:
+        settingsObj.allowRegistration !== false &&
+        settingsObj.allowRegistration !== 'false',
+      requireEmailVerification:
+        settingsObj.requireEmailVerification === true ||
+        settingsObj.requireEmailVerification === 'true',
+      maxFileSize:
+        typeof settingsObj.maxFileSize === 'number'
+          ? settingsObj.maxFileSize
+          : parseInt(String(settingsObj.maxFileSize)) || 5,
+      allowedFileTypes: Array.isArray(settingsObj.allowedFileTypes)
+        ? settingsObj.allowedFileTypes
+        : typeof settingsObj.allowedFileTypes === 'string'
+          ? settingsObj.allowedFileTypes.split(',')
+          : ['jpg', 'png', 'jpeg'],
       emailHost: settingsObj.emailHost || '',
-      emailPort: typeof settingsObj.emailPort === 'number' ? settingsObj.emailPort : parseInt(String(settingsObj.emailPort)) || 587,
+      emailPort:
+        typeof settingsObj.emailPort === 'number'
+          ? settingsObj.emailPort
+          : parseInt(String(settingsObj.emailPort)) || 587,
       emailUser: settingsObj.emailUser || '',
       emailPassword: settingsObj.emailPassword || '',
       emailFrom: settingsObj.emailFrom || '',
@@ -1091,7 +1120,7 @@ export class AdminService {
           where: { key },
           update: { value: value as any },
           create: { key, value: value as any },
-        })
+        }),
       );
     }
 

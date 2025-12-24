@@ -8,7 +8,7 @@ export class CrawlerService {
   constructor(
     private prisma: PrismaService,
     private uploadService: UploadService,
-  ) { }
+  ) {}
 
   async saveGirl(data: {
     name: string;
@@ -32,15 +32,24 @@ export class CrawlerService {
       // Upload images to Cloudinary if requested
       if (data.uploadToCloudinary && data.images.length > 0) {
         try {
-          const uploadResult = await this.uploadService.uploadMultipleImagesFromUrls({
-            urls: data.images,
-            folder: 'girl-pick/girls',
-            publicIdPrefix: `girl-${data.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`,
-          });
+          const uploadResult =
+            await this.uploadService.uploadMultipleImagesFromUrls({
+              urls: data.images,
+              folder: 'girl-pick/girls',
+              publicIdPrefix: `girl-${data.name
+                .toLowerCase()
+                .replace(/\s+/g, '-')
+                .replace(/[^a-z0-9-]/g, '')}`,
+            });
           finalImages = uploadResult.map((item) => item.url);
-          console.log(`✅ Uploaded ${uploadResult.length} images for ${data.name}`);
+          console.log(
+            `✅ Uploaded ${uploadResult.length} images for ${data.name}`,
+          );
         } catch (uploadError) {
-          console.error('⚠️ Failed to upload images to Cloudinary, using original URLs:', uploadError);
+          console.error(
+            '⚠️ Failed to upload images to Cloudinary, using original URLs:',
+            uploadError,
+          );
           // Fallback to original URLs if upload fails
         }
       }
@@ -66,9 +75,16 @@ export class CrawlerService {
             age: data.age || existingGirl.age,
             ratingAverage: data.rating || existingGirl.ratingAverage,
             totalReviews: data.totalReviews || existingGirl.totalReviews,
-            verificationStatus: data.verified ? 'VERIFIED' : existingGirl.verificationStatus,
-            isActive: data.isAvailable !== undefined ? data.isAvailable : existingGirl.isActive,
-            tags: (data.tags && data.tags.length > 0 ? data.tags : existingGirl.tags) as string[] | undefined,
+            verificationStatus: data.verified
+              ? 'VERIFIED'
+              : existingGirl.verificationStatus,
+            isActive:
+              data.isAvailable !== undefined
+                ? data.isAvailable
+                : existingGirl.isActive,
+            tags: (data.tags && data.tags.length > 0
+              ? data.tags
+              : existingGirl.tags) as string[] | undefined,
             location: data.location || existingGirl.location,
             province: data.province || existingGirl.province,
             price: data.price || existingGirl.price,
@@ -130,4 +146,3 @@ export class CrawlerService {
     }
   }
 }
-

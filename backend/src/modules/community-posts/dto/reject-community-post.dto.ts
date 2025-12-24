@@ -7,4 +7,3 @@ export class RejectCommunityPostDto {
   @IsNotEmpty()
   reason: string;
 }
-

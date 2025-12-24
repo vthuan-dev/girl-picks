@@ -32,4 +32,3 @@ export class TrackPageViewDto {
   @IsOptional()
   timestamp?: string;
 }
-

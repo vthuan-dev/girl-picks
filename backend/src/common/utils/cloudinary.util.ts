@@ -65,7 +65,9 @@ export async function uploadImageFromUrl(
     };
   } catch (error: any) {
     console.error('Error uploading image to Cloudinary:', error);
-    throw new Error(`Failed to upload image: ${error?.message || 'Unknown error'}`);
+    throw new Error(
+      `Failed to upload image: ${error?.message || 'Unknown error'}`,
+    );
   }
 }
 
@@ -75,22 +77,24 @@ export async function uploadImageFromUrl(
 export async function uploadMultipleImagesFromUrls(
   imageUrls: string[],
   options: UploadOptions = {},
-): Promise<Array<{
-  url: string;
-  publicId: string;
-  secureUrl: string;
-  width: number;
-  height: number;
-  format: string;
-}>> {
+): Promise<
+  Array<{
+    url: string;
+    publicId: string;
+    secureUrl: string;
+    width: number;
+    height: number;
+    format: string;
+  }>
+> {
   const uploadPromises = imageUrls.map((url, index) =>
     uploadImageFromUrl(url, {
       ...options,
       publicId: options.publicId
         ? `${options.publicId}_${index}`
         : options.publicIdPrefix
-        ? `${options.publicIdPrefix}_${index}`
-        : undefined,
+          ? `${options.publicIdPrefix}_${index}`
+          : undefined,
     }),
   );
 
@@ -100,12 +104,16 @@ export async function uploadMultipleImagesFromUrls(
 /**
  * Delete image from Cloudinary
  */
-export async function deleteImageFromCloudinary(publicId: string): Promise<void> {
+export async function deleteImageFromCloudinary(
+  publicId: string,
+): Promise<void> {
   try {
     await cloudinary.uploader.destroy(publicId);
   } catch (error: any) {
     console.error('Error deleting image from Cloudinary:', error);
-    throw new Error(`Failed to delete image: ${error?.message || 'Unknown error'}`);
+    throw new Error(
+      `Failed to delete image: ${error?.message || 'Unknown error'}`,
+    );
   }
 }
 
@@ -135,4 +143,3 @@ export function getOptimizedImageUrl(
     secure: true,
   });
 }
-

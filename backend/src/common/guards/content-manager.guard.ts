@@ -22,8 +22,7 @@ export class ContentManagerGuard implements CanActivate {
 
     // ADMIN và STAFF_UPLOAD có quyền quản lý content (Girls, Posts, Movies)
     const hasPermission =
-      user.role === UserRole.ADMIN ||
-      user.role === UserRole.STAFF_UPLOAD;
+      user.role === UserRole.ADMIN || user.role === UserRole.STAFF_UPLOAD;
 
     if (!hasPermission) {
       throw new ForbiddenException(
@@ -34,4 +33,3 @@ export class ContentManagerGuard implements CanActivate {
     return true;
   }
 }
-

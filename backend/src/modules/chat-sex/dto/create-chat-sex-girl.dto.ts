@@ -89,7 +89,9 @@ export class CreateChatSexGirlDto {
   @IsString()
   price15min?: string;
 
-  @ApiPropertyOptional({ description: 'Thông tin thanh toán (ví dụ: "Teckcombank 9022")' })
+  @ApiPropertyOptional({
+    description: 'Thông tin thanh toán (ví dụ: "Teckcombank 9022")',
+  })
   @IsOptional()
   @IsString()
   paymentInfo?: string;
@@ -100,7 +102,9 @@ export class CreateChatSexGirlDto {
   @IsString({ each: true })
   services?: string[];
 
-  @ApiPropertyOptional({ description: 'Giờ làm việc (ví dụ: "24/7", "9h-2h tối")' })
+  @ApiPropertyOptional({
+    description: 'Giờ làm việc (ví dụ: "24/7", "9h-2h tối")',
+  })
   @IsOptional()
   @IsString()
   workingHours?: string;
@@ -164,4 +168,3 @@ export class CreateChatSexGirlDto {
   @IsString()
   sourceUrl?: string;
 }
-

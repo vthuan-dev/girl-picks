@@ -111,7 +111,7 @@ function getRandomTags(): string[] {
  */
 async function seedGirlTags() {
   console.log('🌱 Seeding tags for girls...');
-  
+
   const girls = await prisma.girl.findMany({
     where: {
       isActive: true,
@@ -130,10 +130,13 @@ async function seedGirlTags() {
   let updated = 0;
   for (const girl of girls) {
     // Start with existing tags or empty array
-    const existingTags = (girl.tags && Array.isArray(girl.tags) && (girl.tags as string[]).length > 0) 
-      ? (girl.tags as string[]) 
-      : [];
-    
+    const existingTags =
+      girl.tags &&
+      Array.isArray(girl.tags) &&
+      (girl.tags as string[]).length > 0
+        ? (girl.tags as string[])
+        : [];
+
     // If already has 5+ tags, skip
     if (existingTags.length >= 5) {
       continue;
@@ -145,9 +148,15 @@ async function seedGirlTags() {
     // Add location-based tags
     if (girl.province) {
       const provinceLower = girl.province.toLowerCase();
-      if (provinceLower.includes('sài gòn') || provinceLower.includes('ho chi minh')) {
+      if (
+        provinceLower.includes('sài gòn') ||
+        provinceLower.includes('ho chi minh')
+      ) {
         tags.push('gái gọi sài gòn', 'sài gòn');
-      } else if (provinceLower.includes('hà nội') || provinceLower.includes('hanoi')) {
+      } else if (
+        provinceLower.includes('hà nội') ||
+        provinceLower.includes('hanoi')
+      ) {
         tags.push('gái gọi hà nội', 'hà nội');
       } else if (provinceLower.includes('bình dương')) {
         tags.push('gái gọi bình dương', 'bình dương');
@@ -168,13 +177,13 @@ async function seedGirlTags() {
     // Add random popular tags
     const randomTags = getRandomTags();
     tags.push(...randomTags);
-    
+
     // Merge with existing tags and remove duplicates
     const allTags = [...existingTags, ...tags];
-    const uniqueTags = Array.from(new Set(allTags.map(t => t.toLowerCase())))
-      .map(tagLower => {
+    const uniqueTags = Array.from(new Set(allTags.map((t) => t.toLowerCase())))
+      .map((tagLower) => {
         // Find original case from allTags
-        return allTags.find(t => t.toLowerCase() === tagLower) || tagLower;
+        return allTags.find((t) => t.toLowerCase() === tagLower) || tagLower;
       })
       .slice(0, 5);
 
@@ -199,7 +208,7 @@ async function seedGirlTags() {
  */
 async function seedPostTags() {
   console.log('🌱 Seeding tags for posts...');
-  
+
   const posts = await prisma.post.findMany({
     where: {
       status: 'APPROVED',
@@ -223,10 +232,13 @@ async function seedPostTags() {
   let updated = 0;
   for (const post of posts) {
     // Start with existing tags or empty array
-    const existingTags = (post.tags && Array.isArray(post.tags) && (post.tags as string[]).length > 0) 
-      ? (post.tags as string[]) 
-      : [];
-    
+    const existingTags =
+      post.tags &&
+      Array.isArray(post.tags) &&
+      (post.tags as string[]).length > 0
+        ? (post.tags as string[])
+        : [];
+
     // If already has 5+ tags, skip
     if (existingTags.length >= 5) {
       continue;
@@ -263,13 +275,13 @@ async function seedPostTags() {
     // Add random popular tags
     const randomTags = getRandomTags();
     tags.push(...randomTags);
-    
+
     // Merge with existing tags and remove duplicates
     const allTags = [...existingTags, ...tags];
-    const uniqueTags = Array.from(new Set(allTags.map(t => t.toLowerCase())))
-      .map(tagLower => {
+    const uniqueTags = Array.from(new Set(allTags.map((t) => t.toLowerCase())))
+      .map((tagLower) => {
         // Find original case from allTags
-        return allTags.find(t => t.toLowerCase() === tagLower) || tagLower;
+        return allTags.find((t) => t.toLowerCase() === tagLower) || tagLower;
       })
       .slice(0, 5);
 
@@ -295,11 +307,11 @@ async function seedPostTags() {
 async function main() {
   try {
     console.log('🚀 Starting tag seeding...\n');
-    
+
     await seedGirlTags();
     console.log('');
     await seedPostTags();
-    
+
     console.log('\n✨ Tag seeding completed!');
   } catch (error) {
     console.error('❌ Error seeding tags:', error);
@@ -319,4 +331,3 @@ main()
     console.error('❌ Script failed:', error);
     process.exit(1);
   });
-

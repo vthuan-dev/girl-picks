@@ -11,4 +11,3 @@ import { NotificationsModule } from '../notifications/notifications.module';
   exports: [CommunityPostsService],
 })
 export class CommunityPostsModule {}
-
