@@ -21,7 +21,7 @@ import { CreateStaffDto } from './dto/create-staff.dto';
 
 @Injectable()
 export class AdminService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async getDashboardStats() {
     const [
@@ -1219,6 +1219,15 @@ export class AdminService {
     const girl = await this.prisma.girl.findUnique({
       where: { id: girlId },
       include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            phone: true,
+            avatarUrl: true,
+          },
+        },
         // TODO: Uncomment after running: npx prisma generate (need to stop server first)
         // managedBy: {
         //   select: {

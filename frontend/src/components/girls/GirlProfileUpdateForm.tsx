@@ -5,6 +5,7 @@ import { girlsApi } from '@/modules/girls/api/girls.api';
 import { Girl } from '@/types/girl';
 import toast from 'react-hot-toast';
 import Cookies from 'js-cookie';
+import apiClient from '@/lib/api/client';
 
 interface GirlProfileUpdateFormProps {
   girl: Girl;
@@ -115,23 +116,13 @@ export default function GirlProfileUpdateForm({ girl, onUpdate }: GirlProfileUpd
   const uploadImage = async (file: File): Promise<string> => {
     try {
       const base64Data = await fileToBase64(file);
-      const response = await fetch('/api/upload/image', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${Cookies.get('accessToken')}`,
-        },
-        body: JSON.stringify({ url: base64Data }),
+      const response = await apiClient.post('/upload/image', {
+        url: base64Data,
       });
 
-      if (!response.ok) {
-        throw new Error('Upload failed');
-      }
-
-      const data = await response.json();
-      // Backend returns results like { url: '/api/uploads/...' }
-      if (data.url) {
-        return data.url;
+      // apiClient returns results like response.data = { url: '/api/uploads/...' }
+      if (response.data && response.data.url) {
+        return response.data.url;
       }
       throw new Error('Invalid response');
     } catch (error) {

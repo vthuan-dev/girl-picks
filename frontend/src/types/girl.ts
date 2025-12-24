@@ -82,5 +82,8 @@ export interface UpdateGirlProfileDto {
   price?: string;
   services?: string[];
   workingHours?: string;
+  idCardFrontUrl?: string;
+  idCardBackUrl?: string;
+  selfieUrl?: string;
 }
 
