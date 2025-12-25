@@ -3,6 +3,10 @@ import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
 
+// For Next.js 13+ App Router - increase timeout for large uploads
+export const maxDuration = 300; // 5 minutes for large video uploads
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -60,9 +64,31 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: any) {
     console.error('Error uploading video:', error);
+    
+    // Handle specific error types
+    let errorMessage = 'Không thể tải video lên';
+    let statusCode = 500;
+    
+    if (error.message?.includes('413') || error.message?.includes('Request Entity Too Large')) {
+      errorMessage = 'File quá lớn. Kích thước tối đa: 100MB';
+      statusCode = 413;
+    } else if (error.code === 'ENOENT' || error.message?.includes('ENOENT')) {
+      errorMessage = 'Không thể tạo thư mục upload. Vui lòng kiểm tra quyền truy cập.';
+      statusCode = 500;
+    } else if (error.code === 'EACCES' || error.message?.includes('EACCES')) {
+      errorMessage = 'Không có quyền ghi file. Vui lòng kiểm tra quyền truy cập.';
+      statusCode = 403;
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
     return NextResponse.json(
-      { error: 'Không thể tải video lên', message: error.message },
-      { status: 500 }
+      { 
+        error: errorMessage,
+        message: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      },
+      { status: statusCode }
     );
   }
 }
