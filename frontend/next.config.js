@@ -105,6 +105,21 @@ const nextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'gaigu2.net',
+        pathname: '/gai-goi/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'gaigu1.net',
+        pathname: '/gai-goi/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'gaigo1.net',
+        pathname: '/gai-goi/**',
+      },
+      {
+        protocol: 'https',
         hostname: 'res.cloudinary.com',
       },
       {

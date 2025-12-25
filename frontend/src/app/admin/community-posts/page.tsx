@@ -10,6 +10,7 @@ import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import Image from 'next/image';
+import { getGirlDetailUrl } from '@/lib/utils/slug';
 
 export default function AdminCommunityPostsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('PENDING');
@@ -431,7 +432,17 @@ export default function AdminCommunityPostsPage() {
                     </td>
                     <td className="px-4 py-4 align-top">
                       <div className="flex flex-col gap-1">
-                        {post.title && <p className="text-text font-semibold line-clamp-1">{post.title}</p>}
+                        <div className="flex items-center gap-2 mb-1">
+                          {post.title && <p className="text-text font-semibold line-clamp-1">{post.title}</p>}
+                          {post.girl && (
+                            <span className="px-2 py-0.5 bg-pink-500/20 text-pink-400 text-xs font-semibold rounded-full border border-pink-500/30 flex items-center gap-1 flex-shrink-0">
+                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                              Tag gái
+                            </span>
+                          )}
+                        </div>
                         <p className="text-text-muted text-sm line-clamp-2">{post.content}</p>
                         {post.images && post.images.length > 0 && (
                           <div className="flex gap-2 mt-2">
@@ -745,6 +756,47 @@ export default function AdminCommunityPostsPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Tagged Girl */}
+              {selectedPost.girl && (
+                <div className="bg-gradient-to-r from-pink-500/10 to-purple-500/10 rounded-xl p-5 border border-pink-500/20">
+                  <label className="text-xs text-text-muted uppercase mb-3 block">Gái được tag</label>
+                  <div className="flex items-center gap-4">
+                    {selectedPost.girl.user?.avatarUrl ? (
+                      <img
+                        src={selectedPost.girl.user.avatarUrl}
+                        alt={selectedPost.girl.name || 'Gái gọi'}
+                        className="w-16 h-16 rounded-full border-2 border-pink-500/30"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-pink-500/20 to-purple-500/20 border-2 border-pink-500/30 flex items-center justify-center">
+                        <span className="text-pink-400 font-bold text-2xl">
+                          {(selectedPost.girl.name || selectedPost.girl.user?.fullName || 'G')?.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <p className="text-lg font-bold text-text">
+                        {selectedPost.girl.name || selectedPost.girl.user?.fullName || 'Gái gọi'}
+                      </p>
+                      <a
+                        href={getGirlDetailUrl(
+                          selectedPost.girl.id,
+                          selectedPost.girl.name || selectedPost.girl.user?.fullName || selectedPost.girl.id
+                        )}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-pink-400 hover:text-pink-300 transition-colors flex items-center gap-1 mt-1"
+                      >
+                        <span>Xem hồ sơ</span>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Title */}
               {selectedPost.title && (
