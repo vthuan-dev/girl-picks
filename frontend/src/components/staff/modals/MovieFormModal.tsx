@@ -160,6 +160,40 @@ export default function MovieFormModal({ isOpen, onClose, onSuccess, movie }: Mo
       return;
     }
 
+    // Auto-detect duration from file BEFORE uploading
+    try {
+      const videoUrl = URL.createObjectURL(file);
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      video.src = videoUrl;
+
+      await new Promise<void>((resolve, reject) => {
+        video.onloadedmetadata = () => {
+          if (!isNaN(video.duration) && video.duration > 0) {
+            const formatted = formatDuration(video.duration);
+            // Only auto-fill if duration field is empty
+            if (!durationValue) {
+              setValue('duration', formatted, { shouldValidate: false });
+            }
+          }
+          URL.revokeObjectURL(videoUrl);
+          resolve();
+        };
+        video.onerror = () => {
+          URL.revokeObjectURL(videoUrl);
+          reject(new Error('Không thể đọc metadata video'));
+        };
+        // Timeout after 5 seconds
+        setTimeout(() => {
+          URL.revokeObjectURL(videoUrl);
+          resolve(); // Continue even if metadata loading fails
+        }, 5000);
+      });
+    } catch (error) {
+      console.warn('Could not read video metadata:', error);
+      // Continue with upload even if metadata reading fails
+    }
+
     setIsUploadingVideo(true);
     try {
       const formData = new FormData();
@@ -364,14 +398,30 @@ export default function MovieFormModal({ isOpen, onClose, onSuccess, movie }: Mo
               </label>
               <div className="space-y-3">
                 {videoUrl ? (
-                  <div className="bg-background rounded-xl border border-secondary/40 p-3">
-                    <video src={videoUrl} controls className="w-full rounded-lg bg-black mb-2" />
-                    <p className="text-xs text-text-muted break-all mb-2">{videoUrl}</p>
+                  <div className="bg-background rounded-xl border border-secondary/40 p-3 space-y-3">
+                    <div className="relative">
+                      <video 
+                        src={videoUrl} 
+                        controls 
+                        className="w-full rounded-lg bg-black aspect-video object-contain"
+                        preload="metadata"
+                      />
+                    </div>
+                    {durationValue && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <svg className="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-text-muted">Thời lượng: <span className="text-text font-medium">{durationValue}</span></span>
+                      </div>
+                    )}
+                    <p className="text-xs text-text-muted break-all">{videoUrl}</p>
                     <div className="flex gap-2">
                       <button
                         type="button"
                         onClick={() => {
                           setValue('videoUrl', '', { shouldValidate: true });
+                          setValue('duration', '', { shouldValidate: false });
                         }}
                         className="px-3 py-1.5 rounded-lg bg-background border border-secondary/40 text-xs text-text hover:bg-background-light transition-colors cursor-pointer"
                       >
@@ -426,25 +476,27 @@ export default function MovieFormModal({ isOpen, onClose, onSuccess, movie }: Mo
               <label className="block text-sm font-medium text-text mb-2">Poster (ảnh bìa)</label>
               <div className="space-y-3">
                 {poster ? (
-                  <div className="bg-background rounded-xl border border-secondary/40 p-3 flex gap-3 items-center">
-                    <div className="w-24 h-32 rounded-lg overflow-hidden bg-secondary/30 flex-shrink-0">
+                  <div className="bg-background rounded-xl border border-secondary/40 p-3 space-y-3">
+                    <div className="relative w-full aspect-[2/3] rounded-lg overflow-hidden bg-secondary/30">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={poster} alt="Poster" className="w-full h-full object-cover" />
+                      <img 
+                        src={poster} 
+                        alt="Poster" 
+                        className="w-full h-full object-cover"
+                      />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-text-muted break-all mb-2">{poster}</p>
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setValue('poster', '');
-                            setValue('thumbnail', '');
-                          }}
-                          className="px-3 py-1.5 rounded-lg bg-background border border-secondary/40 text-xs text-text hover:bg-background-light transition-colors cursor-pointer"
-                        >
-                          Xóa poster
-                        </button>
-                      </div>
+                    <p className="text-xs text-text-muted break-all">{poster}</p>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setValue('poster', '');
+                          setValue('thumbnail', '');
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-background border border-secondary/40 text-xs text-text hover:bg-background-light transition-colors cursor-pointer"
+                      >
+                        Xóa poster
+                      </button>
                     </div>
                   </div>
                 ) : (
