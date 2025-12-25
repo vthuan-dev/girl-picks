@@ -255,10 +255,10 @@ export class AdminService {
 
       if (search) {
         where.OR = [
-          { content: { contains: search, mode: 'insensitive' } },
+          { content: { contains: search } },
           {
             author: {
-              fullName: { contains: search, mode: 'insensitive' },
+              fullName: { contains: search },
             },
           },
         ];
