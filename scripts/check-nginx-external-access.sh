@@ -32,12 +32,12 @@ fi
 
 echo ""
 echo "2. Kiểm tra Nginx có listen trên port 80 không..."
-if netstat -tlnp 2>/dev/null | grep -E ":80 " | grep nginx; then
-    echo "✓ Nginx đang listen trên port 80"
-    netstat -tlnp 2>/dev/null | grep -E ":80 " | grep nginx
-elif ss -tlnp 2>/dev/null | grep -E ":80 " | grep nginx; then
+if ss -tlnp 2>/dev/null | grep -E ":80 " | grep nginx; then
     echo "✓ Nginx đang listen trên port 80"
     ss -tlnp 2>/dev/null | grep -E ":80 " | grep nginx
+elif netstat -tlnp 2>/dev/null | grep -E ":80 " | grep nginx; then
+    echo "✓ Nginx đang listen trên port 80"
+    netstat -tlnp 2>/dev/null | grep -E ":80 " | grep nginx
 else
     echo "✗ Nginx KHÔNG listen trên port 80!"
     echo "  Kiểm tra config..."
