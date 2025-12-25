@@ -134,7 +134,56 @@ curl -I http://gaigo1.net
 
 ## Nếu vẫn lỗi
 
-1. **Kiểm tra VPS provider firewall**: Một số VPS provider (Vultr, DigitalOcean) có firewall riêng trong dashboard
-2. **Kiểm tra DNS**: Đảm bảo domain trỏ đúng IP
-3. **Xem logs**: `sudo tail -f /var/log/nginx/error.log`
+### 1. Firewall của Vultr (QUAN TRỌNG NHẤT!)
+
+Vultr có firewall riêng trong dashboard. Cần mở port 80 và 443:
+
+1. Đăng nhập Vultr dashboard: https://my.vultr.com
+2. Vào **Products** > Chọn server của bạn
+3. Vào tab **Firewall** hoặc **Settings** > **Firewall**
+4. Tạo/Chỉnh sửa firewall group:
+   - Thêm rule: **HTTP (80)** - Allow
+   - Thêm rule: **HTTPS (443)** - Allow
+5. Apply firewall group vào server
+
+**Hoặc tắt firewall tạm thời để test:**
+- Trong firewall settings, chọn "No Firewall" hoặc disable firewall group
+
+### 2. Kiểm tra DNS
+
+```bash
+# Chạy script kiểm tra
+cd ~/girl-pick
+sudo bash scripts/check-external-connection.sh
+
+# Hoặc kiểm tra thủ công
+dig +short gaigo1.net
+# Phải trả về IP server của bạn
+```
+
+Kiểm tra online: https://dnschecker.org/#A/gaigo1.net
+
+### 3. Test từ server với IP thực
+
+```bash
+# Lấy IP server
+curl ifconfig.me
+
+# Test với IP thực
+curl -I http://YOUR_SERVER_IP
+
+# Nếu không phản hồi → Firewall của Vultr đang chặn
+```
+
+### 4. Xem logs
+
+```bash
+# Access logs (xem có request từ bên ngoài không)
+sudo tail -f /var/log/nginx/access.log
+
+# Error logs
+sudo tail -f /var/log/nginx/error.log
+```
+
+Nếu không thấy request nào trong access.log → Firewall đang chặn hoàn toàn
 
