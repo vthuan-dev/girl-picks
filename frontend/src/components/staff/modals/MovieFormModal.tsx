@@ -152,23 +152,52 @@ export default function MovieFormModal({ isOpen, onClose, onSuccess, movie }: Mo
       toast.error('Vui lòng chọn file video hợp lệ');
       return;
     }
+
+    // Validate file size (max 100MB)
+    const maxSize = 100 * 1024 * 1024; // 100MB
+    if (file.size > maxSize) {
+      toast.error(`File quá lớn. Kích thước tối đa: ${(maxSize / 1024 / 1024).toFixed(0)}MB`);
+      return;
+    }
+
     setIsUploadingVideo(true);
     try {
       const formData = new FormData();
       formData.append('file', file);
+      
       const res = await fetch('/api/upload/video', {
         method: 'POST',
         body: formData,
       });
-      const data = await res.json();
+
+      // Check if response is JSON or HTML (error page)
+      const contentType = res.headers.get('content-type');
+      let data;
+      
+      if (contentType?.includes('application/json')) {
+        data = await res.json();
+      } else {
+        // Server returned HTML (likely error page)
+        const text = await res.text();
+        console.error('Server returned HTML instead of JSON:', text.substring(0, 200));
+        
+        if (res.status === 413) {
+          throw new Error('File quá lớn. Vui lòng chọn file nhỏ hơn 100MB');
+        } else {
+          throw new Error(`Lỗi upload: ${res.status} ${res.statusText}`);
+        }
+      }
+
       if (!res.ok || !data?.url) {
         throw new Error(data?.error || data?.message || 'Không thể upload video');
       }
+      
       setValue('videoUrl', data.url, { shouldValidate: true });
       toast.success('Upload video thành công');
     } catch (error: any) {
       console.error('Upload video error:', error);
-      toast.error(error.message || 'Không thể upload video');
+      const errorMessage = error.message || 'Không thể upload video';
+      toast.error(errorMessage);
     } finally {
       setIsUploadingVideo(false);
       if (videoInputRef.current) videoInputRef.current.value = '';
@@ -181,36 +210,55 @@ export default function MovieFormModal({ isOpen, onClose, onSuccess, movie }: Mo
       toast.error('Vui lòng chọn file hình ảnh');
       return;
     }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      toast.error(`File quá lớn. Kích thước tối đa: ${(maxSize / 1024 / 1024).toFixed(0)}MB`);
+      return;
+    }
+
     setIsUploadingPoster(true);
-    const fileToBase64 = (file: File): Promise<string> => {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = (error) => reject(error);
-      });
-    };
 
     try {
-      const base64Data = await fileToBase64(file);
-      const res = await fetch('/api/upload/image', {
+      // Use FormData instead of base64 for better compatibility
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const res = await fetch('/api/upload/poster', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${Cookies.get('accessToken')}`,
-        },
-        body: JSON.stringify({ url: base64Data }),
+        body: formData,
       });
-      const data = await res.json();
+
+      // Check if response is JSON or HTML (error page)
+      const contentType = res.headers.get('content-type');
+      let data;
+      
+      if (contentType?.includes('application/json')) {
+        data = await res.json();
+      } else {
+        // Server returned HTML (likely error page)
+        const text = await res.text();
+        console.error('Server returned HTML instead of JSON:', text.substring(0, 200));
+        
+        if (res.status === 413) {
+          throw new Error('File quá lớn. Vui lòng chọn file nhỏ hơn 5MB');
+        } else {
+          throw new Error(`Lỗi upload: ${res.status} ${res.statusText}`);
+        }
+      }
+
       if (!res.ok || !data?.url) {
         throw new Error(data?.error || data?.message || 'Không thể upload poster');
       }
+      
       setValue('poster', data.url);
       setValue('thumbnail', data.url);
       toast.success('Upload poster thành công');
     } catch (error: any) {
       console.error('Upload poster error:', error);
-      toast.error(error.message || 'Không thể upload poster');
+      const errorMessage = error.message || 'Không thể upload poster';
+      toast.error(errorMessage);
     } finally {
       setIsUploadingPoster(false);
       if (posterInputRef.current) posterInputRef.current.value = '';

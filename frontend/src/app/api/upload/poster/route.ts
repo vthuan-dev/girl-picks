@@ -67,8 +67,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Create uploads directory if it doesn't exist
-    // Use community-posts folder for general image uploads
-    const uploadsDir = join(process.cwd(), 'public', 'uploads', 'community-posts');
+    // Use movies folder for poster uploads
+    const uploadsDir = join(process.cwd(), 'public', 'uploads', 'movies');
     try {
       if (!existsSync(uploadsDir)) {
         await mkdir(uploadsDir, { recursive: true });
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     await writeFile(filepath, buffer);
 
     // Return the public URL
-    const publicUrl = `/uploads/community-posts/${filename}`;
+    const publicUrl = `/uploads/movies/${filename}`;
     
     return NextResponse.json({
       success: true,
@@ -108,7 +108,10 @@ export async function POST(request: NextRequest) {
     let errorMessage = 'Không thể tải file lên';
     let statusCode = 500;
     
-    if (error.code === 'ENOENT' || error.message?.includes('ENOENT')) {
+    if (error.message?.includes('413') || error.message?.includes('Request Entity Too Large')) {
+      errorMessage = 'File quá lớn. Kích thước tối đa: 5MB';
+      statusCode = 413;
+    } else if (error.code === 'ENOENT' || error.message?.includes('ENOENT')) {
       errorMessage = 'Không thể tạo thư mục upload. Vui lòng kiểm tra quyền truy cập.';
       statusCode = 500;
     } else if (error.code === 'EACCES' || error.message?.includes('EACCES')) {
