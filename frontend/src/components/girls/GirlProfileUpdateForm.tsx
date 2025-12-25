@@ -28,6 +28,7 @@ export default function GirlProfileUpdateForm({ girl, onUpdate }: GirlProfileUpd
     return '';
   })();
   const [formData, setFormData] = useState({
+    name: girl.name || '',
     phone: girl.phone || '',
     bio: girl.bio || '',
     age: girl.age || '',
@@ -104,6 +105,47 @@ export default function GirlProfileUpdateForm({ girl, onUpdate }: GirlProfileUpd
     }
   };
 
+  const compressImage = (file: File, maxWidth = 1200, quality = 0.7): Promise<File> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                const compressedFile = new File([blob], file.name, {
+                  type: 'image/jpeg',
+                  lastModified: Date.now(),
+                });
+                resolve(compressedFile);
+              } else {
+                resolve(file);
+              }
+            },
+            'image/jpeg',
+            quality
+          );
+        };
+      };
+    });
+  };
+
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -115,20 +157,25 @@ export default function GirlProfileUpdateForm({ girl, onUpdate }: GirlProfileUpd
 
   const uploadImage = async (file: File): Promise<string> => {
     try {
-      const base64Data = await fileToBase64(file);
+      // Compress image before upload
+      const compressedFile = await compressImage(file);
+      const base64Data = await fileToBase64(compressedFile);
+
       const response = await apiClient.post('/upload/image', {
         url: base64Data,
       });
 
-      // apiClient returns results like response.data = { url: '/api/uploads/...' }
-      if (response.data && response.data.url) {
-        return response.data.url;
+      // Handle wrapped response { success: true, data: { url: '...' } }
+      const responseData = response.data;
+      const uploadedUrl = responseData.success ? responseData.data?.url : responseData.url;
+
+      if (uploadedUrl) {
+        return uploadedUrl;
       }
-      throw new Error('Invalid response');
-    } catch (error) {
+      throw new Error('Định dạng phản hồi từ server không hợp lệ');
+    } catch (error: any) {
       console.error('Upload error:', error);
-      // Fallback: convert to base64 data URL if upload fails (for preview)
-      return fileToBase64(file);
+      throw new Error(`Không thể tải ảnh lên: ${error.message || 'Lỗi không xác định'}`);
     }
   };
 
@@ -198,6 +245,7 @@ export default function GirlProfileUpdateForm({ girl, onUpdate }: GirlProfileUpd
 
       // Prepare update data - only include fields allowed by backend DTO
       const updateData: any = {
+        name: formData.name || undefined,
         phone: formData.phone || undefined,
         bio: formData.bio || undefined,
         age: formData.age ? parseInt(formData.age.toString()) : undefined,
@@ -381,6 +429,17 @@ export default function GirlProfileUpdateForm({ girl, onUpdate }: GirlProfileUpd
       {/* Profile Info Section */}
       <div className="space-y-4">
         <h3 className="text-lg font-bold text-text">Thông tin hồ sơ</h3>
+
+        <div>
+          <label className="block text-sm font-medium text-text mb-2">Nghệ danh (Tên hiển thị)</label>
+          <input
+            type="text"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            placeholder="Nhập nghệ danh (VD: Ngọc Trinh)"
+            className="w-full px-4 py-2 bg-background-light border border-secondary rounded text-text focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+        </div>
 
         <div>
           <label className="block text-sm font-medium text-text mb-2">Số điện thoại (bắt buộc)</label>

@@ -435,7 +435,6 @@ model CommunityPost {
   id           String     @id @default(uuid())
   authorId     String
   girlId       String? // Optional: if post is related to a specific girl
-  title        String? // Optional title
   content      String
   images       Json       @default("[]") // Array of image URLs stored as JSON
   status       PostStatus @default(PENDING)

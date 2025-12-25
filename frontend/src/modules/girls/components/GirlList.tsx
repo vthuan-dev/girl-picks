@@ -146,8 +146,17 @@ export default function GirlList({ filters = {}, selectedProvince = null, search
         }
       }
 
-      // Sanitize image URLs; keep only http(s) to avoid blob/file errors
-      images = images.filter((url) => typeof url === 'string' && /^https?:\/\//i.test(url));
+      // Sanitize image URLs; keep http(s) URLs and relative paths (starting with /)
+      // Filter out blob:, file:, data: and other invalid protocols
+      images = images.filter((url) => {
+        if (typeof url !== 'string') return false;
+        // Accept absolute URLs (http/https)
+        if (/^https?:\/\//i.test(url)) return true;
+        // Accept relative paths (starting with /)
+        if (url.startsWith('/')) return true;
+        // Reject everything else (blob:, file:, data:, etc.)
+        return false;
+      });
 
       // Use first image as avatar if available
       const avatar = images[0] || girl.avatarUrl || mockImages[index % mockImages.length];

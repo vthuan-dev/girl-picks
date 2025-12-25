@@ -43,6 +43,7 @@ export interface Girl extends User {
   verificationRequestedAt?: string | null;
   verificationVerifiedAt?: string | null;
   reviews?: Review[];
+  user?: User;
 }
 
 export interface GirlListParams {
