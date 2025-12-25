@@ -21,6 +21,8 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ [key: number]: number }>({});
+  const [uploadingImages, setUploadingImages] = useState<Set<number>>(new Set());
   const [errors, setErrors] = useState<{
     content?: string;
     images?: string;
@@ -72,20 +74,100 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
     return true;
   };
 
-  const uploadImage = async (file: File): Promise<string> => {
+  // Compress image for mobile devices
+  const compressImage = async (file: File, maxWidth: number = 1920, quality: number = 0.8): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      // If file is already small enough, return as is
+      if (file.size < 1024 * 1024) { // Less than 1MB
+        resolve(file);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          // Calculate new dimensions
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('Không thể tạo canvas context'));
+            return;
+          }
+
+          ctx.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                reject(new Error('Không thể compress ảnh'));
+                return;
+              }
+              const compressedFile = new File([blob], file.name, {
+                type: file.type,
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
+            },
+            file.type,
+            quality
+          );
+        };
+        img.onerror = () => reject(new Error('Không thể load ảnh'));
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = () => reject(new Error('Không thể đọc file'));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const uploadImage = async (file: File, index: number): Promise<string> => {
+    // Compress image first (especially important for mobile)
+    let fileToUpload = file;
+    try {
+      fileToUpload = await compressImage(file);
+      console.log(`[Upload] Compressed ${file.name}: ${(file.size / 1024 / 1024).toFixed(2)}MB -> ${(fileToUpload.size / 1024 / 1024).toFixed(2)}MB`);
+    } catch (error) {
+      console.warn('[Upload] Compression failed, using original file:', error);
+      // Continue with original file if compression fails
+    }
+
     // Convert File to Base64 string as backend expects JSON with URL/Base64
     const base64String = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
+      reader.onerror = () => reject(new Error('Không thể đọc file'));
+      reader.readAsDataURL(fileToUpload);
     });
 
+    setUploadingImages(prev => new Set(prev).add(index));
+    setUploadProgress(prev => ({ ...prev, [index]: 0 }));
+
     try {
-      const response = await apiClient.post('/upload/image', {
+      // Add timeout for mobile networks (30 seconds)
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Upload timeout - vui lòng thử lại')), 30000);
+      });
+
+      const uploadPromise = apiClient.post('/upload/image', {
         url: base64String,
         folder: 'girl-pick/posts',
       });
+
+      const response = await Promise.race([uploadPromise, timeoutPromise]) as any;
+
+      setUploadProgress(prev => ({ ...prev, [index]: 100 }));
 
       const responseData = response.data;
       const data = responseData.success ? responseData.data : responseData;
@@ -94,13 +176,14 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
         throw new Error('Phản hồi từ server không chứa URL ảnh');
       }
 
-      toast.success('Tải ảnh lên thành công!');
       return data.url;
     } catch (error: any) {
       console.error('Upload error details:', error.response?.data || error.message);
       let errorMessage = 'Không thể tải ảnh lên';
 
-      if (error.response) {
+      if (error.message?.includes('timeout')) {
+        errorMessage = 'Upload quá lâu. Vui lòng kiểm tra kết nối mạng và thử lại.';
+      } else if (error.response) {
         const errorData = error.response.data;
         errorMessage = errorData.message || errorData.error || errorMessage;
 
@@ -110,12 +193,20 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
           errorMessage = 'Bạn không có quyền upload ảnh.';
         } else if (error.response.status === 413) {
           errorMessage = 'File quá lớn. Vui lòng chọn file nhỏ hơn 5MB.';
+        } else if (error.response.status === 408 || error.response.status === 504) {
+          errorMessage = 'Kết nối timeout. Vui lòng thử lại.';
         }
       } else {
         errorMessage = error.message || errorMessage;
       }
 
       throw new Error(errorMessage);
+    } finally {
+      setUploadingImages(prev => {
+        const next = new Set(prev);
+        next.delete(index);
+        return next;
+      });
     }
   };
 
@@ -170,14 +261,15 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
 
       // Upload images to server
       const imageUrls: string[] = [];
+      const uploadErrors: string[] = [];
 
-      // Upload local files
+      // Upload local files with progress tracking
       for (let i = 0; i < imageFiles.length; i++) {
         const file = imageFiles[i];
         const previewUrl = selectedImages[i];
 
         try {
-          const uploadedUrl = await uploadImage(file);
+          const uploadedUrl = await uploadImage(file, i);
           imageUrls.push(uploadedUrl);
 
           // Clean up object URL after successful upload
@@ -185,9 +277,30 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
             URL.revokeObjectURL(previewUrl);
           }
         } catch (error: any) {
-          console.error('Error uploading image:', error);
-          toast.error(`Không thể upload ảnh: ${file.name}`);
+          console.error(`Error uploading image ${i + 1}:`, error);
+          uploadErrors.push(`${file.name}: ${error.message || 'Lỗi không xác định'}`);
+          
+          // Clean up blob URL even on error
+          if (previewUrl && previewUrl.startsWith('blob:')) {
+            URL.revokeObjectURL(previewUrl);
+          }
         }
+      }
+
+      // Show summary of upload errors
+      if (uploadErrors.length > 0) {
+        if (uploadErrors.length === imageFiles.length) {
+          toast.error('Không thể upload bất kỳ ảnh nào. Vui lòng thử lại.');
+          setSubmitting(false);
+          return;
+        } else {
+          toast.error(`${uploadErrors.length} ảnh không thể upload: ${uploadErrors.join(', ')}`);
+        }
+      }
+
+      // If some images uploaded successfully, show success message
+      if (imageUrls.length > 0 && imageUrls.length < imageFiles.length) {
+        toast.success(`Đã upload ${imageUrls.length}/${imageFiles.length} ảnh thành công`);
       }
 
       // Add any manually entered URLs from selectedImages (if they're full URLs)
@@ -220,6 +333,8 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
       setSelectedImages([]);
       setImageFiles([]);
       setErrors({});
+      setUploadProgress({});
+      setUploadingImages(new Set());
 
       if (onSuccess) {
         onSuccess();
@@ -400,27 +515,40 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
         {/* Image Preview Grid */}
         {selectedImages.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-4">
-            {selectedImages.map((imageUrl, index) => (
-              <div key={index} className="relative group cursor-pointer">
-                <div className="aspect-square rounded-xl overflow-hidden bg-secondary/20 border-2 border-secondary/30 group-hover:border-primary/50 transition-all duration-200">
-                  <img
-                    src={imageUrl}
-                    alt={`Preview ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
+            {selectedImages.map((imageUrl, index) => {
+              const isUploading = uploadingImages.has(index);
+              const progress = uploadProgress[index] || 0;
+              
+              return (
+                <div key={index} className="relative group cursor-pointer">
+                  <div className="aspect-square rounded-xl overflow-hidden bg-secondary/20 border-2 border-secondary/30 group-hover:border-primary/50 transition-all duration-200 relative">
+                    <img
+                      src={imageUrl}
+                      alt={`Preview ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                    {/* Upload Progress Overlay */}
+                    {isUploading && (
+                      <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center">
+                        <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin mb-2"></div>
+                        <span className="text-white text-xs font-medium">{progress}%</span>
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    disabled={isUploading}
+                    className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 cursor-pointer hover:bg-red-600 hover:scale-110 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    aria-label="Xóa ảnh"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => removeImage(index)}
-                  className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 cursor-pointer hover:bg-red-600 hover:scale-110 shadow-lg"
-                  aria-label="Xóa ảnh"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -462,13 +590,17 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-4 border-t border-secondary/20">
         <button
           type="submit"
-          disabled={!canSubmit}
+          disabled={!canSubmit || submitting}
           className="flex-1 sm:flex-none px-6 py-3 bg-gradient-to-r from-primary to-primary-hover text-white rounded-xl hover:shadow-lg hover:shadow-primary/30 active:scale-[0.98] transition-all duration-200 font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none disabled:hover:scale-100 flex items-center justify-center gap-2"
         >
           {submitting ? (
             <>
               <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              <span>Đang gửi...</span>
+              <span>
+                {uploadingImages.size > 0 
+                  ? `Đang upload ảnh (${uploadingImages.size}/${imageFiles.length})...` 
+                  : 'Đang gửi...'}
+              </span>
             </>
           ) : (
             <>
@@ -491,6 +623,8 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
               });
               setSelectedImages([]);
               setImageFiles([]);
+              setUploadProgress({});
+              setUploadingImages(new Set());
               onCancel();
             }}
             className="px-6 py-3 bg-background-light border border-secondary/30 text-text rounded-xl hover:bg-background hover:border-secondary/50 transition-all duration-200 font-medium cursor-pointer"

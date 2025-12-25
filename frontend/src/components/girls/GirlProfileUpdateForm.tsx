@@ -15,6 +15,11 @@ interface GirlProfileUpdateFormProps {
 export default function GirlProfileUpdateForm({ girl, onUpdate }: GirlProfileUpdateFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [locations, setLocations] = useState<string[]>([]);
+  const [timeRemaining, setTimeRemaining] = useState<number>(0); // Thời gian còn lại (giây)
+  
+  const COOLDOWN_MINUTES = 5;
+  const COOLDOWN_MS = COOLDOWN_MINUTES * 60 * 1000;
+  const STORAGE_KEY = `lastProfileUpdate_${girl.id}`;
 
   // Ưu tiên điền sẵn địa chỉ/khu vực từ dữ liệu hiện có
   const initialAddress = (() => {
@@ -71,6 +76,37 @@ export default function GirlProfileUpdateForm({ girl, onUpdate }: GirlProfileUpd
     fetchLocations();
     return () => { mounted = false; };
   }, []);
+
+  // Check cooldown timer
+  useEffect(() => {
+    const checkCooldown = () => {
+      const lastUpdateTime = localStorage.getItem(STORAGE_KEY);
+      if (!lastUpdateTime) {
+        setTimeRemaining(0);
+        return;
+      }
+
+      const lastUpdate = parseInt(lastUpdateTime, 10);
+      const now = Date.now();
+      const elapsed = now - lastUpdate;
+      const remaining = Math.max(0, COOLDOWN_MS - elapsed);
+
+      if (remaining > 0) {
+        setTimeRemaining(Math.ceil(remaining / 1000)); // Convert to seconds
+      } else {
+        setTimeRemaining(0);
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    };
+
+    // Check immediately
+    checkCooldown();
+
+    // Update every second
+    const interval = setInterval(checkCooldown, 1000);
+
+    return () => clearInterval(interval);
+  }, [girl.id]);
 
   // CCCD upload states
   const [idCardFront, setIdCardFront] = useState<File | null>(null);
@@ -182,6 +218,14 @@ export default function GirlProfileUpdateForm({ girl, onUpdate }: GirlProfileUpd
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Check cooldown
+    if (timeRemaining > 0) {
+      const minutes = Math.floor(timeRemaining / 60);
+      const seconds = timeRemaining % 60;
+      toast.error(`Vui lòng đợi ${minutes} phút ${seconds} giây nữa trước khi cập nhật lại hồ sơ`);
+      return;
+    }
+
     // Validate required fields
     if (!formData.phone.trim()) {
       toast.error('Vui lòng nhập số điện thoại');
@@ -273,6 +317,11 @@ export default function GirlProfileUpdateForm({ girl, onUpdate }: GirlProfileUpd
 
       // Backend returns { success: true, data: {...} } or direct data
       const girlData = (response as any).data || response;
+      
+      // Save update time to localStorage for cooldown
+      localStorage.setItem(STORAGE_KEY, Date.now().toString());
+      setTimeRemaining(COOLDOWN_MINUTES * 60); // Set to 5 minutes in seconds
+      
       toast.success('Cập nhật hồ sơ thành công! Hồ sơ của bạn đang chờ admin duyệt.');
       onUpdate?.(girlData as Girl);
     } catch (error: any) {
@@ -674,11 +723,33 @@ export default function GirlProfileUpdateForm({ girl, onUpdate }: GirlProfileUpd
 
       <button
         type="submit"
-        disabled={isLoading}
+        disabled={isLoading || timeRemaining > 0}
         className="w-full px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
       >
-        {isLoading ? 'Đang cập nhật...' : 'Cập nhật hồ sơ'}
+        {isLoading ? (
+          'Đang cập nhật...'
+        ) : timeRemaining > 0 ? (
+          (() => {
+            const minutes = Math.floor(timeRemaining / 60);
+            const seconds = timeRemaining % 60;
+            return `Vui lòng đợi ${minutes}:${seconds.toString().padStart(2, '0')} trước khi cập nhật lại`;
+          })()
+        ) : (
+          'Cập nhật hồ sơ'
+        )}
       </button>
+      
+      {/* Cooldown notice */}
+      {timeRemaining > 0 && (
+        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+          <p className="text-sm text-yellow-600 flex items-center gap-2">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Bạn vừa cập nhật hồ sơ. Vui lòng đợi {COOLDOWN_MINUTES} phút trước khi cập nhật lại để tránh spam.
+          </p>
+        </div>
+      )}
     </form>
   );
 }
