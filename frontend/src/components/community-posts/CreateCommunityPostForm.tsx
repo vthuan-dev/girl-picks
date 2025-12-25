@@ -16,7 +16,6 @@ interface CreateCommunityPostFormProps {
 export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateCommunityPostFormProps) {
   const { isAuthenticated, user } = useAuthStore();
   const router = useRouter();
-  const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [selectedGirlId, setSelectedGirlId] = useState<string | undefined>();
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
@@ -206,7 +205,6 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
 
       // Submit post to API
       const postData = {
-        title: title.trim() || undefined,
         content: content.trim(),
         images: imageUrls.length > 0 ? imageUrls : undefined,
         girlId: selectedGirlId || undefined,
@@ -217,7 +215,6 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
       toast.success('Bài viết của bạn đã được gửi và đang chờ duyệt!');
 
       // Reset form
-      setTitle('');
       setContent('');
       setSelectedGirlId(undefined);
       setSelectedImages([]);
@@ -358,21 +355,6 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
         />
       </div>
 
-      {/* Title */}
-      <div>
-        <label htmlFor="post-title" className="block text-sm font-semibold text-text mb-2.5">
-          Tiêu đề <span className="text-text-muted font-normal">(tùy chọn)</span>
-        </label>
-        <input
-          id="post-title"
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Nhập tiêu đề cho bài viết của bạn..."
-          className="w-full px-4 py-3 bg-background-light border border-secondary/30 rounded-xl text-text placeholder:text-text-muted/60 focus:outline-none focus:ring-2 focus:border-primary/60 focus:ring-primary/20 transition-all duration-200"
-        />
-      </div>
-
       {/* Content */}
       <div>
         <label htmlFor="post-content" className="block text-sm font-semibold text-text mb-2.5">
@@ -502,7 +484,6 @@ export default function CreateCommunityPostForm({ onSuccess, onCancel }: CreateC
             type="button"
             onClick={() => {
               setContent('');
-              setTitle('');
               selectedImages.forEach((url) => {
                 if (url.startsWith('blob:')) {
                   URL.revokeObjectURL(url);

@@ -202,9 +202,14 @@ export class GirlsService {
       tags,
     } = filters || {};
 
-    // Generate cache key based on all filter parameters
+    // Get current list version for cache invalidation
+    const versionKey = 'girls:list:version';
+    const version = (await this.cacheService.get<number>(versionKey)) || 0;
+
+    // Generate cache key based on all filter parameters and version
     const cacheKey = this.cacheService.generateKey(
       'girls:list',
+      version,
       page,
       limit,
       districts?.join(',') || '',
@@ -1130,8 +1135,14 @@ export class GirlsService {
   async update(userId: string, updateGirlDto: UpdateGirlDto) {
     const girl = await this.findByUserId(userId);
 
-    const { districts, idCardBackUrl, idCardFrontUrl, selfieUrl, ...rest } =
-      updateGirlDto as any;
+    const {
+      districts,
+      idCardBackUrl,
+      idCardFrontUrl,
+      selfieUrl,
+      name,
+      ...rest
+    } = updateGirlDto as any;
 
     if (!idCardFrontUrl || !idCardBackUrl || !selfieUrl) {
       throw new BadRequestException(
@@ -1139,10 +1150,30 @@ export class GirlsService {
       );
     }
 
+    // Generate slug if name changed or slug is missing
+    let slug = girl.slug;
+    if (name && (name !== girl.name || !girl.slug)) {
+      const baseSlug = generateSlug(name);
+      const existingGirls = await this.prisma.girl.findMany({
+        where: {
+          slug: { startsWith: baseSlug },
+          NOT: { id: girl.id },
+        },
+        select: { slug: true },
+      });
+      const existingSlugs = existingGirls
+        .map((g) => g.slug)
+        .filter(Boolean) as string[];
+      slug = generateUniqueSlug(baseSlug, existingSlugs);
+    }
+
     const updatedGirl = await this.prisma.girl.update({
       where: { id: girl.id },
       data: {
         ...rest,
+        images: updateGirlDto.images !== undefined ? updateGirlDto.images : undefined,
+        name: name || girl.name,
+        ...(slug && { slug }),
         districts: districts !== undefined ? districts : undefined,
         idCardFrontUrl,
         idCardBackUrl,
@@ -1167,6 +1198,9 @@ export class GirlsService {
 
     // Invalidate cache for this specific girl and list cache
     await this.invalidateGirlCache(girl.id);
+    if (slug && slug !== girl.slug) {
+      await this.invalidateGirlCache(slug);
+    }
     await this.invalidateListCache();
 
     return updatedGirl;

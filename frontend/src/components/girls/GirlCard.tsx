@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { Girl } from '@/types/girl';
+import { getFullImageUrl } from '@/lib/utils/image';
 
 interface GirlCardProps {
   girl: Girl;
@@ -9,25 +11,35 @@ interface GirlCardProps {
 
 export default function GirlCard({ girl }: GirlCardProps) {
   // Use slug in URL if available, otherwise use ID
-  const detailUrl = girl.slug 
-    ? `/girls/${girl.id}/${girl.slug}`
+  const detailUrl = girl.slug
+    ? `/girls/${girl.slug}`
     : `/girls/${girl.id}`;
-  
+
+  // Display image: prioritize girl.images[0], then user.avatarUrl, then placeholder
+  const displayImage = (girl.images && girl.images.length > 0)
+    ? girl.images[0]
+    : girl.user?.avatarUrl || girl.avatarUrl || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=1200&h=800&fit=crop';
+
   return (
     <Link href={detailUrl}>
       <div className="bg-background-light rounded-lg border border-secondary/30 overflow-hidden hover:border-primary/50 transition-all group">
         {/* Image */}
         <div className="relative aspect-[3/4] bg-gradient-to-br from-primary/20 to-accent/20 overflow-hidden">
-          <div className="w-full h-full flex items-center justify-center">
-            <span className="text-6xl">👤</span>
-          </div>
+          <Image
+            src={getFullImageUrl(displayImage)}
+            alt={girl.fullName || girl.username || 'Girl image'}
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-110"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           {girl.isAvailable && (
-            <div className="absolute top-2 right-2 px-2 py-1 bg-green-500 text-white rounded text-xs font-medium">
+            <div className="absolute top-2 right-2 px-2 py-1 bg-green-500 text-white rounded text-xs font-medium z-10">
               Online
             </div>
           )}
           {girl.verified && (
-            <div className="absolute top-2 left-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+            <div className="absolute top-2 left-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center z-10">
               <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
@@ -39,7 +51,7 @@ export default function GirlCard({ girl }: GirlCardProps) {
         <div className="p-4">
           <div className="flex items-start justify-between mb-2">
             <div>
-              <h3 className="font-bold text-text mb-1">{girl.fullName || girl.username || 'N/A'}</h3>
+              <h3 className="font-bold text-text mb-1">{girl.name || girl.fullName || girl.user?.fullName || girl.username || 'N/A'}</h3>
               <p className="text-sm text-text-muted">{girl.district?.name || 'N/A'}</p>
             </div>
           </div>

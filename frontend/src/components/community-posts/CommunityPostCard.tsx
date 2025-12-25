@@ -401,7 +401,7 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
   const handleShare = async () => {
     const url = `${window.location.origin}/community-posts/${post.id}`;
     const shareData = {
-      title: post.title || 'Bài viết cộng đồng',
+      title: 'Bài viết cộng đồng',
       text: post.content.substring(0, 100) + '...',
       url: url,
     };

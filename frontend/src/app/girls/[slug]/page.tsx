@@ -8,6 +8,7 @@ import RelatedGirls from '@/components/girls/RelatedGirls';
 import GirlBioSection from '@/components/girls/GirlBioSection';
 import ExpandableText from '@/components/common/ExpandableText';
 import ReviewsSection from '@/components/girls/ReviewsSection';
+import GirlCommunityPosts from '@/components/girls/GirlCommunityPosts';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import ViewTracker from '@/components/common/ViewTracker';
 import { Girl } from '@/types/girl';
@@ -136,9 +137,11 @@ export default async function GirlDetailBySlugPage({ params }: PageProps) {
     }
 
     const canonicalSlug = girl.slug || generateSlug(girl.fullName || (girl as any).name || '');
-    // Compare slugs case-insensitively to avoid unnecessary redirects/loops
-    if (canonicalSlug && slug.toLowerCase() !== canonicalSlug.toLowerCase()) {
-      redirect(`/girls/${canonicalSlug}`);
+
+    // Only redirect if a slug explicitly exists in the DB AND it's different from current param
+    // This prevents redirecting to "generated" slugs that might not be searchable yet
+    if (girl.slug && slug.toLowerCase() !== girl.slug.toLowerCase()) {
+      redirect(`/girls/${girl.slug}`);
     }
   } catch (error: any) {
     console.error('Error fetching girl by slug:', error);
@@ -250,6 +253,11 @@ export default async function GirlDetailBySlugPage({ params }: PageProps) {
             averageRating={ratingValue}
             initialReviews={girl.reviews}
           />
+        </div>
+
+        {/* Bài viết cộng đồng */}
+        <div className="mt-4 sm:mt-6 lg:mt-8">
+          <GirlCommunityPosts girlId={girl.id} limit={6} />
         </div>
 
         {/* Gái gọi liên quan – hiển thị toàn chiều ngang, dưới InnerLayoutRouter */}

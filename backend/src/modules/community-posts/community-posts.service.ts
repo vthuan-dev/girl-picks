@@ -41,7 +41,6 @@ export class CommunityPostsService {
       data: {
         authorId: userId,
         girlId: girlId || createPostDto.girlId || null,
-        title: createPostDto.title,
         content: createPostDto.content,
         images: createPostDto.images || [],
         status: PostStatus.PENDING,
@@ -577,7 +576,7 @@ export class CommunityPostsService {
             id: c.id,
             postId: c.postId,
             postTitle:
-              post.title || post.content?.slice(0, 80) || 'Bài viết cộng đồng',
+              post.content?.slice(0, 80) || 'Bài viết cộng đồng',
             girlName,
             previewImage: images[0] || null,
             type: 'comments' as const,
@@ -620,7 +619,7 @@ export class CommunityPostsService {
         id: l.id,
         postId: l.postId,
         postTitle:
-          post.title || post.content?.slice(0, 80) || 'Bài viết cộng đồng',
+          post.content?.slice(0, 80) || 'Bài viết cộng đồng',
         girlName,
         previewImage: images[0] || null,
         type: 'likes' as const,
