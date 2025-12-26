@@ -598,11 +598,12 @@ export default function MovieFormModal({ isOpen, onClose, onSuccess, movie }: Mo
 
           {/* Duration */}
           <div>
-            <label className="block text-sm font-medium text-text mb-2">Thời lượng (tùy chọn)</label>
+            <label className="block text-sm font-medium text-text mb-2">Thời lượng (tự động)</label>
             <input
               {...register('duration')}
-              className="w-full px-4 py-3 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-              placeholder='Ví dụ: "10:30"'
+              readOnly
+              className="w-full px-4 py-3 bg-background/50 border border-secondary/30 rounded-xl text-text-muted cursor-not-allowed"
+              placeholder='Tự động lấy từ video'
             />
           </div>
 
