@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import Button from '@/components/admin/Button';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { moviesApi, type Movie } from '@/modules/movies/api/movies.api';
@@ -59,11 +58,62 @@ export default function MoviesManagement() {
     }
   };
 
-  const statuses: Array<{ key: 'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED'; label: string }> = [
-    { key: 'ALL', label: 'Tất cả' },
-    { key: 'PENDING', label: 'Chờ duyệt' },
-    { key: 'APPROVED', label: 'Đã duyệt' },
-    { key: 'REJECTED', label: 'Từ chối' },
+  const statuses: Array<{ 
+    key: 'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED'; 
+    label: string;
+    icon: JSX.Element;
+    activeBg: string;
+    activeText: string;
+    hoverBg: string;
+  }> = [
+    { 
+      key: 'ALL', 
+      label: 'Tất cả',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+        </svg>
+      ),
+      activeBg: 'bg-gradient-to-r from-primary to-primary/80',
+      activeText: 'text-white',
+      hoverBg: 'hover:bg-primary/10',
+    },
+    { 
+      key: 'PENDING', 
+      label: 'Chờ duyệt',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+      activeBg: 'bg-gradient-to-r from-yellow-500 to-yellow-600',
+      activeText: 'text-white',
+      hoverBg: 'hover:bg-yellow-500/10',
+    },
+    { 
+      key: 'APPROVED', 
+      label: 'Đã duyệt',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+      activeBg: 'bg-gradient-to-r from-green-500 to-green-600',
+      activeText: 'text-white',
+      hoverBg: 'hover:bg-green-500/10',
+    },
+    { 
+      key: 'REJECTED', 
+      label: 'Từ chối',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+      activeBg: 'bg-gradient-to-r from-red-500 to-red-600',
+      activeText: 'text-white',
+      hoverBg: 'hover:bg-red-500/10',
+    },
   ];
 
   return (
@@ -74,19 +124,41 @@ export default function MoviesManagement() {
           <h2 className="text-xl font-bold text-text">Quản lý Phim sex</h2>
           <p className="text-text-muted text-sm">Upload và quản lý phim sex hiển thị ở trang /phim-sex</p>
         </div>
-        <Button
-          variant="primary"
-          size="md"
+        <button
           onClick={() => {
             setEditingMovie(null);
             setShowModal(true);
           }}
+          className="
+            group relative
+            inline-flex items-center justify-center gap-2
+            px-5 py-3 rounded-xl
+            text-sm font-semibold
+            bg-gradient-to-r from-primary via-primary/90 to-primary/80
+            text-white
+            shadow-lg shadow-primary/30
+            hover:shadow-xl hover:shadow-primary/40
+            hover:scale-105
+            active:scale-100
+            transition-all duration-200 ease-in-out
+            overflow-hidden
+            before:absolute before:inset-0
+            before:bg-gradient-to-r before:from-white/0 before:via-white/20 before:to-white/0
+            before:translate-x-[-100%] before:group-hover:translate-x-[100%]
+            before:transition-transform before:duration-700
+          "
         >
-          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          <svg 
+            className="w-5 h-5 relative z-10 transition-transform duration-200 group-hover:rotate-90" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
           </svg>
-          Upload phim sex
-        </Button>
+          <span className="relative z-10">Upload phim sex</span>
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        </button>
       </div>
 
       {/* Filters */}
@@ -110,22 +182,37 @@ export default function MoviesManagement() {
           />
         </div>
         <div className="flex gap-2 flex-wrap">
-          {statuses.map((s) => (
+          {statuses.map((s) => {
+            const isActive = statusFilter === s.key;
+            return (
             <button
               key={s.key}
               onClick={() => {
                 setStatusFilter(s.key);
                 setPage(1);
               }}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                statusFilter === s.key
-                  ? 'bg-primary text-white'
-                  : 'bg-background border border-secondary/50 text-text hover:bg-primary/10'
-              }`}
-            >
-              {s.label}
+                className={`
+                  group relative
+                  px-4 py-2.5 rounded-xl text-sm font-medium
+                  transition-all duration-200 ease-in-out
+                  flex items-center gap-2
+                  ${
+                    isActive
+                      ? `${s.activeBg} ${s.activeText} shadow-lg shadow-primary/20 scale-105`
+                      : `bg-background border border-secondary/50 text-text ${s.hoverBg} hover:border-primary/50 hover:shadow-md hover:scale-[1.02]`
+                  }
+                `}
+              >
+                <span className={`transition-transform duration-200 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`}>
+                  {s.icon}
+                </span>
+                <span className="relative z-10">{s.label}</span>
+                {isActive && (
+                  <span className="absolute inset-0 rounded-xl bg-white/10 animate-pulse" />
+                )}
             </button>
-          ))}
+            );
+          })}
         </div>
       </div>
 
