@@ -219,38 +219,13 @@ export default function MovieFormModal({ isOpen, onClose, onSuccess, movie }: Mo
 
     setIsUploadingVideo(true);
     try {
-      // Convert file to base64 for backend API
-      const fileToBase64 = (file: File): Promise<string> => {
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.readAsDataURL(file);
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = (error) => reject(error);
-        });
-      };
+      // Use FormData for proper multipart upload to Next.js API route
+      const formData = new FormData();
+      formData.append('file', file);
 
-      const base64Data = await fileToBase64(file);
-      
-      // Get API URL from environment or use default
-      let apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      // Remove trailing slash if present
-      apiUrl = apiUrl.replace(/\/$/, '');
-      // Build upload URL: if apiUrl already ends with /api, use /upload/video, otherwise use /api/upload/video
-      const uploadUrl = apiUrl.endsWith('/api') 
-        ? `${apiUrl}/upload/video` 
-        : `${apiUrl}/api/upload/video`;
-      const token = Cookies.get('accessToken');
-      
-      const res = await fetch(uploadUrl, {
+      const res = await fetch('/api/upload/video', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          url: base64Data,
-          folder: 'videos',
-        }),
+        body: formData,
       });
 
       if (!res.ok) {
@@ -263,18 +238,10 @@ export default function MovieFormModal({ isOpen, onClose, onSuccess, movie }: Mo
       if (!data?.url) {
         throw new Error(data?.error || data?.message || 'Không thể upload video');
       }
-      
-      // Backend returns URL like /uploads/videos/xxx.mp4
-      // Backend serves static files at /uploads/ (not /api/uploads/)
-      // So we need to use domain root, not API URL
-      let videoUrl = data.url;
-      if (!videoUrl.startsWith('http')) {
-        // Extract domain from apiUrl (remove /api if present)
-        const domain = apiUrl.replace(/\/api$/, '').replace(/\/$/, '');
-        videoUrl = `${domain}${data.url}`;
-      }
-      
-      setValue('videoUrl', videoUrl, { shouldValidate: true });
+
+      // Next.js API route returns URL like /uploads/videos/xxx.mp4
+      // nginx will serve this from frontend/public/uploads/
+      setValue('videoUrl', data.url, { shouldValidate: true });
       toast.success('Upload video thành công');
     } catch (error: any) {
       console.error('Upload video error:', error);
@@ -306,7 +273,7 @@ export default function MovieFormModal({ isOpen, onClose, onSuccess, movie }: Mo
       // Use FormData instead of base64 for better compatibility
       const formData = new FormData();
       formData.append('file', file);
-      
+
       const res = await fetch('/api/upload/poster', {
         method: 'POST',
         body: formData,
@@ -315,14 +282,14 @@ export default function MovieFormModal({ isOpen, onClose, onSuccess, movie }: Mo
       // Check if response is JSON or HTML (error page)
       const contentType = res.headers.get('content-type');
       let data;
-      
+
       if (contentType?.includes('application/json')) {
         data = await res.json();
       } else {
         // Server returned HTML (likely error page)
         const text = await res.text();
         console.error('Server returned HTML instead of JSON:', text.substring(0, 200));
-        
+
         if (res.status === 413) {
           throw new Error('File quá lớn. Vui lòng chọn file nhỏ hơn 5MB');
         } else {
@@ -333,7 +300,7 @@ export default function MovieFormModal({ isOpen, onClose, onSuccess, movie }: Mo
       if (!res.ok || !data?.url) {
         throw new Error(data?.error || data?.message || 'Không thể upload poster');
       }
-      
+
       setValue('poster', data.url);
       setValue('thumbnail', data.url);
       toast.success('Upload poster thành công');
@@ -448,9 +415,9 @@ export default function MovieFormModal({ isOpen, onClose, onSuccess, movie }: Mo
                 {videoUrl ? (
                   <div className="bg-background rounded-xl border border-secondary/40 p-3 space-y-3">
                     <div className="relative">
-                      <video 
-                        src={getFullVideoUrl(videoUrl)} 
-                        controls 
+                      <video
+                        src={getFullVideoUrl(videoUrl)}
+                        controls
                         className="w-full rounded-lg bg-black aspect-video object-contain"
                         preload="metadata"
                         onError={(e) => {
@@ -533,9 +500,9 @@ export default function MovieFormModal({ isOpen, onClose, onSuccess, movie }: Mo
                   <div className="bg-background rounded-xl border border-secondary/40 p-3 space-y-3">
                     <div className="relative w-full aspect-[2/3] rounded-lg overflow-hidden bg-secondary/30">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img 
-                        src={getFullImageUrl(poster)} 
-                        alt="Poster" 
+                      <img
+                        src={getFullImageUrl(poster)}
+                        alt="Poster"
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           console.error('Poster load error:', poster);
