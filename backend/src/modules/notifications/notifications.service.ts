@@ -1,29 +1,29 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { NotificationType } from '@prisma/client';
+import { NotificationType, Prisma } from '@prisma/client';
 
 @Injectable()
 export class NotificationsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(
     userId: string,
     type: NotificationType,
     message: string,
-    data?: any,
+    data?: Prisma.InputJsonObject,
   ) {
     return this.prisma.notification.create({
       data: {
         userId,
         type,
         message,
-        data: data || {},
+        data: data ?? {},
       },
     });
   }
 
   async findAll(userId: string, isRead?: boolean) {
-    const where: any = { userId };
+    const where: { userId: string; isRead?: boolean } = { userId };
 
     if (isRead !== undefined) {
       where.isRead = isRead;
@@ -152,7 +152,6 @@ export class NotificationsService {
     cancelledBy: string,
   ) {
     const isCustomer = cancelledBy === customerId;
-    const targetUserId = isCustomer ? girlId : customerId;
     const message = isCustomer
       ? 'Customer đã hủy booking'
       : 'Girl đã hủy booking';
@@ -208,5 +207,38 @@ export class NotificationsService {
       'Thanh toán thất bại. Vui lòng thử lại.',
       { bookingId, paymentId },
     );
+  }
+
+  // Admin notification helpers
+  async notifyAdminsNewPostPending(postId: string, authorName: string) {
+    const admins = await this.prisma.user.findMany({
+      where: { role: 'ADMIN', isActive: true },
+      select: { id: true },
+    });
+
+    for (const admin of admins) {
+      await this.create(
+        admin.id,
+        NotificationType.ADMIN_POST_PENDING_APPROVAL,
+        `Bài viết cộng đồng mới từ "${authorName}" đang chờ duyệt`,
+        { postId },
+      );
+    }
+  }
+
+  async notifyAdminsGirlPendingVerification(girlId: string, girlName: string) {
+    const admins = await this.prisma.user.findMany({
+      where: { role: 'ADMIN', isActive: true },
+      select: { id: true },
+    });
+
+    for (const admin of admins) {
+      await this.create(
+        admin.id,
+        NotificationType.ADMIN_GIRL_PENDING_VERIFICATION,
+        `Hồ sơ gái "${girlName}" đang chờ xác thực`,
+        { girlId },
+      );
+    }
   }
 }
