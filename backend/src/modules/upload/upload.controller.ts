@@ -66,6 +66,19 @@ export class UploadController {
   }
 
   /**
+   * Upload video from Base64
+   * POST /api/upload/video
+   */
+  @Post('video')
+  @Roles(
+    UserRole.ADMIN,
+    UserRole.STAFF_UPLOAD,
+  )
+  async uploadVideo(@Body() dto: { url: string; folder?: string }) {
+    return this.uploadService.uploadVideoFromBase64(dto);
+  }
+
+  /**
    * Get optimized image URL
    * GET /api/upload/optimize/:publicId
    */

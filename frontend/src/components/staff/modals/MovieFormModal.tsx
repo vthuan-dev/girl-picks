@@ -73,9 +73,15 @@ export default function MovieFormModal({ isOpen, onClose, onSuccess, movie }: Mo
     if (url.startsWith('http') || url.startsWith('data:')) {
       return url;
     }
+    // If relative path starts with /uploads/, it's from backend
+    // Need to prepend API URL
+    if (url.startsWith('/uploads/')) {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      return `${apiUrl}${url}`;
+    }
     // Ensure starts with /
     const cleanUrl = url.startsWith('/') ? url : `/${url}`;
-    // For relative paths, return as is (Next.js will serve from public folder)
+    // For other relative paths, try to serve from public folder or API route
     return cleanUrl;
   };
 
@@ -210,37 +216,50 @@ export default function MovieFormModal({ isOpen, onClose, onSuccess, movie }: Mo
 
     setIsUploadingVideo(true);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
+      // Convert file to base64 for backend API
+      const fileToBase64 = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = (error) => reject(error);
+        });
+      };
+
+      const base64Data = await fileToBase64(file);
       
-      const res = await fetch('/api/upload/video', {
+      // Get API URL from environment or use default
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const token = Cookies.get('accessToken');
+      
+      const res = await fetch(`${apiUrl}/api/upload/video`, {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          url: base64Data,
+          folder: 'videos',
+        }),
       });
 
-      // Check if response is JSON or HTML (error page)
-      const contentType = res.headers.get('content-type');
-      let data;
-      
-      if (contentType?.includes('application/json')) {
-        data = await res.json();
-      } else {
-        // Server returned HTML (likely error page)
-        const text = await res.text();
-        console.error('Server returned HTML instead of JSON:', text.substring(0, 200));
-        
-        if (res.status === 413) {
-          throw new Error('File quá lớn. Vui lòng chọn file nhỏ hơn 100MB');
-        } else {
-          throw new Error(`Lỗi upload: ${res.status} ${res.statusText}`);
-        }
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || errorData.error || `Lỗi upload: ${res.status} ${res.statusText}`);
       }
 
-      if (!res.ok || !data?.url) {
+      const data = await res.json();
+
+      if (!data?.url) {
         throw new Error(data?.error || data?.message || 'Không thể upload video');
       }
       
-      setValue('videoUrl', data.url, { shouldValidate: true });
+      // Backend returns URL like /uploads/videos/xxx.mp4
+      // We need to prepend API URL if it's relative
+      const videoUrl = data.url.startsWith('http') ? data.url : `${apiUrl}${data.url}`;
+      
+      setValue('videoUrl', videoUrl, { shouldValidate: true });
       toast.success('Upload video thành công');
     } catch (error: any) {
       console.error('Upload video error:', error);
