@@ -195,6 +195,22 @@ const nextConfig = {
         source: '/api/uploads/:path*',
         destination: `${backendUrl}/uploads/:path*`,
       },
+      // Note: /uploads/videos/* and /uploads/movies/* are handled by API routes
+      // Next.js will check public folder first, then API routes
+      // Only rewrite other uploads paths to backend
+      {
+        source: '/uploads/posts/:path*',
+        destination: `${backendUrl}/uploads/posts/:path*`,
+      },
+      {
+        source: '/uploads/community-posts/:path*',
+        destination: `${backendUrl}/uploads/community-posts/:path*`,
+      },
+      {
+        source: '/uploads/reviews/:path*',
+        destination: `${backendUrl}/uploads/reviews/:path*`,
+      },
+      // Fallback for other upload paths
       {
         source: '/uploads/:path*',
         destination: `${backendUrl}/uploads/:path*`,

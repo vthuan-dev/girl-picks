@@ -121,6 +121,60 @@ export class UploadService {
   }
 
   /**
+   * Upload video from Base64 to Local Storage
+   */
+  async uploadVideoFromBase64(dto: { url: string; folder?: string }) {
+    if (!dto || !dto.url) {
+      throw new BadRequestException('Video data is required.');
+    }
+
+    try {
+      const folder = dto.folder || 'videos';
+      const folderParts = folder.split('/');
+      const fullFolderPath = join(this.uploadPath, ...folderParts);
+
+      if (!existsSync(fullFolderPath)) {
+        mkdirSync(fullFolderPath, { recursive: true });
+      }
+
+      let buffer: Buffer;
+      let extension = 'mp4';
+
+      if (dto.url.startsWith('data:video/')) {
+        // Xử lý Base64 video
+        const matches = dto.url.match(
+          /^data:video\/([A-Za-z-+/]+);base64,(.+)$/,
+        );
+        if (!matches || matches.length !== 3) {
+          throw new Error('Invalid base64 video format');
+        }
+        extension = matches[1] === 'quicktime' ? 'mov' : matches[1];
+        buffer = Buffer.from(matches[2], 'base64');
+      } else {
+        throw new Error('Unsupported video source format. Use Base64.');
+      }
+
+      const filename = `${generateId()}.${extension}`;
+      const filePath = join(fullFolderPath, filename);
+
+      // Lưu file
+      writeFileSync(filePath, buffer);
+
+      const relativeUrl = `/uploads/${folder}/${filename}`;
+
+      return {
+        url: relativeUrl, // URL để Frontend sử dụng
+        path: filePath,
+        filename: filename,
+      };
+    } catch (error: any) {
+      throw new BadRequestException(
+        `Failed to save video locally: ${error?.message || 'Unknown error'}`,
+      );
+    }
+  }
+
+  /**
    * Get URL (Mocking Cloudinary optimization for local)
    */
   getOptimizedUrl(url: string, options?: any) {
