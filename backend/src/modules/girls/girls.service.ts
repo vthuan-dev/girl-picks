@@ -2,18 +2,23 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { Prisma, VerificationStatus, PostStatus, ReviewStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { generateSlug, generateUniqueSlug } from '../../common/utils/slug.util';
 import { UpdateGirlDto } from './dto/update-girl.dto';
 import { CacheService } from '../cache/cache.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class GirlsService {
   constructor(
     private prisma: PrismaService,
     private cacheService: CacheService,
+    @Inject(forwardRef(() => NotificationsService))
+    private notificationsService: NotificationsService,
   ) { }
 
   async searchByPhone(query: string, page = 1, limit = 20) {
@@ -1251,7 +1256,7 @@ export class GirlsService {
       throw new BadRequestException('Verification request is already pending');
     }
 
-    return this.prisma.girl.update({
+    const updatedGirl = await this.prisma.girl.update({
       where: { id: girl.id },
       data: {
         verificationStatus: VerificationStatus.PENDING,
@@ -1259,6 +1264,18 @@ export class GirlsService {
         verificationRequestedAt: new Date(),
       },
     });
+
+    // Notify admins about new girl pending verification
+    try {
+      await this.notificationsService.notifyAdminsGirlPendingVerification(
+        updatedGirl.id,
+        girl.name || girl.user?.fullName || 'Chưa có tên',
+      );
+    } catch (error) {
+      console.error('Failed to send admin notification for girl verification:', error);
+    }
+
+    return updatedGirl;
   }
 
   async approveVerification(id: string, adminId: string) {

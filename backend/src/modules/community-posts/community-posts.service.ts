@@ -37,7 +37,7 @@ export class CommunityPostsService {
       }
     }
 
-    return this.prisma.communityPost.create({
+    const post = await this.prisma.communityPost.create({
       data: {
         authorId: userId,
         girlId: girlId || createPostDto.girlId || null,
@@ -73,6 +73,18 @@ export class CommunityPostsService {
         },
       },
     });
+
+    // Notify admins about new pending post
+    try {
+      await this.notificationsService.notifyAdminsNewPostPending(
+        post.id,
+        post.author.fullName,
+      );
+    } catch (error) {
+      console.error('Failed to send admin notification for new post:', error);
+    }
+
+    return post;
   }
 
   async findAll(filters?: {
