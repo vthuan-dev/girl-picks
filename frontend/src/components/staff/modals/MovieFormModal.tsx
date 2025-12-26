@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import Cookies from 'js-cookie';
 import { moviesApi, type Movie } from '@/modules/movies/api/movies.api';
 import { categoriesApi, type Category } from '@/modules/categories/api/categories.api';
+import { getFullImageUrl } from '@/lib/utils/image';
 
 const movieSchema = z.object({
   title: z.string().min(1, 'Tiêu đề không được để trống'),
@@ -65,6 +66,19 @@ export default function MovieFormModal({ isOpen, onClose, onSuccess, movie }: Mo
   const poster = watch('poster');
   const durationValue = watch('duration');
 
+  // Helper function to get full video URL (similar to getFullImageUrl)
+  const getFullVideoUrl = (url: string | undefined | null): string => {
+    if (!url) return '';
+    // If already absolute URL, return as is
+    if (url.startsWith('http') || url.startsWith('data:')) {
+      return url;
+    }
+    // Ensure starts with /
+    const cleanUrl = url.startsWith('/') ? url : `/${url}`;
+    // For relative paths, return as is (Next.js will serve from public folder)
+    return cleanUrl;
+  };
+
   // Helper: format seconds -> HH:MM:SS or MM:SS
   const formatDuration = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
@@ -83,7 +97,7 @@ export default function MovieFormModal({ isOpen, onClose, onSuccess, movie }: Mo
 
     const video = document.createElement('video');
     video.preload = 'metadata';
-    video.src = videoUrl;
+    video.src = getFullVideoUrl(videoUrl);
 
     const onLoaded = () => {
       if (!isNaN(video.duration)) {
@@ -125,7 +139,7 @@ export default function MovieFormModal({ isOpen, onClose, onSuccess, movie }: Mo
       reset({
         title: movie.title,
         description: movie.description || '',
-        videoUrl: movie.videoUrl,
+        videoUrl: movie.videoUrl || '',
         poster: movie.poster || '',
         thumbnail: movie.thumbnail || '',
         duration: movie.duration || '',
@@ -401,10 +415,16 @@ export default function MovieFormModal({ isOpen, onClose, onSuccess, movie }: Mo
                   <div className="bg-background rounded-xl border border-secondary/40 p-3 space-y-3">
                     <div className="relative">
                       <video 
-                        src={videoUrl} 
+                        src={getFullVideoUrl(videoUrl)} 
                         controls 
                         className="w-full rounded-lg bg-black aspect-video object-contain"
                         preload="metadata"
+                        onError={(e) => {
+                          console.error('Video load error:', videoUrl);
+                          const target = e.target as HTMLVideoElement;
+                          target.style.display = 'none';
+                          toast.error('Không thể tải video. Vui lòng kiểm tra lại URL.');
+                        }}
                       />
                     </div>
                     {durationValue && (
@@ -480,9 +500,15 @@ export default function MovieFormModal({ isOpen, onClose, onSuccess, movie }: Mo
                     <div className="relative w-full aspect-[2/3] rounded-lg overflow-hidden bg-secondary/30">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img 
-                        src={poster} 
+                        src={getFullImageUrl(poster)} 
                         alt="Poster" 
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          console.error('Poster load error:', poster);
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          toast.error('Không thể tải poster. Vui lòng kiểm tra lại URL.');
+                        }}
                       />
                     </div>
                     <p className="text-xs text-text-muted break-all">{poster}</p>
