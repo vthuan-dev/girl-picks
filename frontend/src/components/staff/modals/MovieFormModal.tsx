@@ -74,10 +74,13 @@ export default function MovieFormModal({ isOpen, onClose, onSuccess, movie }: Mo
       return url;
     }
     // If relative path starts with /uploads/, it's from backend
-    // Need to prepend API URL
+    // Backend serves static files at /uploads/ (not /api/uploads/)
+    // So we need to use domain root, not API URL
     if (url.startsWith('/uploads/')) {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      return `${apiUrl}${url}`;
+      // Extract domain from apiUrl (remove /api if present)
+      const domain = apiUrl.replace(/\/api$/, '').replace(/\/$/, '');
+      return `${domain}${url}`;
     }
     // Ensure starts with /
     const cleanUrl = url.startsWith('/') ? url : `/${url}`;
@@ -229,10 +232,16 @@ export default function MovieFormModal({ isOpen, onClose, onSuccess, movie }: Mo
       const base64Data = await fileToBase64(file);
       
       // Get API URL from environment or use default
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      let apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      // Remove trailing slash if present
+      apiUrl = apiUrl.replace(/\/$/, '');
+      // Build upload URL: if apiUrl already ends with /api, use /upload/video, otherwise use /api/upload/video
+      const uploadUrl = apiUrl.endsWith('/api') 
+        ? `${apiUrl}/upload/video` 
+        : `${apiUrl}/api/upload/video`;
       const token = Cookies.get('accessToken');
       
-      const res = await fetch(`${apiUrl}/api/upload/video`, {
+      const res = await fetch(uploadUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -256,8 +265,14 @@ export default function MovieFormModal({ isOpen, onClose, onSuccess, movie }: Mo
       }
       
       // Backend returns URL like /uploads/videos/xxx.mp4
-      // We need to prepend API URL if it's relative
-      const videoUrl = data.url.startsWith('http') ? data.url : `${apiUrl}${data.url}`;
+      // Backend serves static files at /uploads/ (not /api/uploads/)
+      // So we need to use domain root, not API URL
+      let videoUrl = data.url;
+      if (!videoUrl.startsWith('http')) {
+        // Extract domain from apiUrl (remove /api if present)
+        const domain = apiUrl.replace(/\/api$/, '').replace(/\/$/, '');
+        videoUrl = `${domain}${data.url}`;
+      }
       
       setValue('videoUrl', videoUrl, { shouldValidate: true });
       toast.success('Upload video thành công');
