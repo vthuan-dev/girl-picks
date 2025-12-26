@@ -9,14 +9,20 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    // Try FormData first (preferred method)
     let file: File | null = null;
+    const contentType = request.headers.get('content-type') || '';
     
-    try {
-      const formData = await request.formData();
-      file = formData.get('file') as File | null;
-    } catch (formError) {
-      // If FormData fails, try JSON (base64) for backward compatibility
+    // Check Content-Type to determine how to parse the request
+    if (contentType.includes('multipart/form-data')) {
+      // FormData upload (preferred method)
+      try {
+        const formData = await request.formData();
+        file = formData.get('file') as File | null;
+      } catch (formError) {
+        console.error('Failed to parse FormData:', formError);
+      }
+    } else if (contentType.includes('application/json')) {
+      // JSON upload (base64 for backward compatibility)
       try {
         const body = await request.json();
         if (body.url && body.url.startsWith('data:image')) {
@@ -29,8 +35,28 @@ export async function POST(request: NextRequest) {
           file = new File([buffer], filename, { type: mimeType });
         }
       } catch (jsonError) {
-        // Both failed
-        console.error('Failed to parse request:', { formError, jsonError });
+        console.error('Failed to parse JSON:', jsonError);
+      }
+    } else {
+      // Try FormData first as fallback (browser might not set Content-Type correctly)
+      try {
+        const formData = await request.formData();
+        file = formData.get('file') as File | null;
+      } catch (formError) {
+        // If FormData fails, try JSON as last resort
+        try {
+          const body = await request.json();
+          if (body.url && body.url.startsWith('data:image')) {
+            const base64Data = body.url.split(',')[1];
+            const buffer = Buffer.from(base64Data, 'base64');
+            const mimeType = body.url.match(/data:([^;]+)/)?.[1] || 'image/jpeg';
+            const extension = mimeType.split('/')[1] || 'jpg';
+            const filename = `upload-${Date.now()}.${extension}`;
+            file = new File([buffer], filename, { type: mimeType });
+          }
+        } catch (jsonError) {
+          console.error('Failed to parse request:', { formError, jsonError });
+        }
       }
     }
 

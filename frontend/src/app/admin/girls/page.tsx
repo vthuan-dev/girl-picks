@@ -6,6 +6,8 @@ import IconButton from '@/components/admin/IconButton';
 import { girlsApi, Girl as AdminGirl } from '@/modules/admin/api/girls.api';
 import { adminApi } from '@/modules/admin/api/admin.api';
 import { girlsApi as publicGirlsApi } from '@/modules/girls/api/girls.api'; // Renamed to avoid conflict
+import { districtsApi } from '@/modules/districts/api/districts.api';
+import { District } from '@/types/district';
 import toast from 'react-hot-toast';
 import Cookies from 'js-cookie';
 import { format } from 'date-fns';
@@ -78,16 +80,59 @@ export default function AdminGirlsPage() {
     districts: '' as string, // comma separated input
     images: '' as string, // comma separated URLs (for backward compatibility)
     age: '',
+    // Physical Info
+    height: '',
+    weight: '',
+    measurements: '',
+    origin: '',
+    // Location
+    address: '',
+    location: '',
+    province: '',
+    // Pricing & Services
+    price: '',
+    workingHours: '',
+    tags: '' as string, // comma separated input
+    services: '' as string, // comma separated input
   });
 
   // Image upload state for profile creation
   const [profileImages, setProfileImages] = useState<File[]>([]);
   const [profileImagePreviews, setProfileImagePreviews] = useState<string[]>([]);
 
+  // Mode selection state
+  const [createMode, setCreateMode] = useState<'create' | 'select'>('create');
+  const [availableUsers, setAvailableUsers] = useState<Array<{
+    id: string;
+    email: string;
+    fullName: string;
+    phone?: string;
+    avatarUrl?: string;
+    createdAt: string;
+    isActive: boolean;
+  }>>([]);
+  const [selectedUserId, setSelectedUserId] = useState<string>('');
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+
+  // Location state
+  const [provinces, setProvinces] = useState<string[]>([]);
+  const [selectedProvince, setSelectedProvince] = useState<string>('');
+  const [districtsByProvince, setDistrictsByProvince] = useState<District[]>([]);
+  const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
+  const [isLoadingProvinces, setIsLoadingProvinces] = useState(false);
+  const [isLoadingDistricts, setIsLoadingDistricts] = useState(false);
+
   useEffect(() => {
     loadGirls();
     loadStats();
   }, [statusFilter, verificationFilter, page, searchQuery]);
+
+  // Load provinces when modal opens
+  useEffect(() => {
+    if (createModalOpen) {
+      loadProvinces();
+    }
+  }, [createModalOpen]);
 
   const loadGirls = async () => {
     setIsLoading(true);
@@ -147,11 +192,204 @@ export default function AdminGirlsPage() {
       districts: '',
       images: '',
       age: '',
+      height: '',
+      weight: '',
+      measurements: '',
+      origin: '',
+      address: '',
+      location: '',
+      province: '',
+      price: '',
+      workingHours: '',
+      tags: '',
+      services: '',
     });
+    setCreateMode('create');
+    setSelectedUserId('');
+    setAvailableUsers([]);
+    // Reset location state
+    setSelectedProvince('');
+    setDistrictsByProvince([]);
+    setSelectedDistricts([]);
+    // Reset image state
+    profileImagePreviews.forEach(preview => URL.revokeObjectURL(preview));
+    setProfileImages([]);
+    setProfileImagePreviews([]);
     setCreateModalOpen(true);
+    // Load provinces
+    loadProvinces();
+  };
+
+  const loadAvailableUsers = async () => {
+    setIsLoadingUsers(true);
+    try {
+      const response = await girlsApi.getGirlsWithoutProfile({ page: 1, limit: 100 });
+      if (response && Array.isArray(response.data)) {
+        setAvailableUsers(response.data);
+      } else {
+        setAvailableUsers([]);
+      }
+    } catch (error: any) {
+      console.error('Error loading available users:', error);
+      toast.error('Không thể tải danh sách users');
+      setAvailableUsers([]);
+    } finally {
+      setIsLoadingUsers(false);
+    }
+  };
+
+  // Fallback danh sách tỉnh/thành
+  const defaultProvinces = [
+    'Sài Gòn', 'Hà Nội', 'Bình Dương', 'Đà Nẵng', 'Đồng Nai', 'Lâm Đồng',
+    'Bà Rịa Vũng Tàu', 'Khánh Hòa', 'Long An', 'Cần Thơ', 'Đắk Lắk', 'Bình Thuận',
+    'Thừa Thiên Huế', 'Bình Phước', 'Bình Định', 'Đồng Tháp', 'Bến Tre', 'Kiên Giang',
+    'Tiền Giang', 'An Giang', 'Trà Vinh', 'Vĩnh Long', 'Phú Yên', 'Bạc Liêu',
+    'Hải Phòng', 'Hậu Giang', 'Sóc Trăng', 'Ninh Thuận', 'Nghệ An',
+  ];
+
+  const loadProvinces = async () => {
+    setIsLoadingProvinces(true);
+    try {
+      // Load danh sách tỉnh có gái từ API (có count) - giống như user gái update profile
+      const provinceCounts = await publicGirlsApi.getCountByProvince();
+      const list = (provinceCounts || [])
+        .filter(({ count }) => count > 0)
+        .sort((a, b) => b.count - a.count)
+        .map(({ province }) => province);
+      
+      setProvinces(list.length > 0 ? list : defaultProvinces);
+    } catch (error: any) {
+      console.error('Error loading provinces:', error);
+      // Fallback to default list if API fails
+      setProvinces(defaultProvinces);
+    } finally {
+      setIsLoadingProvinces(false);
+    }
+  };
+
+  const loadDistrictsByProvince = async (province: string) => {
+    if (!province) {
+      setDistrictsByProvince([]);
+      setSelectedDistricts([]);
+      return;
+    }
+    setIsLoadingDistricts(true);
+    try {
+      const response = await districtsApi.getDistrictsByProvince(province);
+      if (response?.success && Array.isArray(response.data)) {
+        setDistrictsByProvince(response.data);
+      } else {
+        setDistrictsByProvince([]);
+      }
+    } catch (error: any) {
+      console.error('Error loading districts:', error);
+      toast.error('Không thể tải danh sách quận/huyện');
+      setDistrictsByProvince([]);
+    } finally {
+      setIsLoadingDistricts(false);
+    }
   };
 
   const handleCreate = async () => {
+    if (createMode === 'select') {
+      // Mode: Select existing user and create profile
+      if (!selectedUserId) {
+        toast.error('Vui lòng chọn user từ danh sách');
+        return;
+      }
+
+      if (!createForm.fullName.trim()) {
+        toast.error('Vui lòng nhập tên hiển thị');
+        return;
+      }
+
+      setIsCreating(true);
+      try {
+        // Upload images if files are selected
+        let imageUrls: string[] = [];
+        if (profileImages.length > 0) {
+          const loadingToast = toast.loading('Đang tải ảnh lên...');
+          imageUrls = await Promise.all(profileImages.map((file) => uploadImage(file)));
+          toast.dismiss(loadingToast);
+        } else if (createForm.images.trim()) {
+          // Fallback to URL input if no files uploaded
+          imageUrls = createForm.images.split(',').map((d) => d.trim()).filter(Boolean);
+        }
+
+        await girlsApi.createGirlProfile(selectedUserId, {
+          name: createForm.fullName.trim(),
+          bio: createForm.bio.trim() || undefined,
+          age: createForm.age ? parseInt(createForm.age, 10) || undefined : undefined,
+          districts: undefined, // Không dùng districts nữa, chỉ dùng province
+          images: imageUrls.length > 0 ? imageUrls : undefined,
+          // Physical Info
+          height: createForm.height.trim() || undefined,
+          weight: createForm.weight.trim() || undefined,
+          measurements: createForm.measurements.trim() || undefined,
+          origin: createForm.origin.trim() || undefined,
+          // Location
+          address: createForm.address.trim() || undefined,
+          location: createForm.location.trim() || undefined,
+          province: selectedProvince || undefined,
+          // Pricing & Services
+          price: createForm.price.trim() || undefined,
+          workingHours: createForm.workingHours.trim() || undefined,
+          tags: createForm.tags
+            ? createForm.tags.split(',').map((t) => t.trim()).filter(Boolean)
+            : undefined,
+          services: createForm.services
+            ? createForm.services.split(',').map((s) => s.trim()).filter(Boolean)
+            : undefined,
+        });
+
+        toast.success('Tạo hồ sơ gái gọi thành công');
+        setCreateModalOpen(false);
+        setSelectedUserId('');
+        setCreateMode('create');
+        // Reset image state
+        setProfileImages([]);
+        setProfileImagePreviews([]);
+        // Reset form
+        setCreateForm({
+          email: '',
+          password: '',
+          fullName: '',
+          phone: '',
+          bio: '',
+          districts: '',
+          images: '',
+          age: '',
+          height: '',
+          weight: '',
+          measurements: '',
+          origin: '',
+          address: '',
+          location: '',
+          province: '',
+          price: '',
+          workingHours: '',
+          tags: '',
+          services: '',
+        });
+        // Reset location state
+        setSelectedProvince('');
+        setDistrictsByProvince([]);
+        setSelectedDistricts([]);
+
+        // Reload để cập nhật danh sách
+        await loadGirls();
+        await loadStats();
+      } catch (error: any) {
+        console.error('Create profile error:', error);
+        const errorMessage = error?.message || error?.response?.data?.message || 'Không thể tạo hồ sơ';
+        toast.error(errorMessage);
+      } finally {
+        setIsCreating(false);
+      }
+      return;
+    }
+
+    // Mode: Create new user account
     // Basic validate - chỉ cần email, password, fullName
     if (!createForm.email.trim() || !createForm.password.trim() || !createForm.fullName.trim()) {
       toast.error('Vui lòng nhập email, mật khẩu và họ tên');
@@ -242,33 +480,32 @@ export default function AdminGirlsPage() {
 
   // Upload image helper function
   const uploadImage = async (file: File): Promise<string> => {
-    const fileToBase64 = (file: File): Promise<string> => {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = (error) => reject(error);
-      });
-    };
-
     try {
-      const base64Data = await fileToBase64(file);
+      // Use FormData (preferred method) instead of base64 JSON
+      const formData = new FormData();
+      formData.append('file', file);
+
       const response = await fetch('/api/upload/image', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${Cookies.get('accessToken')}`,
+          // Don't set Content-Type header - browser will set it automatically with boundary for FormData
         },
-        body: JSON.stringify({ url: base64Data }),
+        body: formData,
       });
 
       if (!response.ok) {
-        throw new Error('Tải ảnh thất bại');
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || errorData.message || 'Tải ảnh thất bại';
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
+      if (!data.url) {
+        throw new Error('Không nhận được URL ảnh từ server');
+      }
       return data.url;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading image:', error);
       throw error;
     }
@@ -310,7 +547,9 @@ export default function AdminGirlsPage() {
       await loadGirls();
       await loadStats();
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Không thể tạo hồ sơ');
+      console.error('Create profile error:', error);
+      const errorMessage = error?.message || error?.response?.data?.message || 'Không thể tạo hồ sơ';
+      toast.error(errorMessage);
     } finally {
       setIsCreatingProfile(false);
     }
@@ -327,6 +566,17 @@ export default function AdminGirlsPage() {
       districts: '',
       images: '',
       age: '',
+      height: '',
+      weight: '',
+      measurements: '',
+      origin: '',
+      address: '',
+      location: '',
+      province: '',
+      price: '',
+      workingHours: '',
+      tags: '',
+      services: '',
     });
     // Reset image state
     setProfileImages([]);
@@ -847,6 +1097,11 @@ export default function AdminGirlsPage() {
                                     setSelectedImageTitle('CCCD Mặt trước');
                                     setImageViewerOpen(true);
                                   }}
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                    console.warn('Failed to load image:', selectedGirl.idCardFrontUrl);
+                                  }}
                                 />
                                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
                                   <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -871,6 +1126,11 @@ export default function AdminGirlsPage() {
                                     setSelectedImageTitle('CCCD Mặt sau');
                                     setImageViewerOpen(true);
                                   }}
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                    console.warn('Failed to load image:', selectedGirl.idCardBackUrl);
+                                  }}
                                 />
                                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
                                   <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -894,6 +1154,11 @@ export default function AdminGirlsPage() {
                                     setSelectedImageUrl(selectedGirl.selfieUrl!);
                                     setSelectedImageTitle('Ảnh mặt mộc');
                                     setImageViewerOpen(true);
+                                  }}
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                    console.warn('Failed to load image:', selectedGirl.selfieUrl);
                                   }}
                                 />
                                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
@@ -934,6 +1199,11 @@ export default function AdminGirlsPage() {
                         {selectedGirl.images.map((image, idx) => (
                           <img
                             key={idx}
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              console.warn('Failed to load image:', image);
+                            }}
                             src={image}
                             alt={`${selectedGirl.name} - ${idx + 1}`}
                             className="w-full h-32 object-cover rounded-lg border border-secondary/30"
@@ -1201,7 +1471,13 @@ export default function AdminGirlsPage() {
                 </div>
               </div>
               <button
-                onClick={() => setCreateModalOpen(false)}
+                onClick={() => {
+                  // Reset image state when closing
+                  profileImagePreviews.forEach(preview => URL.revokeObjectURL(preview));
+                  setProfileImages([]);
+                  setProfileImagePreviews([]);
+                  setCreateModalOpen(false);
+                }}
                 className="p-2 hover:bg-background rounded-lg transition-colors"
               >
                 <svg className="w-6 h-6 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1212,36 +1488,206 @@ export default function AdminGirlsPage() {
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-6 space-y-5">
+              {/* Mode Selection */}
+              <div>
+                <label className="block text-sm font-semibold text-text mb-3">Chọn phương thức</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCreateMode('create');
+                      setSelectedUserId('');
+                      setCreateForm({
+                        email: '',
+                        password: '',
+                        fullName: '',
+                        phone: '',
+                        bio: '',
+                        districts: '',
+                        images: '',
+                        age: '',
+                        height: '',
+                        weight: '',
+                        measurements: '',
+                        origin: '',
+                        address: '',
+                        location: '',
+                        province: '',
+                        price: '',
+                        workingHours: '',
+                        tags: '',
+                        services: '',
+                      });
+                      // Reset image state
+                      profileImagePreviews.forEach(preview => URL.revokeObjectURL(preview));
+                      setProfileImages([]);
+                      setProfileImagePreviews([]);
+                      // Reset location state
+                      setSelectedProvince('');
+                      setDistrictsByProvince([]);
+                      setSelectedDistricts([]);
+                    }}
+                    className={`px-4 py-3 rounded-xl border-2 transition-all ${
+                      createMode === 'create'
+                        ? 'border-primary bg-primary/10 text-primary font-medium'
+                        : 'border-secondary/50 bg-background text-text hover:border-primary/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 justify-center">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      <span>Tạo tài khoản mới</span>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCreateMode('select');
+                      setSelectedUserId('');
+                      setCreateForm({
+                        email: '',
+                        password: '',
+                        fullName: '',
+                        phone: '',
+                        bio: '',
+                        districts: '',
+                        images: '',
+                        age: '',
+                        height: '',
+                        weight: '',
+                        measurements: '',
+                        origin: '',
+                        address: '',
+                        location: '',
+                        province: '',
+                        price: '',
+                        workingHours: '',
+                        tags: '',
+                        services: '',
+                      });
+                      // Reset image state
+                      profileImagePreviews.forEach(preview => URL.revokeObjectURL(preview));
+                      setProfileImages([]);
+                      setProfileImagePreviews([]);
+                      // Reset location state
+                      setSelectedProvince('');
+                      setDistrictsByProvince([]);
+                      setSelectedDistricts([]);
+                      loadAvailableUsers();
+                      loadProvinces();
+                    }}
+                    className={`px-4 py-3 rounded-xl border-2 transition-all ${
+                      createMode === 'select'
+                        ? 'border-primary bg-primary/10 text-primary font-medium'
+                        : 'border-secondary/50 bg-background text-text hover:border-primary/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 justify-center">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                      <span>Chọn user có sẵn</span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* User Selection Dropdown (only for select mode) */}
+              {createMode === 'select' && (
+                <div>
+                  <label className="block text-sm font-semibold text-text mb-2">
+                    Chọn user <span className="text-red-500">*</span>
+                  </label>
+                  {isLoadingUsers ? (
+                    <div className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl flex items-center justify-center">
+                      <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                      <span className="ml-2 text-text-muted">Đang tải danh sách...</span>
+                    </div>
+                  ) : (
+                    <select
+                      value={selectedUserId}
+                      onChange={(e) => {
+                        const userId = e.target.value;
+                        setSelectedUserId(userId);
+                        const selectedUser = availableUsers.find(u => u.id === userId);
+                        if (selectedUser) {
+                          setCreateForm({
+                            ...createForm,
+                            email: selectedUser.email,
+                            fullName: selectedUser.fullName || '',
+                            phone: selectedUser.phone || '',
+                            bio: '',
+                            districts: '',
+                            images: '',
+                            age: '',
+                            height: '',
+                            weight: '',
+                            measurements: '',
+                            origin: '',
+                            address: '',
+                            location: '',
+                            province: '',
+                            price: '',
+                            workingHours: '',
+                            tags: '',
+                            services: '',
+                          });
+                        }
+                      }}
+                      className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                    >
+                      <option value="">-- Chọn user --</option>
+                      {availableUsers.map((user) => (
+                        <option key={user.id} value={user.id}>
+                          {user.fullName} ({user.email}) {user.phone ? `- ${user.phone}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {availableUsers.length === 0 && !isLoadingUsers && (
+                    <p className="mt-1.5 text-xs text-text-muted">
+                      Không có user nào chưa có profile
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* User Info Fields */}
               <div>
                 <label className="block text-sm font-semibold text-text mb-2">Email</label>
                 <input
                   type="email"
                   value={createForm.email}
                   onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                  disabled={createMode === 'select' && selectedUserId !== ''}
+                  className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   placeholder="email@example.com"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-semibold text-text mb-2">Mật khẩu</label>
-                <input
-                  type="password"
-                  value={createForm.password}
-                  onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
-                  placeholder="••••••••"
-                />
-                <p className="mt-1.5 text-xs text-text-muted">
-                  Phải có ít nhất 8 ký tự bao gồm chữ hoa, chữ thường và số
-                </p>
-              </div>
+              {createMode === 'create' && (
+                <div>
+                  <label className="block text-sm font-semibold text-text mb-2">Mật khẩu</label>
+                  <input
+                    type="password"
+                    value={createForm.password}
+                    onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                    placeholder="••••••••"
+                  />
+                  <p className="mt-1.5 text-xs text-text-muted">
+                    Phải có ít nhất 8 ký tự bao gồm chữ hoa, chữ thường và số
+                  </p>
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-semibold text-text mb-2">Họ tên</label>
                 <input
                   type="text"
                   value={createForm.fullName}
                   onChange={(e) => setCreateForm({ ...createForm, fullName: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                  disabled={createMode === 'select' && selectedUserId !== ''}
+                  className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   placeholder="Nguyễn Thị A"
                 />
               </div>
@@ -1251,10 +1697,266 @@ export default function AdminGirlsPage() {
                   type="text"
                   value={createForm.phone}
                   onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                  disabled={createMode === 'select' && selectedUserId !== ''}
+                  className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   placeholder="09xxxxxxxx"
                 />
               </div>
+
+              {/* Profile Fields (shown for both modes, but required for select mode) */}
+              {createMode === 'select' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-semibold text-text mb-2">Mô tả</label>
+                    <textarea
+                      value={createForm.bio}
+                      onChange={(e) => setCreateForm({ ...createForm, bio: e.target.value })}
+                      rows={3}
+                      className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all resize-none"
+                      placeholder="Giới thiệu về gái gọi..."
+                    />
+                  </div>
+                  
+                  {/* Basic Info */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-text mb-2">Tuổi</label>
+                      <input
+                        type="number"
+                        value={createForm.age}
+                        onChange={(e) => setCreateForm({ ...createForm, age: e.target.value })}
+                        min="18"
+                        max="60"
+                        className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                        placeholder="25"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-text mb-2">Khu vực</label>
+                      <p className="text-xs text-text-muted mb-2">
+                        Vui lòng chọn tỉnh/thành phố và quận/huyện ở phần "Địa điểm" bên dưới
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Physical Info */}
+                  <div className="border-t border-secondary/30 pt-4">
+                    <h3 className="text-sm font-semibold text-text mb-3">Thông tin thể chất</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-text mb-2">Chiều cao</label>
+                        <input
+                          type="text"
+                          value={createForm.height}
+                          onChange={(e) => setCreateForm({ ...createForm, height: e.target.value })}
+                          className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                          placeholder="160cm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-text mb-2">Cân nặng</label>
+                        <input
+                          type="text"
+                          value={createForm.weight}
+                          onChange={(e) => setCreateForm({ ...createForm, weight: e.target.value })}
+                          className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                          placeholder="52kg"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-text mb-2">Số đo</label>
+                        <input
+                          type="text"
+                          value={createForm.measurements}
+                          onChange={(e) => setCreateForm({ ...createForm, measurements: e.target.value })}
+                          className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                          placeholder="89-64-92"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-text mb-2">Xuất xứ</label>
+                        <input
+                          type="text"
+                          value={createForm.origin}
+                          onChange={(e) => setCreateForm({ ...createForm, origin: e.target.value })}
+                          className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                          placeholder="Miền Tây"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Location */}
+                  <div className="border-t border-secondary/30 pt-4">
+                    <h3 className="text-sm font-semibold text-text mb-3">Địa điểm</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-text mb-2">
+                          Tỉnh/Thành phố <span className="text-red-500">*</span>
+                        </label>
+                        {isLoadingProvinces ? (
+                          <div className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl flex items-center justify-center">
+                            <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                            <span className="ml-2 text-text-muted">Đang tải...</span>
+                          </div>
+                        ) : (
+                          <>
+                            <select
+                              value={selectedProvince}
+                            onChange={(e) => {
+                              const province = e.target.value;
+                              setSelectedProvince(province);
+                            }}
+                              className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                            >
+                              <option value="">-- Chọn tỉnh/thành phố --</option>
+                              {provinces.length > 0 ? (
+                                provinces.map((province) => (
+                                  <option key={province} value={province}>
+                                    {province}
+                                  </option>
+                                ))
+                              ) : (
+                                <option value="" disabled>Không có dữ liệu</option>
+                              )}
+                            </select>
+                            {provinces.length === 0 && !isLoadingProvinces && (
+                              <p className="mt-1.5 text-xs text-text-muted">
+                                Không có tỉnh/thành phố nào. Vui lòng kiểm tra lại hoặc thử tải lại trang.
+                              </p>
+                            )}
+                          </>
+                        )}
+                      </div>
+
+                    </div>
+                  </div>
+
+                  {/* Pricing & Services */}
+                  <div className="border-t border-secondary/30 pt-4">
+                    <h3 className="text-sm font-semibold text-text mb-3">Giá cả & Dịch vụ</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-text mb-2">Giá</label>
+                        <input
+                          type="text"
+                          value={createForm.price}
+                          onChange={(e) => setCreateForm({ ...createForm, price: e.target.value })}
+                          className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                          placeholder="200K"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-text mb-2">Giờ làm việc</label>
+                        <input
+                          type="text"
+                          value={createForm.workingHours}
+                          onChange={(e) => setCreateForm({ ...createForm, workingHours: e.target.value })}
+                          className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                          placeholder="24/24"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-text mb-2">Thẻ (phân cách bằng dấu phẩy)</label>
+                        <input
+                          type="text"
+                          value={createForm.tags}
+                          onChange={(e) => setCreateForm({ ...createForm, tags: e.target.value })}
+                          className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                          placeholder="xinh đẹp, dịu dàng"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-text mb-2">Dịch vụ (phân cách bằng dấu phẩy)</label>
+                        <input
+                          type="text"
+                          value={createForm.services}
+                          onChange={(e) => setCreateForm({ ...createForm, services: e.target.value })}
+                          className="w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                          placeholder="massage, karaoke"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-text mb-2">Ảnh</label>
+                    
+                    {/* File Input */}
+                    <div className="mb-3">
+                      <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-secondary/50 rounded-xl cursor-pointer bg-background hover:bg-background-light hover:border-primary/50 transition-colors">
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                          <svg className="w-10 h-10 mb-3 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                          </svg>
+                          <p className="mb-2 text-sm text-text-muted">
+                            <span className="font-semibold">Nhấn để chọn ảnh</span> hoặc kéo thả
+                          </p>
+                          <p className="text-xs text-text-muted">PNG, JPG, GIF (Tối đa 5MB mỗi ảnh)</p>
+                        </div>
+                        <input
+                          type="file"
+                          className="hidden"
+                          multiple
+                          accept="image/*"
+                          onChange={handleImageSelect}
+                        />
+                      </label>
+                    </div>
+
+                    {/* Image Previews */}
+                    {profileImagePreviews.length > 0 && (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-3">
+                        {profileImagePreviews.map((preview, index) => (
+                          <div key={index} className="relative group cursor-pointer">
+                            <img
+                              src={preview}
+                              alt={`Preview ${index + 1}`}
+                              className="w-full h-32 object-cover rounded-lg border border-secondary/30 transition-transform group-hover:scale-105"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                console.warn('Failed to load preview image:', preview);
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-black/40 rounded-lg opacity-0 md:group-hover:opacity-100 transition-opacity"></div>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemoveImage(index);
+                              }}
+                              className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white rounded-full shadow-lg opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all transform scale-100 md:scale-90 md:group-hover:scale-100 z-10 touch-manipulation"
+                              title="Xóa ảnh"
+                              aria-label="Xóa ảnh"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                            <div className="absolute bottom-1 left-1 px-2 py-0.5 bg-black/70 text-white text-xs rounded truncate max-w-[calc(100%-4rem)]">
+                              {profileImages[index]?.name || `Ảnh ${index + 1}`}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Fallback URL input (optional) */}
+                    <details className="mt-3">
+                      <summary className="text-sm text-text-muted cursor-pointer hover:text-text transition-colors">
+                        Hoặc nhập URL ảnh (tùy chọn)
+                      </summary>
+                      <textarea
+                        value={createForm.images}
+                        onChange={(e) => setCreateForm({ ...createForm, images: e.target.value })}
+                        rows={2}
+                        className="mt-2 w-full px-4 py-2.5 bg-background border border-secondary/50 rounded-xl text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                        placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
+                      />
+                    </details>
+                  </div>
+                </>
+              )}
 
               {/* Info Banner */}
               <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
@@ -1263,8 +1965,16 @@ export default function AdminGirlsPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <span>
-                    <strong>Lưu ý:</strong> Sau khi tạo tài khoản, bạn sẽ được hỏi có muốn cập nhật thông tin hồ sơ chi tiết (tuổi, mô tả, khu vực, ảnh...) không.
-                    Bạn có thể bỏ qua và cập nhật sau.
+                    {createMode === 'create' ? (
+                      <>
+                        <strong>Lưu ý:</strong> Sau khi tạo tài khoản, bạn sẽ được hỏi có muốn cập nhật thông tin hồ sơ chi tiết (tuổi, mô tả, khu vực, ảnh...) không.
+                        Bạn có thể bỏ qua và cập nhật sau.
+                      </>
+                    ) : (
+                      <>
+                        <strong>Lưu ý:</strong> Chọn user đã có tài khoản nhưng chưa có profile. Sau khi chọn, bạn có thể cập nhật thông tin hồ sơ cho user đó.
+                      </>
+                    )}
                   </span>
                 </p>
               </div>
@@ -1274,7 +1984,13 @@ export default function AdminGirlsPage() {
             <div className="p-6 border-t border-secondary/30 flex justify-end gap-3">
               <Button
                 variant="secondary"
-                onClick={() => setCreateModalOpen(false)}
+                onClick={() => {
+                  // Reset image state when closing
+                  profileImagePreviews.forEach(preview => URL.revokeObjectURL(preview));
+                  setProfileImages([]);
+                  setProfileImagePreviews([]);
+                  setCreateModalOpen(false);
+                }}
               >
                 Hủy
               </Button>
@@ -1283,7 +1999,7 @@ export default function AdminGirlsPage() {
                 onClick={handleCreate}
                 isLoading={isCreating}
               >
-                Tạo tài khoản
+                {createMode === 'create' ? 'Tạo tài khoản' : 'Tạo hồ sơ'}
               </Button>
             </div>
           </div>
@@ -1424,6 +2140,11 @@ export default function AdminGirlsPage() {
                           src={preview}
                           alt={`Preview ${index + 1}`}
                           className="w-full h-32 object-cover rounded-lg border border-secondary/30 transition-transform group-hover:scale-105"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            console.warn('Failed to load preview image:', preview);
+                          }}
                         />
                         {/* Dark overlay on hover (desktop only) */}
                         <div className="absolute inset-0 bg-black/40 rounded-lg opacity-0 md:group-hover:opacity-100 transition-opacity"></div>
@@ -1544,6 +2265,11 @@ export default function AdminGirlsPage() {
               alt={selectedImageTitle || 'Ảnh xác thực'}
               className="max-w-full max-h-full object-contain rounded-lg"
               onClick={(e) => e.stopPropagation()}
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                console.warn('Failed to load image in viewer:', selectedImageUrl);
+              }}
             />
 
             {/* Download button */}

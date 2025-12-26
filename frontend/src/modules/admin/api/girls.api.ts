@@ -179,6 +179,20 @@ export const girlsApi = {
     images?: string[];
     age?: number;
     name?: string;
+    // Physical Info
+    height?: string;
+    weight?: string;
+    measurements?: string;
+    origin?: string;
+    // Location
+    address?: string;
+    location?: string;
+    province?: string;
+    // Pricing & Services
+    price?: string;
+    workingHours?: string;
+    tags?: string[];
+    services?: string[];
   }): Promise<Girl> => {
     const response = await apiClient.post<any>(`/admin/girls/${userId}/profile`, data);
     return unwrapResponse(response.data) as Girl;

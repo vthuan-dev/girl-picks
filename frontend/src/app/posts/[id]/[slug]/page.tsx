@@ -20,7 +20,7 @@ interface PageProps {
 
 // Generate metadata for SEO
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { id } = await params;
+  const { id, slug } = await params;
   
   try {
     const response = await postsApi.getById(id);
@@ -44,7 +44,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
     if (!imageUrl) imageUrl = `${siteUrl}/images/logo/logo.png`;
     
-    const { slug } = await params;
     const url = `${siteUrl}/posts/${post.id}/${slug}`;
 
     // Parse tags
