@@ -491,4 +491,69 @@ export class ChatSexService {
       },
     });
   }
+
+  /**
+   * Get users with role GIRL who don't have a ChatSexGirl profile
+   * Filters out users who already have a ChatSexGirl profile (matched by phone number)
+   */
+  async getUsersWithoutChatSexProfile(page: number = 1, limit: number = 50) {
+    // Get all users with role GIRL
+    const [allGirlUsers, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where: {
+          role: 'GIRL',
+          isActive: true,
+        },
+        select: {
+          id: true,
+          email: true,
+          fullName: true,
+          phone: true,
+          avatarUrl: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.user.count({
+        where: {
+          role: 'GIRL',
+          isActive: true,
+        },
+      }),
+    ]);
+
+    // Get all existing ChatSexGirl phone numbers
+    const existingChatSexGirls = await this.prisma.chatSexGirl.findMany({
+      where: {
+        phone: { not: null },
+      },
+      select: {
+        phone: true,
+      },
+    });
+
+    const existingPhones = new Set(
+      existingChatSexGirls
+        .map((g) => g.phone)
+        .filter(Boolean) as string[],
+    );
+
+    // Filter out users who already have ChatSexGirl profile (by phone match)
+    const usersWithoutProfile = allGirlUsers.filter(
+      (user) => !user.phone || !existingPhones.has(user.phone),
+    );
+
+    // Apply pagination
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedUsers = usersWithoutProfile.slice(startIndex, endIndex);
+
+    return {
+      data: paginatedUsers,
+      total: usersWithoutProfile.length,
+      page,
+      limit,
+      totalPages: Math.ceil(usersWithoutProfile.length / limit),
+    };
+  }
 }

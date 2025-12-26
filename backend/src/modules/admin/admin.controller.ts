@@ -195,6 +195,20 @@ export class AdminController {
       images?: string[];
       age?: number;
       name?: string;
+      // Physical Info
+      height?: string;
+      weight?: string;
+      measurements?: string;
+      origin?: string;
+      // Location
+      address?: string;
+      location?: string;
+      province?: string;
+      // Pricing & Services
+      price?: string;
+      workingHours?: string;
+      tags?: string[];
+      services?: string[];
     },
   ) {
     return this.adminService.createGirlProfileFromUser(userId, profileDto);

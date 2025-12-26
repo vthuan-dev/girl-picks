@@ -567,6 +567,20 @@ export class AdminService {
       images?: string[];
       age?: number;
       name?: string;
+      // Physical Info
+      height?: string;
+      weight?: string;
+      measurements?: string;
+      origin?: string;
+      // Location
+      address?: string;
+      location?: string;
+      province?: string;
+      // Pricing & Services
+      price?: string;
+      workingHours?: string;
+      tags?: string[];
+      services?: string[];
     },
   ) {
     // Kiểm tra user có tồn tại và là GIRL
@@ -598,8 +612,22 @@ export class AdminService {
         bio: dto.bio || null,
         districts: dto.districts || [],
         images: dto.images || [],
-        age: dto.age,
+        age: dto.age || null,
         name: dto.name || user.fullName,
+        // Physical Info
+        height: dto.height || null,
+        weight: dto.weight || null,
+        measurements: dto.measurements || null,
+        origin: dto.origin || null,
+        // Location
+        address: dto.address || null,
+        location: dto.location || null,
+        province: dto.province || null,
+        // Pricing & Services
+        price: dto.price || null,
+        workingHours: dto.workingHours || null,
+        tags: dto.tags || [],
+        services: dto.services || [],
         verificationStatus: VerificationStatus.PENDING,
         needsReverify: false,
       },
@@ -668,9 +696,14 @@ export class AdminService {
       throw new NotFoundException('Girl not found');
     }
 
+    // When admin updates, don't require re-verification
     return this.prisma.girl.update({
       where: { id },
-      data: dto,
+      data: {
+        ...dto,
+        needsReverify: false, // Admin updates don't require re-verification
+        // Don't change verificationStatus - keep current status
+      },
       include: {
         user: {
           select: {
