@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { ReviewsService } from '../reviews/reviews.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { ProcessReportDto } from './dto/process-report.dto';
 import { CreateGirlDto } from './dto/create-girl.dto';
 import { UpdateGirlAdminDto } from './dto/update-girl-admin.dto';
@@ -47,6 +48,7 @@ export class AdminController {
   constructor(
     private readonly adminService: AdminService,
     private readonly reviewsService: ReviewsService,
+    private readonly notificationsService: NotificationsService,
   ) {
     console.log(
       '[AdminController] Initialized with ReviewsService:',
@@ -535,5 +537,49 @@ export class AdminController {
   @ApiResponse({ status: 200, description: 'Post deleted' })
   deletePost(@Param('id') id: string) {
     return this.adminService.deletePostAsAdmin(id);
+  }
+
+  // ============================================
+  // Notifications Management
+  // ============================================
+
+  @Get('notifications')
+  @ApiOperation({ summary: 'Get admin notifications' })
+  @ApiQuery({ name: 'unreadOnly', required: false, type: Boolean })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'List of notifications' })
+  async getNotifications(
+    @CurrentUser('id') adminId: string,
+    @Query('unreadOnly') unreadOnly?: string,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
+  ) {
+    const isReadFilter = unreadOnly === 'true' ? false : undefined;
+    const notifications = await this.notificationsService.findAll(adminId, isReadFilter);
+    return notifications.slice(0, limit);
+  }
+
+  @Get('notifications/unread-count')
+  @ApiOperation({ summary: 'Get unread notification count' })
+  @ApiResponse({ status: 200, description: 'Unread count' })
+  async getUnreadCount(@CurrentUser('id') adminId: string) {
+    const count = await this.notificationsService.getUnreadCount(adminId);
+    return { count };
+  }
+
+  @Post('notifications/:id/read')
+  @ApiOperation({ summary: 'Mark notification as read' })
+  @ApiResponse({ status: 200, description: 'Notification marked as read' })
+  async markNotificationAsRead(
+    @Param('id') id: string,
+    @CurrentUser('id') adminId: string,
+  ) {
+    return this.notificationsService.markAsRead(id, adminId);
+  }
+
+  @Post('notifications/read-all')
+  @ApiOperation({ summary: 'Mark all notifications as read' })
+  @ApiResponse({ status: 200, description: 'All notifications marked as read' })
+  async markAllNotificationsAsRead(@CurrentUser('id') adminId: string) {
+    return this.notificationsService.markAllAsRead(adminId);
   }
 }
