@@ -110,17 +110,17 @@ export const adminApi = {
   getDashboardStats: async (): Promise<DashboardStats> => {
     const response = await apiClient.get<any>('/admin/stats');
     const responseData = response.data;
-    
+
     // Handle wrapped response {success: true, data: {...}}
     if (responseData.success && responseData.data) {
       return responseData.data;
     }
-    
+
     // If already unwrapped, return directly
     if (responseData.overview) {
       return responseData;
     }
-    
+
     throw new Error('Định dạng phản hồi từ server không hợp lệ');
   },
 
@@ -130,15 +130,15 @@ export const adminApi = {
       `/admin/pending/posts?page=${page}&limit=${limit}`
     );
     const responseData = response.data;
-    
+
     if (responseData.success && responseData.data) {
       return responseData.data;
     }
-    
+
     if (responseData.data && Array.isArray(responseData.data)) {
       return responseData;
     }
-    
+
     throw new Error('Định dạng phản hồi từ server không hợp lệ');
   },
 
@@ -148,15 +148,15 @@ export const adminApi = {
       `/admin/pending/reviews?page=${page}&limit=${limit}`
     );
     const responseData = response.data;
-    
+
     if (responseData.success && responseData.data) {
       return responseData.data;
     }
-    
+
     if (responseData.data && Array.isArray(responseData.data)) {
       return responseData;
     }
-    
+
     throw new Error('Định dạng phản hồi từ server không hợp lệ');
   },
 
@@ -166,15 +166,15 @@ export const adminApi = {
       `/admin/pending/verifications?page=${page}&limit=${limit}`
     );
     const responseData = response.data;
-    
+
     if (responseData.success && responseData.data) {
       return responseData.data;
     }
-    
+
     if (responseData.data && Array.isArray(responseData.data)) {
       return responseData;
     }
-    
+
     throw new Error('Định dạng phản hồi từ server không hợp lệ');
   },
 
@@ -184,7 +184,7 @@ export const adminApi = {
     if (status) params.append('status', status);
     params.append('page', page.toString());
     params.append('limit', limit.toString());
-    
+
     const response = await apiClient.get<PaginatedResponse<Report>>(
       `/admin/reports?${params.toString()}`
     );
@@ -228,10 +228,33 @@ export const adminApi = {
   // Notifications
   getNotifications: async (unreadOnly: boolean = false, limit: number = 20): Promise<any[]> => {
     try {
-      const response = await apiClient.get<any[]>(
+      const response = await apiClient.get<any>(
         `/admin/notifications?unreadOnly=${unreadOnly}&limit=${limit}`
       );
-      return response.data || [];
+
+      // Handle wrapped response {success: true, data: [...]} or direct array
+      let notifications = response.data;
+      if (notifications?.success && Array.isArray(notifications.data)) {
+        notifications = notifications.data;
+      }
+
+      // Ensure it's an array
+      if (!Array.isArray(notifications)) {
+        console.warn('getNotifications: response is not an array', notifications);
+        return [];
+      }
+
+      // Transform backend notification format to frontend format
+      return notifications.map((n: any) => ({
+        id: n.id,
+        type: n.type,
+        title: n.type?.replace(/_/g, ' ') || 'Thông báo', // Map type to title
+        message: n.message,
+        isRead: n.isRead,
+        createdAt: n.createdAt,
+        href: n.data?.postId ? `/admin/pending/community-posts` :
+          n.data?.girlId ? `/admin/pending/verifications` : undefined,
+      }));
     } catch (error) {
       console.error('Get notifications error:', error);
       return [];
