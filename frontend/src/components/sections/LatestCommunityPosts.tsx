@@ -66,8 +66,14 @@ export default function LatestCommunityPosts({ limit = 6 }: LatestCommunityPosts
   if (isLoading && posts.length === 0) {
     return (
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-text">Bài viết cộng đồng</h2>
+        <div className="mb-4">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg bg-secondary/30 animate-pulse" />
+            <div className="flex flex-col gap-1.5">
+              <div className="h-4 w-32 bg-secondary/30 rounded animate-pulse" />
+              <div className="h-3 w-40 bg-secondary/20 rounded animate-pulse" />
+            </div>
+          </div>
         </div>
         <div className="space-y-4">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -88,8 +94,18 @@ export default function LatestCommunityPosts({ limit = 6 }: LatestCommunityPosts
     console.error('[LatestCommunityPosts] Error:', error);
     return (
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-text">Bài viết cộng đồng</h2>
+        <div className="mb-4">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20">
+              <svg className="w-6 h-6 sm:w-7 sm:h-7 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="flex flex-col">
+              <h2 className="text-base sm:text-lg font-bold text-text">Bài viết cộng đồng</h2>
+              <p className="text-xs text-text-muted mt-0.5">Không thể tải dữ liệu</p>
+            </div>
+          </div>
         </div>
         <div className="text-center py-8 text-text-muted">
           <p>Không thể tải bài viết. Vui lòng thử lại sau.</p>
@@ -103,8 +119,20 @@ export default function LatestCommunityPosts({ limit = 6 }: LatestCommunityPosts
     console.log('[LatestCommunityPosts] No posts found');
     return (
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-text">Bài viết cộng đồng</h2>
+        <div className="mb-4">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
+              <svg className="w-6 h-6 sm:w-7 sm:h-7 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
+              </svg>
+            </div>
+            <div className="flex flex-col">
+              <h2 className="text-base sm:text-lg font-bold text-text">
+                Bài viết cộng đồng
+              </h2>
+              <p className="text-xs text-text-muted mt-0.5">Chia sẻ và kết nối với cộng đồng</p>
+            </div>
+          </div>
         </div>
         <div className="text-center py-8 text-text-muted">
           <p>Chưa có bài viết nào.</p>
@@ -116,8 +144,46 @@ export default function LatestCommunityPosts({ limit = 6 }: LatestCommunityPosts
   return (
     <div className="mb-8">
       {/* Header */}
-      <div className="flex items-center justify-between gap-3 mb-2">
-        <h2 className="text-lg font-bold text-text whitespace-nowrap">Bài viết cộng đồng</h2>
+      <div className="mb-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            {/* Simple icon */}
+            <div className="flex-shrink-0 w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
+              <svg
+                className="w-6 h-6 sm:w-7 sm:h-7 text-primary"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"
+                />
+              </svg>
+            </div>
+            
+            {/* Title */}
+            <div className="flex flex-col">
+              <h2 className="text-base sm:text-lg font-bold text-text">
+                Bài viết cộng đồng
+              </h2>
+              <p className="text-xs text-text-muted mt-0.5">
+                Chia sẻ và kết nối với cộng đồng
+              </p>
+            </div>
+          </div>
+          
+          {/* Badge showing post count */}
+          {posts.length > 0 && (
+            <div className="flex-shrink-0 hidden sm:flex items-center px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20">
+              <span className="text-xs font-medium text-primary">
+                {posts.length}
+              </span>
+            </div>
+          )}
+        </div>
       </div>
       {isAuthenticated && user?.role === 'CUSTOMER' && (
         <div className="mb-4">

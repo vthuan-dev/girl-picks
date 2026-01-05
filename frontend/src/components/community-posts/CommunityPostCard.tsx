@@ -705,8 +705,29 @@ export default function CommunityPostCard({ post }: CommunityPostCardProps) {
           </div>
         ) : (
           <div className="pt-2">
-            <Link href="/auth/login" className="text-sm text-primary hover:text-primary/80 hover:underline transition-colors font-medium">
-              Đăng nhập để bình luận
+            <Link
+              href="/auth/login"
+              className="flex items-center gap-3 w-full px-4 py-2.5 bg-background border border-secondary/30 rounded-lg text-sm text-text-muted/60 hover:text-text-muted hover:border-primary/40 transition-all duration-300 group cursor-pointer"
+            >
+              <div className="w-10 h-10 sm:w-8 sm:h-8 rounded-full bg-secondary/10 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                <svg
+                  className="w-7 h-7 sm:w-4 sm:h-4 text-text-muted/40 group-hover:text-primary transition-colors"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  />
+                </svg>
+              </div>
+              <span className="flex-1">Đăng nhập để bình luận...</span>
+              <div className="px-2 py-1 rounded-md bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-1 group-hover:translate-x-0">
+                Đăng nhập
+              </div>
             </Link>
           </div>
         )}

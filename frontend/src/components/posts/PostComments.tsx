@@ -27,13 +27,13 @@ export default function PostComments({ postId, initialCount = 0 }: PostCommentsP
       setIsLoading(true);
       const response = await postsApi.getComments(postId, pageNum, 10);
       const newComments = response.data || [];
-      
+
       if (append) {
         setComments(prev => [...prev, ...newComments]);
       } else {
         setComments(newComments);
       }
-      
+
       setTotalCount(response.totalAll || response.total || newComments.length);
       setHasMore(pageNum < (response.totalPages || 1));
     } catch (error) {
@@ -167,9 +167,31 @@ interface CommentFormProps {
 function CommentForm({ isAuthenticated, user, value, onChange, onSubmit, isSubmitting, placeholder, autoFocus, compact, onCancel }: CommentFormProps) {
   if (!isAuthenticated) {
     return (
-      <div className="px-4 py-3 bg-background border border-secondary/50 rounded-xl text-center">
-        <p className="text-text-muted text-sm mb-2">Đăng nhập để bình luận</p>
-        <Link href="/auth/login" className="text-primary hover:underline text-sm font-medium">Đăng nhập ngay</Link>
+      <div className="pt-2">
+        <Link
+          href="/auth/login"
+          className="flex items-center gap-3 w-full px-4 py-2.5 bg-background border border-secondary/30 rounded-lg text-sm text-text-muted/60 hover:text-text-muted hover:border-primary/40 transition-all duration-300 group cursor-pointer"
+        >
+          <div className="w-10 h-10 sm:w-8 sm:h-8 rounded-full bg-secondary/10 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+            <svg
+              className="w-7 h-7 sm:w-4 sm:h-4 text-text-muted/40 group-hover:text-primary transition-colors"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+              />
+            </svg>
+          </div>
+          <span className="flex-1">Đăng nhập để bình luận...</span>
+          <div className="px-2 py-1 rounded-md bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-1 group-hover:translate-x-0">
+            Đăng nhập
+          </div>
+        </Link>
       </div>
     );
   }
@@ -302,8 +324,8 @@ function CommentItem({ comment, postId, isAuthenticated, user, onReplyAdded, isR
 
           {/* Reply Button */}
           {!isReply && isAuthenticated && (
-            <button 
-              onClick={() => setShowReplyForm(!showReplyForm)} 
+            <button
+              onClick={() => setShowReplyForm(!showReplyForm)}
               className="text-sm text-primary hover:text-primary-hover font-medium transition-colors duration-200 hover:underline"
             >
               {showReplyForm ? 'Hủy' : 'Trả lời'}
@@ -330,8 +352,8 @@ function CommentItem({ comment, postId, isAuthenticated, user, onReplyAdded, isR
 
           {/* View Replies Button */}
           {!isReply && repliesCount > 0 && !showReplies && (
-            <button 
-              onClick={() => setShowReplies(true)} 
+            <button
+              onClick={() => setShowReplies(true)}
               className="flex items-center gap-1.5 mt-2 text-primary text-sm font-medium hover:text-primary-hover transition-colors duration-200 hover:underline"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -347,8 +369,8 @@ function CommentItem({ comment, postId, isAuthenticated, user, onReplyAdded, isR
               {comment.replies.map((reply) => (
                 <CommentItem key={reply.id} comment={reply} postId={postId} isAuthenticated={isAuthenticated} user={user} onReplyAdded={onReplyAdded} isReply />
               ))}
-              <button 
-                onClick={() => setShowReplies(false)} 
+              <button
+                onClick={() => setShowReplies(false)}
                 className="text-text-muted text-xs hover:text-text ml-1 mt-2 transition-colors"
               >
                 Ẩn phản hồi
