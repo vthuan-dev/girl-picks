@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery } from 'react-query';
-import Link from 'next/link';
+import SmoothLink from '@/components/common/SmoothLink';
 import Image from 'next/image';
 import { communityPostsApi, type CommunityPost } from '@/modules/community-posts/api/community-posts.api';
 import { getFullImageUrl } from '@/lib/utils/image';
@@ -104,12 +104,12 @@ export default function GirlCommunityPosts({ girlId, limit = 6 }: GirlCommunityP
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg sm:text-xl font-bold text-text">Bài viết cộng đồng</h2>
         {posts.length >= limit && (
-          <Link
+          <SmoothLink
             href={`/community-posts?girlId=${girlId}`}
             className="text-xs sm:text-sm text-primary hover:text-primary-hover font-medium transition-colors"
           >
             Xem thêm →
-          </Link>
+          </SmoothLink>
         )}
       </div>
 
@@ -119,7 +119,7 @@ export default function GirlCommunityPosts({ girlId, limit = 6 }: GirlCommunityP
           const postUrl = `/community-posts/${post.id}`;
 
           return (
-            <Link
+            <SmoothLink
               key={post.id}
               href={postUrl}
               className="block group"
@@ -194,7 +194,7 @@ export default function GirlCommunityPosts({ girlId, limit = 6 }: GirlCommunityP
                   </div>
                 </div>
               </div>
-            </Link>
+            </SmoothLink>
           );
         })}
       </div>
