@@ -28,6 +28,7 @@ function CommentItem({
   formatDate,
   depth = 0, // Độ sâu của nested reply (0 = top-level comment)
   maxDepth = 5, // Giới hạn độ sâu tối đa
+  parentComment,
 }: {
   comment: ReviewComment;
   isAuthenticated: boolean;
@@ -40,37 +41,39 @@ function CommentItem({
   formatDate: (dateString: string) => string;
   depth?: number;
   maxDepth?: number;
+  parentComment?: ReviewComment;
 }) {
   const hasReplies = comment.replies && comment.replies.length > 0;
   const isReplying = replyingTo === comment.id;
   const currentReplyText = replyText[comment.id] || '';
   const isNested = depth > 0; // Nếu depth > 0 thì đây là nested reply
 
-  // Tính margin-left dựa trên depth
-  const getMarginLeft = () => {
-    if (!isNested) return '';
-    const marginMap: { [key: number]: string } = {
-      1: 'ml-4',
-      2: 'ml-8',
-      3: 'ml-12',
-      4: 'ml-16',
-      5: 'ml-20',
-    };
-    return marginMap[depth] || 'ml-4';
-  };
-
   return (
-    <div className={`space-y-2 ${getMarginLeft()}`}>
-      {/* Main Comment/Reply */}
-      <div className={`flex gap-3 ${isNested ? 'p-2' : 'p-3'} ${isNested ? 'bg-background/50' : 'bg-background'} rounded-lg ${isNested ? '' : 'border border-secondary/20'}`}>
-        <div className={`${isNested ? 'w-6 h-6' : 'w-8 h-8'} rounded-full ${isNested ? 'bg-primary/80' : 'bg-primary'} flex items-center justify-center flex-shrink-0`}>
-          <span className={`text-white font-bold ${isNested ? 'text-xs' : 'text-xs'}`}>
+    <div className={`${isNested ? 'mt-3' : 'mt-0'} w-full`}>
+      {/* Main Comment/Reply Card - Facebook Style */}
+      <div className={`flex gap-3 transition-all duration-200 ${isNested ? 'hover:bg-background-light/20 py-2.5 px-3' : 'hover:bg-background-light/30 p-4 border border-secondary/20 hover:border-secondary/40 bg-background/50 rounded-lg'}`}>
+        {/* Avatar */}
+        <div className={`${isNested ? 'w-8 h-8' : 'w-10 h-10'} rounded-full bg-primary flex items-center justify-center flex-shrink-0 transition-all duration-200 hover:ring-2 hover:ring-primary/50 hover:scale-105`}>
+          <span className={`text-white font-bold ${isNested ? 'text-xs' : 'text-sm'}`}>
             {comment.user?.fullName?.charAt(0)?.toUpperCase() || 'U'}
           </span>
         </div>
+
+        {/* Content */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className={`font-semibold text-text ${isNested ? 'text-xs' : 'text-sm'}`}>{comment.user?.fullName || 'Ẩn danh'}</span>
+          {/* Username and Timestamp */}
+          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+            <span className={`font-semibold text-text ${isNested ? 'text-sm' : 'text-base'} hover:text-primary transition-colors cursor-pointer`}>
+              {comment.user?.fullName || 'Ẩn danh'}
+            </span>
+            {parentComment && (
+              <>
+                <span className="text-text-muted text-xs">đang trả lời</span>
+                <span className="text-primary font-medium text-sm hover:underline cursor-pointer">
+                  {parentComment.user?.fullName || 'Ẩn danh'}
+                </span>
+              </>
+            )}
             <span className="text-text-muted text-xs">
               {new Date(comment.createdAt).toLocaleDateString('vi-VN', {
                 day: '2-digit',
@@ -81,14 +84,18 @@ function CommentItem({
               })}
             </span>
           </div>
-          <p className={`text-text ${isNested ? 'text-xs' : 'text-sm'} whitespace-pre-wrap mb-2`}>{comment.content}</p>
 
-          {/* Reply Button - chỉ hiển thị nếu chưa đạt maxDepth */}
+          {/* Comment Content */}
+          <p className={`text-text ${isNested ? 'text-sm' : 'text-base'} whitespace-pre-wrap mb-2 leading-relaxed break-words`}>
+            {comment.content}
+          </p>
+
+          {/* Reply Button */}
           {isAuthenticated && depth < maxDepth && (
             <button
               type="button"
               onClick={() => setReplyingTo(isReplying ? null : comment.id)}
-              className="text-xs text-primary hover:text-primary-hover transition-colors"
+              className="text-sm text-primary hover:text-primary-hover font-medium transition-colors duration-200 hover:underline px-1 py-0.5 rounded hover:bg-primary/10"
             >
               {isReplying ? 'Hủy' : 'Trả lời'}
             </button>
@@ -98,13 +105,13 @@ function CommentItem({
 
       {/* Reply Form */}
       {isReplying && isAuthenticated && depth < maxDepth && (
-        <div className={`${isNested ? 'ml-4' : 'ml-11'} flex gap-2`}>
+        <div className={`${isNested ? 'ml-11' : 'ml-12'} mt-3 flex gap-2 w-full`}>
           <input
             type="text"
             value={currentReplyText}
             onChange={(e) => setReplyText(prev => ({ ...prev, [comment.id]: e.target.value }))}
             placeholder={`Trả lời ${comment.user?.fullName || 'bình luận này'}...`}
-            className="flex-1 px-3 py-2 bg-background border border-secondary/30 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-primary/50"
+            className="flex-1 px-3 py-2 bg-background border border-secondary/30 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && currentReplyText.trim()) {
                 onReply(comment.id);
@@ -115,16 +122,16 @@ function CommentItem({
             type="button"
             onClick={async () => { await onReply(comment.id); }}
             disabled={submitting || !currentReplyText.trim()}
-            className="px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors font-medium"
+            className="px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium"
           >
             {submitting ? '...' : 'Gửi'}
           </button>
         </div>
       )}
 
-      {/* Replies - Recursive rendering */}
+      {/* Replies Container - Facebook Style */}
       {hasReplies && depth < maxDepth && (
-        <div className={`${isNested ? 'ml-4' : 'ml-11'} space-y-2 ${depth === 0 ? 'border-l-2 border-secondary/20 pl-3' : ''}`}>
+        <div className={`${isNested ? 'ml-4' : 'ml-12'} mt-3 space-y-2 w-full ${depth === 0 ? 'border-l-2 border-primary/20 pl-4' : 'border-l-2 border-primary/10 pl-4'}`}>
           {comment.replies!.map((reply) => (
             <CommentItem
               key={reply.id}
@@ -139,6 +146,7 @@ function CommentItem({
               formatDate={formatDate}
               depth={depth + 1}
               maxDepth={maxDepth}
+              parentComment={comment}
             />
           ))}
         </div>

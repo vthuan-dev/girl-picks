@@ -269,33 +269,48 @@ function CommentItem({ comment, postId, isAuthenticated, user, onReplyAdded, isR
   const repliesCount = comment._count?.replies || comment.replies?.length || 0;
 
   return (
-    <div className={`${isReply ? 'ml-10 mt-2' : 'py-2'}`}>
-      <div className="flex gap-2">
-        <div className="flex-shrink-0">
-          <div className={`${isReply ? 'w-7 h-7' : 'w-9 h-9'} rounded-full overflow-hidden bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center`}>
-            {comment.user?.avatarUrl ? (
-              <Image src={comment.user.avatarUrl} alt={comment.user.fullName || ''} width={isReply ? 28 : 36} height={isReply ? 28 : 36} className="object-cover w-full h-full" unoptimized />
-            ) : (
-              <span className="text-xs font-bold text-primary">{comment.user?.fullName?.charAt(0)?.toUpperCase() || 'U'}</span>
-            )}
-          </div>
+    <div className={`${isReply ? 'mt-2' : 'mt-0'}`}>
+      {/* Main Comment/Reply Card - Facebook Style */}
+      <div className={`flex gap-3 ${isReply ? 'pl-4' : 'pl-0'} transition-all duration-200 hover:bg-background-light/30 rounded-lg ${isReply ? 'py-2' : 'p-4'} ${!isReply ? 'border border-secondary/20 hover:border-secondary/40' : ''}`}>
+        {/* Avatar */}
+        <div className={`${isReply ? 'w-8 h-8' : 'w-10 h-10'} rounded-full overflow-hidden bg-primary flex items-center justify-center flex-shrink-0 transition-all duration-200 hover:ring-2 hover:ring-primary/50`}>
+          {comment.user?.avatarUrl ? (
+            <Image src={comment.user.avatarUrl} alt={comment.user.fullName || ''} width={isReply ? 32 : 40} height={isReply ? 32 : 40} className="object-cover w-full h-full" unoptimized />
+          ) : (
+            <span className={`text-white font-bold ${isReply ? 'text-xs' : 'text-sm'}`}>
+              {comment.user?.fullName?.charAt(0)?.toUpperCase() || 'U'}
+            </span>
+          )}
         </div>
 
+        {/* Content */}
         <div className="flex-1 min-w-0">
-          <div className="bg-background/60 rounded-xl px-3 py-2 inline-block max-w-full">
-            <span className="font-medium text-text text-sm">{comment.user?.fullName || 'Người dùng'}</span>
-            <p className="text-text text-sm whitespace-pre-wrap break-words mt-0.5">{comment.content}</p>
-          </div>
-          
-          <div className="flex items-center gap-3 mt-1 ml-1 text-xs">
-            <span className="text-text-muted">{formatDate(comment.createdAt)}</span>
-            {!isReply && isAuthenticated && (
-              <button onClick={() => setShowReplyForm(!showReplyForm)} className="text-text-muted hover:text-primary font-medium transition-colors">
-                Trả lời
-              </button>
-            )}
+          {/* Username and Timestamp */}
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <span className={`font-semibold text-text ${isReply ? 'text-sm' : 'text-base'} hover:text-primary transition-colors cursor-pointer`}>
+              {comment.user?.fullName || 'Người dùng'}
+            </span>
+            <span className="text-text-muted text-xs">
+              {formatDate(comment.createdAt)}
+            </span>
           </div>
 
+          {/* Comment Content */}
+          <p className={`text-text ${isReply ? 'text-sm' : 'text-base'} whitespace-pre-wrap mb-2 leading-relaxed break-words`}>
+            {comment.content}
+          </p>
+
+          {/* Reply Button */}
+          {!isReply && isAuthenticated && (
+            <button 
+              onClick={() => setShowReplyForm(!showReplyForm)} 
+              className="text-sm text-primary hover:text-primary-hover font-medium transition-colors duration-200 hover:underline"
+            >
+              {showReplyForm ? 'Hủy' : 'Trả lời'}
+            </button>
+          )}
+
+          {/* Reply Form */}
           {showReplyForm && (
             <div className="mt-2">
               <CommentForm
@@ -313,8 +328,12 @@ function CommentItem({ comment, postId, isAuthenticated, user, onReplyAdded, isR
             </div>
           )}
 
+          {/* View Replies Button */}
           {!isReply && repliesCount > 0 && !showReplies && (
-            <button onClick={() => setShowReplies(true)} className="flex items-center gap-1.5 mt-2 ml-1 text-primary text-sm font-medium hover:underline">
+            <button 
+              onClick={() => setShowReplies(true)} 
+              className="flex items-center gap-1.5 mt-2 text-primary text-sm font-medium hover:text-primary-hover transition-colors duration-200 hover:underline"
+            >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
               </svg>
@@ -322,12 +341,18 @@ function CommentItem({ comment, postId, isAuthenticated, user, onReplyAdded, isR
             </button>
           )}
 
+          {/* Replies Container - Facebook Style */}
           {showReplies && comment.replies && comment.replies.length > 0 && (
-            <div className="mt-2 space-y-2">
+            <div className={`mt-2 space-y-1 ${!isReply ? 'border-l-2 border-primary/20 pl-4' : 'border-l-2 border-primary/10 pl-4'}`}>
               {comment.replies.map((reply) => (
                 <CommentItem key={reply.id} comment={reply} postId={postId} isAuthenticated={isAuthenticated} user={user} onReplyAdded={onReplyAdded} isReply />
               ))}
-              <button onClick={() => setShowReplies(false)} className="text-text-muted text-xs hover:text-text ml-1">Ẩn phản hồi</button>
+              <button 
+                onClick={() => setShowReplies(false)} 
+                className="text-text-muted text-xs hover:text-text ml-1 mt-2 transition-colors"
+              >
+                Ẩn phản hồi
+              </button>
             </div>
           )}
         </div>

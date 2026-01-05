@@ -64,14 +64,38 @@ export const authApi = {
 
   // Request Password Reset
   requestPasswordReset: async (data: PasswordResetDto): Promise<{ message: string }> => {
-    const response = await apiClient.post<{ message: string }>('/auth/forgot-password', data);
-    return response.data;
+    const response = await apiClient.post<any>('/auth/forgot-password', data);
+    const responseData = response.data;
+    
+    // Handle wrapped response from TransformInterceptor
+    if (responseData.success && responseData.data) {
+      return responseData.data;
+    }
+    
+    // If already unwrapped, return directly
+    if (responseData.message) {
+      return responseData;
+    }
+    
+    throw new Error('Định dạng phản hồi từ server không hợp lệ');
   },
 
   // Confirm Password Reset
   confirmPasswordReset: async (data: PasswordResetConfirmDto): Promise<{ message: string }> => {
-    const response = await apiClient.post<{ message: string }>('/auth/reset-password', data);
-    return response.data;
+    const response = await apiClient.post<any>('/auth/reset-password', data);
+    const responseData = response.data;
+    
+    // Handle wrapped response from TransformInterceptor
+    if (responseData.success && responseData.data) {
+      return responseData.data;
+    }
+    
+    // If already unwrapped, return directly
+    if (responseData.message) {
+      return responseData;
+    }
+    
+    throw new Error('Định dạng phản hồi từ server không hợp lệ');
   },
 
   // Get Current User

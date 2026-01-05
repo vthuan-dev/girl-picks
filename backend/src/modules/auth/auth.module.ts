@@ -4,6 +4,7 @@ import { PassportModule } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { PrismaModule } from '../../prisma/prisma.module';
+import { EmailModule } from '../email/email.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import jwtConfig from '../../config/jwt.config';
@@ -14,6 +15,7 @@ const config = jwtConfig();
   imports: [
     PrismaModule,
     PassportModule,
+    EmailModule,
     JwtModule.register({
       secret: config.jwt.secret,
       signOptions: {
