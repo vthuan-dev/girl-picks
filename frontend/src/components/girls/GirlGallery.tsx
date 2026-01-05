@@ -11,10 +11,18 @@ interface GirlGalleryProps {
 }
 
 export default function GirlGallery({ id, images, name }: GirlGalleryProps) {
+  // Filter out invalid images
+  const validImages = (images || []).filter((img): img is string => 
+    typeof img === 'string' && img.trim().length > 0
+  );
+  
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [imageErrors, setImageErrors] = useState<Set<number>>(new Set());
-  const mainImage = images[selectedIndex] || images[0] || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=1200&h=800&fit=crop';
+  
+  // Ensure selectedIndex is within bounds
+  const safeSelectedIndex = Math.max(0, Math.min(selectedIndex, validImages.length - 1));
+  const mainImage = validImages[safeSelectedIndex] || validImages[0] || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=1200&h=800&fit=crop';
 
   // Debug: Log images data
   useEffect(() => {
@@ -22,37 +30,66 @@ export default function GirlGallery({ id, images, name }: GirlGalleryProps) {
       id,
       name,
       imagesCount: images?.length || 0,
+      validImagesCount: validImages.length,
       images: images,
+      validImages: validImages,
       imagesType: typeof images,
       isArray: Array.isArray(images),
       selectedIndex,
       mainImage,
     });
-  }, [id, name, images, selectedIndex, mainImage]);
+  }, [id, name, images, validImages, selectedIndex, mainImage]);
 
-  const handleImageError = (index: number, imageUrl: string) => {
-    console.error('[GirlGallery] Image load error:', {
-      index,
-      imageUrl,
-      originalUrl: images[index],
-      processedUrl: getFullImageUrl(images[index]),
-    });
-    setImageErrors(prev => new Set(prev).add(index));
+  const handleImageError = (index: number, imageUrl?: string | null) => {
+    try {
+      const safeImageUrl = imageUrl || '';
+      const originalImage = validImages?.[index] || safeImageUrl || 'unknown';
+      const safeOriginalImage = typeof originalImage === 'string' ? originalImage : 'unknown';
+      
+      console.error('[GirlGallery] Image load error:', {
+        index,
+        imageUrl: safeImageUrl,
+        originalUrl: safeOriginalImage,
+        processedUrl: getFullImageUrl(safeOriginalImage),
+        validImagesLength: validImages.length,
+        validImagesArray: validImages,
+      });
+      
+      setImageErrors(prev => new Set(prev).add(index));
+    } catch (error) {
+      console.error('[GirlGallery] Error in handleImageError:', error, {
+        index,
+        imageUrl,
+        validImagesLength: validImages.length,
+      });
+      setImageErrors(prev => new Set(prev).add(index));
+    }
   };
 
-  const getImageUrl = (image: string, index: number) => {
-    if (imageErrors.has(index)) {
-      console.log('[GirlGallery] Using fallback image for index:', index);
+  const getImageUrl = (image: string | undefined | null, index: number) => {
+    try {
+      if (!image || typeof image !== 'string' || image.trim().length === 0) {
+        console.warn('[GirlGallery] Empty or invalid image at index:', index, { image });
+        return '/images/logo/logo.png';
+      }
+      
+      if (imageErrors.has(index)) {
+        console.log('[GirlGallery] Using fallback image for index:', index);
+        return '/images/logo/logo.png';
+      }
+      
+      const processedUrl = getFullImageUrl(image);
+      console.log('[GirlGallery] Image URL processing:', {
+        index,
+        original: image,
+        processed: processedUrl,
+        hasError: imageErrors.has(index),
+      });
+      return processedUrl;
+    } catch (error) {
+      console.error('[GirlGallery] Error in getImageUrl:', error, { image, index });
       return '/images/logo/logo.png';
     }
-    const processedUrl = getFullImageUrl(image);
-    console.log('[GirlGallery] Image URL processing:', {
-      index,
-      original: image,
-      processed: processedUrl,
-      hasError: imageErrors.has(index),
-    });
-    return processedUrl;
   };
 
   // Handle keyboard navigation
@@ -62,11 +99,11 @@ export default function GirlGallery({ id, images, name }: GirlGalleryProps) {
     if (e.key === 'Escape') {
       setLightboxOpen(false);
     } else if (e.key === 'ArrowLeft') {
-      setSelectedIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
+      setSelectedIndex((prev) => (prev > 0 ? prev - 1 : validImages.length - 1));
     } else if (e.key === 'ArrowRight') {
-      setSelectedIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0));
+      setSelectedIndex((prev) => (prev < validImages.length - 1 ? prev + 1 : 0));
     }
-  }, [lightboxOpen, images.length]);
+  }, [lightboxOpen, validImages.length]);
 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);
@@ -100,14 +137,14 @@ export default function GirlGallery({ id, images, name }: GirlGalleryProps) {
           style={{ viewTransitionName: `girl-image-${id}` }}
         >
           <Image
-            src={getImageUrl(mainImage, selectedIndex)}
+            src={getImageUrl(mainImage, safeSelectedIndex)}
             alt={`${name} - Ảnh ${selectedIndex + 1}`}
             fill
             className="object-cover transition-opacity duration-300"
             sizes="(max-width: 768px) 100vw, (max-width: 1024px) 66vw, 50vw"
             priority
             unoptimized={mainImage?.startsWith('http')}
-            onError={() => handleImageError(selectedIndex, mainImage)}
+            onError={() => handleImageError(safeSelectedIndex, mainImage || '')}
           />
 
           {/* Zoom hint */}
@@ -120,12 +157,12 @@ export default function GirlGallery({ id, images, name }: GirlGalleryProps) {
           </div>
 
           {/* Image Navigation Arrows */}
-          {images.length > 1 && (
+          {validImages.length > 1 && (
             <>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setSelectedIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
+                  setSelectedIndex((prev) => (prev > 0 ? prev - 1 : validImages.length - 1));
                 }}
                 className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-background/90 backdrop-blur-md rounded-full hover:bg-background transition-all opacity-0 group-hover:opacity-100 cursor-pointer z-10 shadow-xl"
                 aria-label="Ảnh trước"
@@ -137,7 +174,7 @@ export default function GirlGallery({ id, images, name }: GirlGalleryProps) {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setSelectedIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0));
+                  setSelectedIndex((prev) => (prev < validImages.length - 1 ? prev + 1 : 0));
                 }}
                 className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-background/90 backdrop-blur-md rounded-full hover:bg-background transition-all opacity-0 group-hover:opacity-100 cursor-pointer z-10 shadow-xl"
                 aria-label="Ảnh tiếp theo"
@@ -150,18 +187,18 @@ export default function GirlGallery({ id, images, name }: GirlGalleryProps) {
           )}
 
           {/* Image Counter */}
-          {images.length > 1 && (
+          {validImages.length > 1 && (
             <div className="absolute bottom-4 right-4 px-3 py-1.5 bg-background/90 backdrop-blur-md rounded-lg text-sm text-text font-medium shadow-xl">
-              {selectedIndex + 1} / {images.length}
+              {selectedIndex + 1} / {validImages.length}
             </div>
           )}
         </div>
 
         {/* Thumbnails */}
-        {images.length > 1 && (
+        {validImages.length > 1 && (
           <div className="p-4 bg-background-light border-t border-secondary/30">
             <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
-              {images.map((image, index) => (
+              {validImages.map((image, index) => (
                 <button
                   key={index}
                   onClick={() => setSelectedIndex(index)}
@@ -205,7 +242,7 @@ export default function GirlGallery({ id, images, name }: GirlGalleryProps) {
           <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-3 sm:p-4 bg-gradient-to-b from-black/80 to-transparent z-50">
             {/* Image Counter */}
             <div className="px-3 py-1.5 bg-black/50 rounded-lg text-white text-sm font-medium">
-              {selectedIndex + 1} / {images.length}
+              {selectedIndex + 1} / {validImages.length}
             </div>
 
             {/* Close Button - Always visible on mobile */}
@@ -226,24 +263,24 @@ export default function GirlGallery({ id, images, name }: GirlGalleryProps) {
             onClick={(e) => e.stopPropagation()}
           >
             <Image
-              src={getImageUrl(images[selectedIndex], selectedIndex)}
+              src={getImageUrl(validImages[selectedIndex], selectedIndex)}
               alt={`${name} - Ảnh ${selectedIndex + 1}`}
               fill
               className="object-contain"
               sizes="100vw"
               priority
-              unoptimized={images[selectedIndex]?.startsWith('http')}
-              onError={() => handleImageError(selectedIndex, images[selectedIndex])}
+              unoptimized={validImages[selectedIndex]?.startsWith('http')}
+              onError={() => handleImageError(selectedIndex, validImages[selectedIndex] || '')}
             />
           </div>
 
           {/* Navigation Arrows */}
-          {images.length > 1 && (
+          {validImages.length > 1 && (
             <>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setSelectedIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
+                  setSelectedIndex((prev) => (prev > 0 ? prev - 1 : validImages.length - 1));
                 }}
                 className="absolute left-4 top-1/2 -translate-y-1/2 p-4 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
                 aria-label="Ảnh trước"
@@ -255,7 +292,7 @@ export default function GirlGallery({ id, images, name }: GirlGalleryProps) {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setSelectedIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0));
+                  setSelectedIndex((prev) => (prev < validImages.length - 1 ? prev + 1 : 0));
                 }}
                 className="absolute right-4 top-1/2 -translate-y-1/2 p-4 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
                 aria-label="Ảnh tiếp theo"
@@ -268,9 +305,9 @@ export default function GirlGallery({ id, images, name }: GirlGalleryProps) {
           )}
 
           {/* Thumbnails Strip */}
-          {images.length > 1 && (
+          {validImages.length > 1 && (
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 p-2 bg-black/50 rounded-lg max-w-[90vw] overflow-x-auto">
-              {images.map((image, index) => (
+              {validImages.map((image, index) => (
                 <button
                   key={index}
                   onClick={(e) => {
