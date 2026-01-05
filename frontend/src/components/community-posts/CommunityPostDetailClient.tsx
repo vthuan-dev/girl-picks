@@ -180,7 +180,7 @@ export default function CommunityPostDetailClient({ post: initialPost }: Communi
     if (!isAuthenticated) return;
     try {
       const response = await communityPostsApi.getLikeStatus(post.id);
-      setLiked(response.data?.liked || false);
+      setLiked(response.liked || false);
     } catch (error) {
       // Ignore errors
     }
@@ -198,7 +198,7 @@ export default function CommunityPostDetailClient({ post: initialPost }: Communi
     }
 
     try {
-      await communityPostsApi.like(post.id);
+      await communityPostsApi.toggleLike(post.id);
       setLiked(!liked);
       setLikeCount(prev => liked ? prev - 1 : prev + 1);
     } catch (error: any) {
@@ -219,7 +219,7 @@ export default function CommunityPostDetailClient({ post: initialPost }: Communi
 
     setSubmittingComment(true);
     try {
-      await communityPostsApi.createComment(post.id, { content: commentText });
+      await communityPostsApi.addComment(post.id, { content: commentText });
       setCommentText('');
       toast.success('Bình luận thành công');
       fetchComments();
@@ -236,7 +236,7 @@ export default function CommunityPostDetailClient({ post: initialPost }: Communi
 
     setSubmittingReply(true);
     try {
-      await communityPostsApi.createComment(post.id, { content: text, parentId });
+      await communityPostsApi.addComment(post.id, { content: text, parentId });
       setReplyText({ ...replyText, [parentId]: '' });
       setReplyingTo(null);
       toast.success('Phản hồi thành công');
@@ -270,7 +270,7 @@ export default function CommunityPostDetailClient({ post: initialPost }: Communi
             </div>
             {post.girl && (
               <SmoothLink
-                href={getGirlDetailUrl(post.girl.id, post.girl.name || undefined)}
+                href={getGirlDetailUrl(post.girl.id, post.girl.name || '')}
                 className="text-xs text-primary hover:text-primary-hover transition-colors flex items-center gap-1 px-2 py-1 rounded-md hover:bg-primary/10"
               >
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -331,11 +331,10 @@ export default function CommunityPostDetailClient({ post: initialPost }: Communi
         <div className="p-3 border-t border-secondary/30 flex items-center gap-3">
           <button
             onClick={handleLike}
-            className={`flex items-center gap-2 px-4 py-2 sm:px-3 sm:py-1.5 rounded-md transition-all text-sm ${
-              liked
-                ? 'bg-primary/20 text-primary'
-                : 'bg-background border border-secondary/30 text-text-muted hover:text-text'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 sm:px-3 sm:py-1.5 rounded-md transition-all text-sm ${liked
+              ? 'bg-primary/20 text-primary'
+              : 'bg-background border border-secondary/30 text-text-muted hover:text-text'
+              }`}
           >
             <svg className={`w-5 h-5 sm:w-4 sm:h-4 ${liked ? 'fill-current' : ''}`} fill={liked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />

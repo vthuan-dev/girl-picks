@@ -127,3 +127,4 @@ cat .env | grep -E "^[A-Z]" | head -20
    pm2 logs girl-pick-backend
    ```
 
+

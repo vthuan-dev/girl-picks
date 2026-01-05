@@ -65,8 +65,8 @@ export default function Breadcrumbs({ items }: BreadcrumbsProps) {
         <div className="flex items-center gap-2 mb-2">
           <div className="w-1 h-5 sm:h-6 bg-primary rounded-full flex-shrink-0"></div>
           <h1 className="text-base sm:text-lg md:text-xl font-semibold text-text leading-snug break-words line-clamp-2">
-            {lastItem.label}
-          </h1>
+          {lastItem.label}
+        </h1>
         </div>
       )}
     </nav>
