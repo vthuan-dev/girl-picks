@@ -5,11 +5,12 @@ import Image from 'next/image';
 import { getFullImageUrl } from '@/lib/utils/image';
 
 interface GirlGalleryProps {
+  id: string;
   images: string[];
   name: string;
 }
 
-export default function GirlGallery({ images, name }: GirlGalleryProps) {
+export default function GirlGallery({ id, images, name }: GirlGalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const mainImage = images[selectedIndex] || images[0] || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=1200&h=800&fit=crop';
@@ -56,6 +57,7 @@ export default function GirlGallery({ images, name }: GirlGalleryProps) {
         <div
           className="relative w-full aspect-[3/4] max-h-[55vh] bg-secondary/20 overflow-hidden group cursor-pointer"
           onClick={() => openLightbox(selectedIndex)}
+          style={{ viewTransitionName: `girl-image-${id}` }}
         >
           <Image
             src={getFullImageUrl(mainImage)}

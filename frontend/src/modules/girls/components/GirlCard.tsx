@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
+import SmoothLink from '@/components/common/SmoothLink';
 import { useState } from 'react';
 import { Girl } from '@/types/girl';
 import { girlsApi } from '../api/girls.api';
@@ -26,10 +26,10 @@ export default function GirlCard({ girl, index = 0 }: GirlCardInternalProps) {
   const isPriority = index < 6;
 
   return (
-    <Link href={girlUrl} className="block">
-      <div className="group relative bg-background-light rounded-lg overflow-hidden hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300 cursor-pointer border border-secondary/30 hover:border-primary/50 transform hover:-translate-y-1">
+    <SmoothLink href={girlUrl} className="block">
+      <div className="group relative bg-background-light rounded-lg overflow-hidden hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300 cursor-pointer border border-secondary/30 hover:border-primary/50 transform hover:-translate-y-1 active:scale-95">
         {/* Image Container - Top Section */}
-        <div className="relative w-full aspect-[3/4] overflow-hidden bg-secondary/20">
+        <div className="relative w-full aspect-[3/4] overflow-hidden bg-secondary/20" style={{ viewTransitionName: `girl-image-${girl.id}` }}>
           <Image
             src={getFullImageUrl(imageUrl)}
             alt={girl.fullName || 'Profile image'}
@@ -65,26 +65,21 @@ export default function GirlCard({ girl, index = 0 }: GirlCardInternalProps) {
           {/* Rating Badge - Top Right */}
           <div className="absolute top-2 right-2 bg-background/95 backdrop-blur-md px-2 py-1 rounded-lg flex items-center gap-1.5 shadow-xl z-10">
             <div className="flex items-center gap-0.5">
-              {[...Array(5)].map((_, i) => {
+              {(() => {
                 const rating = girl.rating ?? girl.ratingAverage ?? 0;
-                const filled = i < Math.floor(rating);
-                const halfFilled = i === Math.floor(rating) && rating % 1 >= 0.5;
+                const isRated = rating > 0;
                 return (
                   <svg
-                    key={i}
-                    className={`w-3 h-3 ${filled
-                      ? 'text-yellow-400 fill-current'
-                      : halfFilled
-                        ? 'text-yellow-400 fill-current opacity-50'
-                        : 'text-secondary/30'
-                      }`}
-                    fill="currentColor"
+                    className={`w-3 h-3 ${isRated ? 'text-yellow-400 fill-current' : 'text-secondary/30'}`}
+                    fill={isRated ? 'currentColor' : 'none'}
+                    stroke={isRated ? 'none' : 'currentColor'}
+                    strokeWidth={isRated ? 0 : 2}
                     viewBox="0 0 20 20"
                   >
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>
                 );
-              })}
+              })()}
             </div>
             <span className="text-text font-bold text-sm">
               {(girl.rating ?? girl.ratingAverage ?? 0).toFixed(1)}
@@ -125,26 +120,21 @@ export default function GirlCard({ girl, index = 0 }: GirlCardInternalProps) {
           {/* Rating Stars (1-5) */}
           <div className="flex items-center gap-2 mb-2">
             <div className="flex items-center gap-0.5">
-              {[...Array(5)].map((_, i) => {
+              {(() => {
                 const rating = girl.rating ?? girl.ratingAverage ?? 0;
-                const filled = i < Math.floor(rating);
-                const halfFilled = i === Math.floor(rating) && rating % 1 >= 0.5;
+                const isRated = rating > 0;
                 return (
                   <svg
-                    key={i}
-                    className={`w-3.5 h-3.5 ${filled
-                      ? 'text-yellow-400 fill-current'
-                      : halfFilled
-                        ? 'text-yellow-400 fill-current opacity-50'
-                        : 'text-secondary/30'
-                      }`}
-                    fill="currentColor"
+                    className={`w-3.5 h-3.5 ${isRated ? 'text-yellow-400 fill-current' : 'text-secondary/30'}`}
+                    fill={isRated ? 'currentColor' : 'none'}
+                    stroke={isRated ? 'none' : 'currentColor'}
+                    strokeWidth={isRated ? 0 : 2}
                     viewBox="0 0 20 20"
                   >
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>
                 );
-              })}
+              })()}
             </div>
             <span className="text-text font-semibold text-xs">
               {(girl.rating ?? girl.ratingAverage ?? 0).toFixed(1)}
@@ -179,6 +169,6 @@ export default function GirlCard({ girl, index = 0 }: GirlCardInternalProps) {
           </div>
         </div>
       </div>
-    </Link>
+    </SmoothLink>
   );
 }
