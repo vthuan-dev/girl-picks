@@ -13,7 +13,47 @@ interface GirlGalleryProps {
 export default function GirlGallery({ id, images, name }: GirlGalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [imageErrors, setImageErrors] = useState<Set<number>>(new Set());
   const mainImage = images[selectedIndex] || images[0] || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=1200&h=800&fit=crop';
+
+  // Debug: Log images data
+  useEffect(() => {
+    console.log('[GirlGallery] Component mounted/updated:', {
+      id,
+      name,
+      imagesCount: images?.length || 0,
+      images: images,
+      imagesType: typeof images,
+      isArray: Array.isArray(images),
+      selectedIndex,
+      mainImage,
+    });
+  }, [id, name, images, selectedIndex, mainImage]);
+
+  const handleImageError = (index: number, imageUrl: string) => {
+    console.error('[GirlGallery] Image load error:', {
+      index,
+      imageUrl,
+      originalUrl: images[index],
+      processedUrl: getFullImageUrl(images[index]),
+    });
+    setImageErrors(prev => new Set(prev).add(index));
+  };
+
+  const getImageUrl = (image: string, index: number) => {
+    if (imageErrors.has(index)) {
+      console.log('[GirlGallery] Using fallback image for index:', index);
+      return '/images/logo/logo.png';
+    }
+    const processedUrl = getFullImageUrl(image);
+    console.log('[GirlGallery] Image URL processing:', {
+      index,
+      original: image,
+      processed: processedUrl,
+      hasError: imageErrors.has(index),
+    });
+    return processedUrl;
+  };
 
   // Handle keyboard navigation
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -60,12 +100,14 @@ export default function GirlGallery({ id, images, name }: GirlGalleryProps) {
           style={{ viewTransitionName: `girl-image-${id}` }}
         >
           <Image
-            src={getFullImageUrl(mainImage)}
+            src={getImageUrl(mainImage, selectedIndex)}
             alt={`${name} - Ảnh ${selectedIndex + 1}`}
             fill
             className="object-cover transition-opacity duration-300"
             sizes="(max-width: 768px) 100vw, (max-width: 1024px) 66vw, 50vw"
             priority
+            unoptimized={mainImage?.startsWith('http')}
+            onError={() => handleImageError(selectedIndex, mainImage)}
           />
 
           {/* Zoom hint */}
@@ -131,11 +173,13 @@ export default function GirlGallery({ id, images, name }: GirlGalleryProps) {
                   aria-label={`Xem ảnh ${index + 1}`}
                 >
                   <Image
-                    src={getFullImageUrl(image)}
+                    src={getImageUrl(image, index)}
                     alt={`${name} - Thumbnail ${index + 1}`}
                     fill
                     className="object-cover"
                     sizes="96px"
+                    unoptimized={image?.startsWith('http')}
+                    onError={() => handleImageError(index, image)}
                   />
                   {selectedIndex === index && (
                     <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
@@ -182,12 +226,14 @@ export default function GirlGallery({ id, images, name }: GirlGalleryProps) {
             onClick={(e) => e.stopPropagation()}
           >
             <Image
-              src={getFullImageUrl(images[selectedIndex])}
+              src={getImageUrl(images[selectedIndex], selectedIndex)}
               alt={`${name} - Ảnh ${selectedIndex + 1}`}
               fill
               className="object-contain"
               sizes="100vw"
               priority
+              unoptimized={images[selectedIndex]?.startsWith('http')}
+              onError={() => handleImageError(selectedIndex, images[selectedIndex])}
             />
           </div>
 
@@ -237,11 +283,13 @@ export default function GirlGallery({ id, images, name }: GirlGalleryProps) {
                     }`}
                 >
                   <Image
-                    src={getFullImageUrl(image)}
+                    src={getImageUrl(image, index)}
                     alt={`Thumbnail ${index + 1}`}
                     fill
                     className="object-cover"
                     sizes="64px"
+                    unoptimized={image?.startsWith('http')}
+                    onError={() => handleImageError(index, image)}
                   />
                 </button>
               ))}
