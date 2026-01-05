@@ -288,7 +288,7 @@ export default async function GirlDetailPage({ params }: PageProps) {
               </div>
 
               {/* Gallery */}
-              <GirlGallery images={girl.images || [imageUrl]} name={displayName} />
+              <GirlGallery id={girl.id} images={girl.images || [imageUrl]} name={displayName} />
 
               {/* Info Card */}
               <GirlInfoCard girl={girl} />
