@@ -16,12 +16,28 @@ export default function ForgotPasswordPage() {
       toast.error('Vui lòng nhập email');
       return;
     }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error('Email không hợp lệ');
+      return;
+    }
+    
     setIsLoading(true);
     try {
-      await authApi.requestPasswordReset({ email });
-      toast.success('Đã gửi hướng dẫn đặt lại mật khẩu tới email của bạn');
+      const response = await authApi.requestPasswordReset({ email });
+      toast.success(response.message || 'Đã gửi hướng dẫn đặt lại mật khẩu tới email của bạn');
+      // Clear email field after success
+      setEmail('');
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Không thể gửi yêu cầu');
+      console.error('Password reset error:', error);
+      const errorMessage = 
+        error.response?.data?.message || 
+        error.response?.data?.data?.message ||
+        error.message || 
+        'Không thể gửi yêu cầu. Vui lòng thử lại sau.';
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -30,7 +46,7 @@ export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8 relative overflow-hidden">
+      <div className="flex-1 flex items-center justify-center p-4 pt-20 sm:pt-24 sm:p-6 lg:p-8 relative overflow-hidden">
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse" />
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />

@@ -3,9 +3,11 @@ import {
   UnauthorizedException,
   BadRequestException,
   ConflictException,
+  Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../prisma/prisma.service';
+import { EmailService } from '../email/email.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import {
@@ -35,9 +37,12 @@ const isResetTokenValue = (value: unknown): value is ResetTokenValue => {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private emailService: EmailService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -294,45 +299,90 @@ export class AuthService {
   }
 
   async forgotPassword(email: string) {
+    // For security, we don't reveal whether the email exists or not
+    // Always return the same message
+    
+    // Normalize email: trim whitespace and convert to lowercase
+    const normalizedEmail = email.trim().toLowerCase();
+    
+    this.logger.log(`Password reset request received for email: "${email}" (normalized: "${normalizedEmail}")`);
+    
     const user = await this.prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     });
 
-    if (!user) {
-      throw new BadRequestException('Email không tồn tại trong hệ thống');
+    // Only proceed if user exists
+    if (user) {
+      this.logger.log(`✅ User found: ${user.email} (ID: ${user.id}, Name: ${user.fullName})`);
+      
+      // Generate reset token
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour
+
+      // Store reset token in database
+      await this.prisma.setting.upsert({
+        where: { key: `reset_token_${user.id}` },
+        update: {
+          value: {
+            token: resetToken,
+            expiry: resetTokenExpiry,
+          },
+        },
+        create: {
+          key: `reset_token_${user.id}`,
+          value: {
+            token: resetToken,
+            expiry: resetTokenExpiry,
+          },
+        },
+      });
+
+      this.logger.log(`Reset token generated and stored for user: ${user.id}`);
+
+      // Send email with reset link
+      try {
+        this.logger.log(`Attempting to send password reset email to ${user.email}...`);
+        await this.emailService.sendPasswordResetEmail(
+          user.email,
+          resetToken,
+          user.fullName,
+        );
+        this.logger.log(`✅ Password reset email sent successfully to ${user.email}`);
+      } catch (error) {
+        // Log error but don't expose it to user for security
+        this.logger.error(
+          `❌ Failed to send password reset email to ${user.email}:`,
+          error,
+        );
+        // In development, we might want to know about this
+        if (process.env.NODE_ENV === 'development') {
+          this.logger.warn(
+            'Email sending failed. Check SMTP configuration.',
+          );
+        }
+      }
+    } else {
+      // Log for monitoring but don't reveal to user
+      this.logger.warn(`❌ Password reset requested for non-existent email: "${normalizedEmail}" (original: "${email}")`);
     }
 
-    // Generate reset token
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour
-
-    // Store reset token in database (you might want to create a separate table for this)
-    // For now, we'll use a simple approach with settings table
-    await this.prisma.setting.upsert({
-      where: { key: `reset_token_${user.id}` },
-      update: {
-        value: {
-          token: resetToken,
-          expiry: resetTokenExpiry,
-        },
-      },
-      create: {
-        key: `reset_token_${user.id}`,
-        value: {
-          token: resetToken,
-          expiry: resetTokenExpiry,
-        },
-      },
-    });
-
-    // TODO: Send email with reset link
-    // await this.emailService.sendPasswordResetEmail(user.email, resetToken);
-
-    return {
-      message: 'If the email exists, a password reset link has been sent',
-      // In development, return token for testing
-      ...(process.env.NODE_ENV === 'development' && { resetToken }),
+    // Always return the same message for security
+    const response: { message: string; resetToken?: string } = {
+      message: 'Nếu email tồn tại trong hệ thống, chúng tôi đã gửi hướng dẫn đặt lại mật khẩu tới email của bạn.',
     };
+
+    // In development, return token for testing (only if user exists and token was generated)
+    if (process.env.NODE_ENV === 'development' && user) {
+      // Get the token we just stored
+      const setting = await this.prisma.setting.findUnique({
+        where: { key: `reset_token_${user.id}` },
+      });
+      if (setting?.value && isResetTokenValue(setting.value)) {
+        response.resetToken = setting.value.token;
+      }
+    }
+
+    return response;
   }
 
   async resetPassword(token: string, newPassword: string) {
