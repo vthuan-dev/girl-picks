@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import SmoothLink from '@/components/common/SmoothLink';
 import Image from 'next/image';
 import { Girl } from '@/types/girl';
 import { getFullImageUrl } from '@/lib/utils/image';
@@ -21,7 +21,7 @@ export default function GirlCard({ girl }: GirlCardProps) {
     : girl.user?.avatarUrl || girl.avatarUrl || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=1200&h=800&fit=crop';
 
   return (
-    <Link href={detailUrl}>
+    <SmoothLink href={detailUrl}>
       <div className="bg-background-light rounded-lg border border-secondary/30 overflow-hidden hover:border-primary/50 transition-all group">
         {/* Image */}
         <div className="relative aspect-[3/4] bg-gradient-to-br from-primary/20 to-accent/20 overflow-hidden">
@@ -71,7 +71,7 @@ export default function GirlCard({ girl }: GirlCardProps) {
           </button>
         </div>
       </div>
-    </Link>
+    </SmoothLink>
   );
 }
 

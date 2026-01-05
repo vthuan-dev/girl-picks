@@ -213,13 +213,13 @@ export default async function GirlDetailBySlugPage({ params }: PageProps) {
       />
       <StructuredData type="BreadcrumbList" data={breadcrumbStructuredData} />
 
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-1 sm:py-6 lg:py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-1 sm:py-6 lg:py-8 page-transition">
         <Breadcrumbs items={breadcrumbs} />
 
         <div className="flex flex-col lg:grid lg:grid-cols-[2fr,1fr] gap-4 sm:gap-6 lg:gap-10">
           {/* Main content: gallery + bio */}
           <div className="space-y-4 sm:space-y-6">
-            <GirlGallery images={girl.images as string[]} name={displayName} />
+            <GirlGallery id={girl.id} images={girl.images as string[]} name={displayName} />
 
             {/* Bio: loại bỏ cảnh báo thanh toán 25 điểm nếu có */}
             {(() => {

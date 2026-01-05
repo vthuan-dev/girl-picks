@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { useEffect } from 'react';
 import Header from './Header';
 import Footer from './Footer';
 import BottomNavigation from './BottomNavigation';
@@ -12,6 +13,14 @@ export default function ClientLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+
+  // Enable smooth page transitions
+  useEffect(() => {
+    if (typeof document !== 'undefined' && 'startViewTransition' in document) {
+      // Browser supports View Transitions API
+      return;
+    }
+  }, [pathname]);
 
   // Không render Header/Footer cho admin routes, auth routes
   const isAdminRoute = pathname?.startsWith('/admin');
@@ -44,7 +53,7 @@ export default function ClientLayout({
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      <main id="main-content" className="flex-1 bg-background pb-24 pt-14 sm:pt-16 lg:pt-[72px]" tabIndex={-1}>
+      <main id="main-content" className="flex-1 bg-background pb-24 pt-14 sm:pt-16 lg:pt-[72px] page-transition" tabIndex={-1}>
         {children}
       </main>
       <Footer />
