@@ -60,11 +60,14 @@ export default function Breadcrumbs({ items }: BreadcrumbsProps) {
         </div>
       )}
       
-      {/* Girl name on new line - Mobile optimized, design đẹp như ảnh */}
+      {/* Last item title - Compact and elegant design */}
       {lastItem && (
-        <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-text leading-tight break-words tracking-tight">
-          {lastItem.label}
-        </h1>
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-1 h-5 sm:h-6 bg-primary rounded-full flex-shrink-0"></div>
+          <h1 className="text-base sm:text-lg md:text-xl font-semibold text-text leading-snug break-words line-clamp-2">
+            {lastItem.label}
+          </h1>
+        </div>
       )}
     </nav>
   );
