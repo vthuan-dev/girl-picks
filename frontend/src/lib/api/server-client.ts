@@ -53,11 +53,18 @@ export async function serverApiClient<T>(
   }
 
   try {
-    const response = await fetch(url, {
+    // Determine caching strategy based on endpoint
+    // Girl detail pages can be cached with ISR for better performance
+    const isGirlDetailEndpoint = /^\/girls\/[^\/]+$/.test(endpoint) && !endpoint.includes('?');
+    const fetchOptions: RequestInit = {
       ...options,
       headers,
-      cache: 'no-store', // Always fetch fresh data
-    });
+      ...(isGirlDetailEndpoint
+        ? { next: { revalidate: 60 } } // Cache for 60 seconds with ISR
+        : { cache: 'no-store' as RequestCache }), // Always fresh for other endpoints
+    };
+
+    const response = await fetch(url, fetchOptions);
 
 
     if (!response.ok) {
