@@ -246,6 +246,8 @@ model Girl {
   @@index([weight]) // For weight filter
   @@index([price]) // For price filter
   @@index([origin]) // For origin filter
+  @@index([isActive, slug]) // For detail page queries by slug
+  @@index([isActive, isFeatured, ratingAverage, lastActiveAt]) // For pagination ORDER BY
   @@map("girls")
 }
 

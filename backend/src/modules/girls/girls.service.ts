@@ -673,16 +673,43 @@ export class GirlsService {
 
     // If no tags filter, use DB pagination directly
     if (!tags || tags.length === 0) {
-      [paginatedGirls, total] = await Promise.all([
-        this.prisma.girl.findMany({
-          where,
-          select,
-          skip: (page - 1) * limit,
-          take: limit,
-          orderBy,
-        }),
-        this.prisma.girl.count({ where }),
-      ]);
+      // Cache total count separately with shorter TTL - only count when needed
+      const totalCacheKey = this.cacheService.generateKey('girls:total',
+        districts?.join(',') || '',
+        rating || 0,
+        verification || '',
+        isFeatured ? 'true' : isFeatured === false ? 'false' : '',
+        isPremium ? 'true' : isPremium === false ? 'false' : '',
+        priceFilter || '',
+        ageFilter || '',
+        heightFilter || '',
+        weightFilter || '',
+        originFilter || '',
+        locationFilter || '',
+        province || '',
+        search || '',
+      );
+
+      // Get cached total or count from DB
+      const cachedTotal = await this.cacheService.get<number>(totalCacheKey);
+
+      // Fetch paginated data
+      paginatedGirls = await this.prisma.girl.findMany({
+        where,
+        select,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy,
+      });
+
+      // Only count if not cached
+      if (cachedTotal === null || cachedTotal === undefined) {
+        total = await this.prisma.girl.count({ where });
+        // Cache total for 5 minutes
+        await this.cacheService.set(totalCacheKey, total, 300);
+      } else {
+        total = cachedTotal;
+      }
     } else {
       // If tags provided, we still fetch matching records and filter in app layer
       // But we minimize the number of records by applying the rest of the 'where' in DB
@@ -760,16 +787,54 @@ export class GirlsService {
     }
 
     console.log('[GirlsService] Cache miss, fetching from database...');
+
+    // Detect if input is UUID or slug for optimized query
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
+    const whereClause: Prisma.GirlWhereInput = isUUID
+      ? { id: idOrSlug, isActive: true }
+      : { slug: idOrSlug, isActive: true };
+
+    // Use lightweight select for faster query - posts/reviews loaded separately via lazy load
     const girl = await this.prisma.girl.findFirst({
-      where: {
-        AND: [
-          {
-            OR: [{ id: idOrSlug }, { slug: idOrSlug }],
-          },
-          { isActive: true },
-        ],
-      },
-      include: {
+      where: whereClause,
+      select: {
+        id: true,
+        userId: true,
+        managedById: true,
+        name: true,
+        slug: true,
+        age: true,
+        bio: true,
+        phone: true,
+        birthYear: true,
+        height: true,
+        weight: true,
+        measurements: true,
+        origin: true,
+        districts: true,
+        address: true,
+        location: true,
+        province: true,
+        price: true,
+        ratingAverage: true,
+        totalReviews: true,
+        verificationStatus: true,
+        verificationDocuments: true,
+        verificationRequestedAt: true,
+        verificationVerifiedAt: true,
+        viewCount: true,
+        favoriteCount: true,
+        isFeatured: true,
+        isPremium: true,
+        isActive: true,
+        isAvailable: true,
+        images: true,
+        tags: true,
+        services: true,
+        lastActiveAt: true,
+        workingHours: true,
+        createdAt: true,
+        updatedAt: true,
         user: {
           select: {
             id: true,
@@ -779,29 +844,6 @@ export class GirlsService {
             avatarUrl: true,
             isActive: true,
           },
-        },
-        posts: {
-          where: { status: PostStatus.APPROVED },
-          orderBy: { createdAt: 'desc' },
-          take: 10,
-        },
-        reviews: {
-          where: { status: ReviewStatus.APPROVED },
-          orderBy: { createdAt: 'desc' },
-          take: 10,
-          include: {
-            customer: {
-              select: {
-                id: true,
-                fullName: true,
-                avatarUrl: true,
-              },
-            },
-          },
-        },
-        servicePackages: {
-          where: { isActive: true },
-          orderBy: { price: 'asc' },
         },
         _count: {
           select: {
