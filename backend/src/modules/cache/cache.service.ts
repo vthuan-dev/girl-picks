@@ -4,7 +4,7 @@ import type { Cache } from 'cache-manager';
 
 @Injectable()
 export class CacheService {
-  constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
+  constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) { }
 
   async get<T>(key: string): Promise<T | undefined> {
     try {
@@ -18,7 +18,6 @@ export class CacheService {
   async set(key: string, value: any, ttl?: number): Promise<void> {
     try {
       await this.cacheManager.set(key, value, ttl);
-      console.log('[CacheService] Cache set successfully:', key, 'TTL:', ttl);
     } catch (error) {
       console.error('[CacheService] Error setting cache:', error);
       // Don't throw - allow app to continue without cache

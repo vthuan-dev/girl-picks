@@ -732,7 +732,6 @@ export class GirlsService {
 
   async findOne(idOrSlug: string, incrementView: boolean = true) {
     // Try to find by ID first, then by slug
-    console.log(`[GirlsService] Finding girl with idOrSlug: ${idOrSlug}`);
 
     // Generate cache key
     const cacheKey = this.cacheService.generateKey('girls:detail', idOrSlug);
@@ -740,16 +739,21 @@ export class GirlsService {
     // Try to get from cache first
     const cachedGirl = await this.cacheService.get<any>(cacheKey);
     if (cachedGirl) {
-      console.log('[GirlsService] Cache hit for girl:', idOrSlug);
       // Still increment view count even if cached
       if (incrementView && cachedGirl?.id) {
-        await this.incrementViewCount(cachedGirl.id);
+        // Increment view count in background (fire-and-forget)
+        this.incrementViewCount(cachedGirl.id).catch((err) =>
+          console.error('[GirlsService] Error incrementing view (cached):', err),
+        );
         // Tăng viewCount trong object trả về để UI thấy ngay
         const updatedGirl = {
           ...cachedGirl,
           viewCount: (cachedGirl.viewCount || 0) + 1,
         };
-        await this.cacheService.set(cacheKey, updatedGirl, 600);
+        // Don't await cache update, return early
+        this.cacheService.set(cacheKey, updatedGirl, 600).catch((err) =>
+          console.error('[GirlsService] Error updating cache (cached):', err),
+        );
         return updatedGirl;
       }
       return cachedGirl;
@@ -811,7 +815,6 @@ export class GirlsService {
     });
 
     if (!girl) {
-      console.log(`[GirlsService] Girl not found with idOrSlug: ${idOrSlug}`);
       // Try to find without isActive check to see if girl exists but is inactive
       const inactiveGirl = await this.prisma.girl.findFirst({
         where: {
@@ -820,21 +823,18 @@ export class GirlsService {
         select: { id: true, isActive: true },
       });
       if (inactiveGirl) {
-        console.log(
-          `[GirlsService] Girl exists but isActive: ${inactiveGirl.isActive}`,
-        );
       }
       throw new NotFoundException('Girl not found');
     }
 
-    console.log(
-      `[GirlsService] Found girl: ${girl.id}, isActive: ${girl.isActive}`,
-    );
 
     // Increment view count if requested
     let result: any = girl;
     if (incrementView) {
-      await this.incrementViewCount(girl.id);
+      // Increment in background
+      this.incrementViewCount(girl.id).catch((err) =>
+        console.error('[GirlsService] Error incrementing view:', err),
+      );
       // Tăng viewCount trong object trả về
       result = {
         ...girl,

@@ -1,7 +1,9 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { getImageBufferFromUrl } from '../../common/utils/image-downloader.util';
+import axios from 'axios';
+
 // Dùng hàm đơn giản thay cho uuid để tránh thiếu module
 const generateId = () => Date.now() + '-' + Math.round(Math.random() * 1e9);
 
@@ -19,17 +21,79 @@ export interface UploadMultipleImagesDto {
 
 @Injectable()
 export class UploadService {
+  private readonly logger = new Logger(UploadService.name);
   private readonly uploadPath = join(process.cwd(), 'uploads');
 
+  // Bunny CDN Config
+  private readonly bunnyStorageZone = process.env.BUNNY_STORAGE_ZONE || 'girlpick-storage';
+  private readonly bunnyStorageHost = process.env.BUNNY_STORAGE_HOST || 'sg.storage.bunnycdn.com';
+  private readonly bunnyApiKey = process.env.BUNNY_API_KEY || '';
+  private readonly bunnyCdnUrl = process.env.BUNNY_CDN_URL || 'https://girlpick.b-cdn.net';
+  private readonly useBunnyCdn = !!process.env.BUNNY_API_KEY; // Chỉ dùng Bunny nếu có API key
+
   constructor() {
-    // Đảm bảo thư mục uploads tồn tại
+    // Đảm bảo thư mục uploads tồn tại (fallback)
     if (!existsSync(this.uploadPath)) {
       mkdirSync(this.uploadPath, { recursive: true });
+    }
+
+    if (this.useBunnyCdn) {
+      this.logger.log(`✅ Bunny CDN enabled: ${this.bunnyCdnUrl}`);
+    } else {
+      this.logger.warn('⚠️ Bunny CDN not configured, using local storage');
     }
   }
 
   /**
-   * Upload single image from URL or Base64 to Local Storage
+   * Upload buffer to Bunny CDN Storage
+   */
+  private async uploadToBunnyCdn(buffer: Buffer, remotePath: string): Promise<string> {
+    const url = `https://${this.bunnyStorageHost}/${this.bunnyStorageZone}/${remotePath}`;
+
+    try {
+      const response = await axios.put(url, buffer, {
+        headers: {
+          'AccessKey': this.bunnyApiKey,
+          'Content-Type': 'application/octet-stream',
+        },
+        timeout: 30000,
+      });
+
+      if (response.status === 200 || response.status === 201) {
+        const cdnUrl = `${this.bunnyCdnUrl}/${remotePath}`;
+        this.logger.debug(`✅ Uploaded to CDN: ${cdnUrl}`);
+        return cdnUrl;
+      } else {
+        throw new Error(`Bunny CDN returned status ${response.status}`);
+      }
+    } catch (error: any) {
+      this.logger.error(`❌ Bunny CDN upload failed: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete file from Bunny CDN Storage
+   */
+  private async deleteFromBunnyCdn(remotePath: string): Promise<boolean> {
+    const url = `https://${this.bunnyStorageHost}/${this.bunnyStorageZone}/${remotePath}`;
+
+    try {
+      await axios.delete(url, {
+        headers: {
+          'AccessKey': this.bunnyApiKey,
+        },
+        timeout: 10000,
+      });
+      return true;
+    } catch (error: any) {
+      this.logger.error(`❌ Bunny CDN delete failed: ${error.message}`);
+      return false;
+    }
+  }
+
+  /**
+   * Upload single image from URL or Base64 to Bunny CDN (or Local Storage as fallback)
    */
   async uploadImageFromUrl(dto: UploadImageDto) {
     if (!dto || !dto.url) {
@@ -38,14 +102,6 @@ export class UploadService {
 
     try {
       const folder = dto.folder || 'posts';
-      // Tách folder theo dấu / và ghép lại bằng join để an toàn trên mọi OS
-      const folderParts = folder.split('/');
-      const fullFolderPath = join(this.uploadPath, ...folderParts);
-
-      if (!existsSync(fullFolderPath)) {
-        mkdirSync(fullFolderPath, { recursive: true });
-      }
-
       let buffer: Buffer;
       let extension = 'jpg';
 
@@ -75,9 +131,30 @@ export class UploadService {
       }
 
       const filename = `${dto.publicId || generateId()}.${extension}`;
-      const filePath = join(fullFolderPath, filename);
 
-      // Lưu file
+      // ========== UPLOAD TO BUNNY CDN ==========
+      if (this.useBunnyCdn) {
+        const remotePath = `${folder}/${filename}`;
+        const cdnUrl = await this.uploadToBunnyCdn(buffer, remotePath);
+
+        return {
+          originalUrl: dto.url.substring(0, 100) + '...',
+          url: cdnUrl, // URL CDN để Frontend sử dụng
+          path: remotePath,
+          filename: filename,
+          cdn: true,
+        };
+      }
+
+      // ========== FALLBACK TO LOCAL STORAGE ==========
+      const folderParts = folder.split('/');
+      const fullFolderPath = join(this.uploadPath, ...folderParts);
+
+      if (!existsSync(fullFolderPath)) {
+        mkdirSync(fullFolderPath, { recursive: true });
+      }
+
+      const filePath = join(fullFolderPath, filename);
       writeFileSync(filePath, buffer);
 
       const relativeUrl = `/api/uploads/${folder}/${filename}`;
@@ -87,10 +164,11 @@ export class UploadService {
         url: relativeUrl, // URL để Frontend sử dụng
         path: filePath,
         filename: filename,
+        cdn: false,
       };
     } catch (error: any) {
       throw new BadRequestException(
-        `Failed to save image locally: ${error?.message || 'Unknown error'}`,
+        `Failed to upload image: ${error?.message || 'Unknown error'}`,
       );
     }
   }
@@ -109,19 +187,32 @@ export class UploadService {
   }
 
   /**
-   * Delete image from Local Storage
+   * Delete image from CDN or Local Storage
    */
   async deleteImage(publicId: string) {
-    // Logic xóa file nếu cần, tạm thời để trống hoặc thực hiện xóa cơ bản
+    if (this.useBunnyCdn) {
+      // Extract path from CDN URL if needed
+      let remotePath = publicId;
+      if (publicId.includes(this.bunnyCdnUrl)) {
+        remotePath = publicId.replace(`${this.bunnyCdnUrl}/`, '');
+      }
+
+      const success = await this.deleteFromBunnyCdn(remotePath);
+      return {
+        success,
+        message: success ? 'Image deleted from CDN' : 'Failed to delete from CDN',
+      };
+    }
+
+    // Local storage delete
     return {
       success: true,
-      message:
-        'Local image delete functionality not fully implemented but bypassed',
+      message: 'Local image delete functionality not fully implemented but bypassed',
     };
   }
 
   /**
-   * Upload video from Base64 to Local Storage
+   * Upload video from Base64 to Local Storage (video vẫn lưu local)
    */
   async uploadVideoFromBase64(dto: { url: string; folder?: string }) {
     if (!dto || !dto.url) {

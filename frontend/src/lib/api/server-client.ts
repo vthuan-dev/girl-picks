@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers';
+import { cache } from 'react';
 
 // For server-side rendering, we need to detect Docker environment at runtime
 // NEXT_PUBLIC_API_URL is embedded at build time, but we need runtime detection for server-side
@@ -6,16 +7,14 @@ import { cookies } from 'next/headers';
 const getApiUrl = () => {
   // Priority 1: Check for explicit API_URL environment variable (set at runtime, not build time)
   if (process.env.API_URL) {
-    console.log(`[getApiUrl] Using API_URL from env: ${process.env.API_URL}`);
     return process.env.API_URL;
   }
-  
+
   // Priority 2: Use NEXT_PUBLIC_API_URL if available (for VPS deployment)
   if (process.env.NEXT_PUBLIC_API_URL) {
-    console.log(`[getApiUrl] Using NEXT_PUBLIC_API_URL: ${process.env.NEXT_PUBLIC_API_URL}`);
     return process.env.NEXT_PUBLIC_API_URL;
   }
-  
+
   // No hardcoded fallback - require environment variable to be set
   const errorMsg = 'API_URL or NEXT_PUBLIC_API_URL must be set in environment variables';
   console.error(`[getApiUrl] ERROR: ${errorMsg}`);
@@ -42,9 +41,8 @@ export async function serverApiClient<T>(
   const token = cookieStore.get('accessToken')?.value;
 
   const url = `${API_URL}${endpoint}`;
-  
-  console.log(`[serverApiClient] Fetching: ${url}`);
-  
+
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),
@@ -60,8 +58,7 @@ export async function serverApiClient<T>(
       headers,
       cache: 'no-store', // Always fetch fresh data
     });
-    
-    console.log(`[serverApiClient] Response status: ${response.status} for ${url}`);
+
 
     if (!response.ok) {
       // Handle 404
@@ -87,10 +84,10 @@ export async function serverApiClient<T>(
 /**
  * Get girl by ID (server-side)
  */
-export async function getGirlById(id: string) {
+export const getGirlById = cache(async (id: string) => {
   try {
     const response = await serverApiClient<any>(`/girls/${id}`);
-    
+
     // Backend returns {success: true, data: {...}}
     if (response && typeof response === 'object') {
       // If wrapped in {success: true, data: {...}}
@@ -111,7 +108,7 @@ export async function getGirlById(id: string) {
         return { data: (response as any).data };
       }
     }
-    
+
     // Fallback
     return { data: response };
   } catch (error: any) {
@@ -119,12 +116,12 @@ export async function getGirlById(id: string) {
     // Re-throw to trigger notFound() in page component
     throw error;
   }
-}
+});
 
 /**
  * Get girl by slug (server-side)
  */
-export async function getGirlBySlug(slug: string) {
+export const getGirlBySlug = cache(async (slug: string) => {
   try {
     const response = await serverApiClient<any>(`/girls/${slug}`);
     if (response && typeof response === 'object') {
@@ -143,7 +140,7 @@ export async function getGirlBySlug(slug: string) {
     console.error(`Failed to fetch girl by slug ${slug}:`, error);
     throw error;
   }
-}
+});
 
 /**
  * Get girls list (server-side)
@@ -162,7 +159,7 @@ export async function getGirls(params?: {
 
   const queryString = queryParams.toString();
   const endpoint = `/girls${queryString ? `?${queryString}` : ''}`;
-  
+
   return serverApiClient<{ data: any[]; total: number; page: number; limit: number }>(endpoint);
 }
 

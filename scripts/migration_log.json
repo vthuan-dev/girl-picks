@@ -1,0 +1,12 @@
+{
+  "total_girls": 3289,
+  "processed_girls": 3289,
+  "downloaded": 52766,
+  "uploaded": 52530,
+  "skipped": 0,
+  "download_failed": 12738,
+  "upload_failed": 236,
+  "db_updated": 2724,
+  "errors": 0,
+  "duration": 9010.816386699677
+}

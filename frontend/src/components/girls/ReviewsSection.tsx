@@ -106,8 +106,8 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
           let likesCount = 0;
           try {
             likesCount = await reviewsApi.getLikes(apiReview.id);
-          } catch (error) {
-            console.error('Error loading likes:', error);
+          } catch (e) {
+            // Silently ignore like loading errors to avoid noise
           }
 
           // Get comments count from API if available
@@ -153,7 +153,6 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
         [reviewId]: response.data || [],
       }));
     } catch (error) {
-      console.error('Error loading comments:', error);
       toast.error('Không thể tải bình luận');
     } finally {
       setLoadingComments((prev) => {

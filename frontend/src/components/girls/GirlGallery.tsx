@@ -12,49 +12,27 @@ interface GirlGalleryProps {
 
 export default function GirlGallery({ id, images, name }: GirlGalleryProps) {
   // Filter out invalid images
-  const validImages = (images || []).filter((img): img is string => 
+  const validImages = (images || []).filter((img): img is string =>
     typeof img === 'string' && img.trim().length > 0
   );
-  
+
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [imageErrors, setImageErrors] = useState<Set<number>>(new Set());
-  
+
   // Ensure selectedIndex is within bounds
   const safeSelectedIndex = Math.max(0, Math.min(selectedIndex, validImages.length - 1));
   const mainImage = validImages[safeSelectedIndex] || validImages[0] || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=1200&h=800&fit=crop';
 
-  // Debug: Log images data
-  useEffect(() => {
-    console.log('[GirlGallery] Component mounted/updated:', {
-      id,
-      name,
-      imagesCount: images?.length || 0,
-      validImagesCount: validImages.length,
-      images: images,
-      validImages: validImages,
-      imagesType: typeof images,
-      isArray: Array.isArray(images),
-      selectedIndex,
-      mainImage,
-    });
-  }, [id, name, images, validImages, selectedIndex, mainImage]);
 
   const handleImageError = (index: number, imageUrl?: string | null) => {
     try {
       const safeImageUrl = imageUrl || '';
       const originalImage = validImages?.[index] || safeImageUrl || 'unknown';
       const safeOriginalImage = typeof originalImage === 'string' ? originalImage : 'unknown';
-      
-      console.error('[GirlGallery] Image load error:', {
-        index,
-        imageUrl: safeImageUrl,
-        originalUrl: safeOriginalImage,
-        processedUrl: getFullImageUrl(safeOriginalImage),
-        validImagesLength: validImages.length,
-        validImagesArray: validImages,
-      });
-      
+
+      console.error('[GirlGallery] Image load error at index:', index);
+
       setImageErrors(prev => new Set(prev).add(index));
     } catch (error) {
       console.error('[GirlGallery] Error in handleImageError:', error, {
@@ -69,22 +47,14 @@ export default function GirlGallery({ id, images, name }: GirlGalleryProps) {
   const getImageUrl = (image: string | undefined | null, index: number) => {
     try {
       if (!image || typeof image !== 'string' || image.trim().length === 0) {
-        console.warn('[GirlGallery] Empty or invalid image at index:', index, { image });
         return '/images/logo/logo.png';
       }
-      
+
       if (imageErrors.has(index)) {
-        console.log('[GirlGallery] Using fallback image for index:', index);
         return '/images/logo/logo.png';
       }
-      
+
       const processedUrl = getFullImageUrl(image);
-      console.log('[GirlGallery] Image URL processing:', {
-        index,
-        original: image,
-        processed: processedUrl,
-        hasError: imageErrors.has(index),
-      });
       return processedUrl;
     } catch (error) {
       console.error('[GirlGallery] Error in getImageUrl:', error, { image, index });

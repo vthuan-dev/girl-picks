@@ -131,6 +131,10 @@ const nextConfig = {
         hostname: 'upload.wikimedia.org',
       },
       {
+        protocol: 'https',
+        hostname: 'girlpick.b-cdn.net',
+      },
+      {
         protocol: 'http',
         hostname: 'localhost',
       },

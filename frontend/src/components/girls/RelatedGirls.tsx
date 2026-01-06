@@ -19,23 +19,19 @@ export default function RelatedGirls({ currentGirlId, districtId }: RelatedGirls
     const fetchRelatedGirls = async () => {
       try {
         setLoading(true);
-        console.log('[RelatedGirls] Fetching with districtId:', districtId, 'currentGirlId:', currentGirlId);
 
         const response = await girlsApi.getGirls({
           limit: 10,
           ...(districtId && { districtId }),
         });
 
-        console.log('[RelatedGirls] Full response:', response);
 
         // API returns PaginatedResponse<Girl> = { data: Girl[], meta: {...} }
         const girlsList: Girl[] = response?.data || [];
 
-        console.log('[RelatedGirls] Extracted girls list:', girlsList.length, 'girls');
 
         // Filter out current girl
         const relatedGirls = girlsList.filter((girl: Girl) => girl && girl.id && girl.id !== currentGirlId);
-        console.log('[RelatedGirls] Filtered related girls:', relatedGirls.length);
 
         setGirls(relatedGirls.slice(0, 8)); // Show max 8
       } catch (error) {
@@ -261,10 +257,10 @@ export default function RelatedGirls({ currentGirlId, districtId }: RelatedGirls
                           <svg
                             key={i}
                             className={`w-3 h-3 ${filled
-                                ? 'text-yellow-400 fill-current'
-                                : halfFilled
-                                  ? 'text-yellow-400 fill-current opacity-50'
-                                  : 'text-secondary/30'
+                              ? 'text-yellow-400 fill-current'
+                              : halfFilled
+                                ? 'text-yellow-400 fill-current opacity-50'
+                                : 'text-secondary/30'
                               }`}
                             fill="currentColor"
                             viewBox="0 0 20 20"

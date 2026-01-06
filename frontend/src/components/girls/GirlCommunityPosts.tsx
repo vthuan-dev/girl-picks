@@ -18,15 +18,12 @@ export default function GirlCommunityPosts({ girlId, limit = 6 }: GirlCommunityP
   const { data, isLoading, error } = useQuery(
     ['community-posts', 'girl', girlId],
     async () => {
-      console.log('[GirlCommunityPosts] Fetching posts for girlId:', girlId);
       const response = await communityPostsApi.getAll({
         girlId,
         status: 'APPROVED',
         page: 1,
         limit,
       });
-      console.log('[GirlCommunityPosts] API response:', response);
-      console.log('[GirlCommunityPosts] Posts found:', response?.data?.length || 0);
       return response;
     },
     {
@@ -38,10 +35,8 @@ export default function GirlCommunityPosts({ girlId, limit = 6 }: GirlCommunityP
 
   useEffect(() => {
     if (data?.data) {
-      console.log('[GirlCommunityPosts] Setting posts:', data.data.length);
       setPosts(data.data);
     } else {
-      console.log('[GirlCommunityPosts] No posts data, data:', data);
       setPosts([]);
     }
   }, [data]);

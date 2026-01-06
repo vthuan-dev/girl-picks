@@ -51,7 +51,6 @@ export default function PopularTags({
     async () => {
       try {
         const result = await tagsApi.getPopularTags({ limit: 20, source });
-        console.log('[PopularTags] Fetched tags:', result);
         return result;
       } catch (err) {
         console.error('[PopularTags] Error fetching tags:', err);
