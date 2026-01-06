@@ -219,19 +219,6 @@ export default async function GirlDetailBySlugPage({ params }: PageProps) {
         <div className="flex flex-col lg:grid lg:grid-cols-[2fr,1fr] gap-4 sm:gap-6 lg:gap-10">
           {/* Main content: gallery + bio */}
           <div className="space-y-4 sm:space-y-6">
-            {(() => {
-              // Debug: Log girl images data
-              console.log('[GirlDetailPage] Girl images data:', {
-                girlId: girl.id,
-                girlName: displayName,
-                imagesRaw: girl.images,
-                imagesType: typeof girl.images,
-                isArray: Array.isArray(girl.images),
-                imagesLength: Array.isArray(girl.images) ? girl.images.length : 'N/A',
-                imagesParsed: girl.images as string[],
-              });
-              return null;
-            })()}
             <GirlGallery id={girl.id} images={girl.images as string[]} name={displayName} />
 
             {/* Bio: loại bỏ cảnh báo thanh toán 25 điểm nếu có */}

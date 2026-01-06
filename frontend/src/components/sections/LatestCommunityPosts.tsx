@@ -37,14 +37,12 @@ export default function LatestCommunityPosts({ limit = 6 }: LatestCommunityPosts
 
   useEffect(() => {
     if (data) {
-      console.log('[LatestCommunityPosts] Data received:', data);
       setPosts((prev) => {
         const combined = page === 1 ? data.data : [...prev, ...data.data];
         // Sắp xếp theo thời gian tạo: bài tạo mới nhất nằm trên (mới nhất ở trên cùng)
         const sorted = [...combined].sort(
           (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
         );
-        console.log('[LatestCommunityPosts] Posts set (sorted newest first):', sorted.length);
         return sorted;
       });
       setHasMore(data.data.length === pageSize);
@@ -116,7 +114,6 @@ export default function LatestCommunityPosts({ limit = 6 }: LatestCommunityPosts
 
   // Show empty state instead of returning null
   if (!isLoading && posts.length === 0) {
-    console.log('[LatestCommunityPosts] No posts found');
     return (
       <div className="mb-8">
         <div className="mb-4">
@@ -163,7 +160,7 @@ export default function LatestCommunityPosts({ limit = 6 }: LatestCommunityPosts
                 />
               </svg>
             </div>
-            
+
             {/* Title */}
             <div className="flex flex-col">
               <h2 className="text-base sm:text-lg font-bold text-text">
@@ -174,7 +171,7 @@ export default function LatestCommunityPosts({ limit = 6 }: LatestCommunityPosts
               </p>
             </div>
           </div>
-          
+
           {/* Badge showing post count */}
           {posts.length > 0 && (
             <div className="flex-shrink-0 hidden sm:flex items-center px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20">

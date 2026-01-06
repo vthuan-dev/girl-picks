@@ -8,10 +8,6 @@ if (!API_URL) {
   throw new Error('NEXT_PUBLIC_API_URL must be set in environment variables');
 }
 
-// Log API URL in development for debugging
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-  console.log('🔗 API URL:', API_URL);
-}
 
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({
@@ -55,7 +51,7 @@ apiClient.interceptors.response.use(
 
           // Handle wrapped response
           const responseData = response.data;
-          const accessToken = responseData.success 
+          const accessToken = responseData.success
             ? responseData.data?.accessToken || responseData.data?.access_token
             : responseData.accessToken || responseData.access_token;
 
@@ -66,11 +62,11 @@ apiClient.interceptors.response.use(
               sameSite: 'strict',
             });
 
-          if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-          }
+            if (originalRequest.headers) {
+              originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+            }
 
-          return apiClient(originalRequest);
+            return apiClient(originalRequest);
           }
         }
       } catch (refreshError) {

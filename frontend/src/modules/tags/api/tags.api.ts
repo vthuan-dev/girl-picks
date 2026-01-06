@@ -21,26 +21,25 @@ export const tagsApi = {
       const response = await apiClient.get<any>('/tags/popular', {
         params: { limit, source },
       });
-      
+
       const responseData = response.data;
-      
-      console.log('[tagsApi] Raw response:', responseData);
-      
+
+
       // Handle wrapped response
       if (responseData && responseData.success && responseData.data) {
         return responseData.data;
       }
-      
+
       // If already unwrapped (direct array), return it
       if (Array.isArray(responseData)) {
         return responseData;
       }
-      
+
       // If response is object with array inside
       if (responseData && Array.isArray(responseData)) {
         return responseData;
       }
-      
+
       console.warn('[tagsApi] Unexpected response format:', responseData);
       return [];
     } catch (error: any) {
@@ -59,17 +58,17 @@ export const tagsApi = {
    */
   getAllTags: async (): Promise<string[]> => {
     const response = await apiClient.get<ApiResponse<string[]>>('/tags/all');
-    
+
     const responseData = response.data;
-    
+
     if (responseData.success && responseData.data) {
       return responseData.data;
     }
-    
+
     if (Array.isArray(responseData)) {
       return responseData;
     }
-    
+
     return [];
   },
 };
