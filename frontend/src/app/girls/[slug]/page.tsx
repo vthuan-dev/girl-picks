@@ -1,24 +1,33 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
+import { Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import { getGirlBySlug } from '@/lib/api/server-client';
 import StructuredData from '@/components/seo/StructuredData';
 import GirlGallery from '@/components/girls/GirlGallery';
 import GirlInfoCard from '@/components/girls/GirlInfoCard';
-import RelatedGirls from '@/components/girls/RelatedGirls';
 import GirlBioSection from '@/components/girls/GirlBioSection';
-import ExpandableText from '@/components/common/ExpandableText';
-import ReviewsSection from '@/components/girls/ReviewsSection';
-import GirlCommunityPosts from '@/components/girls/GirlCommunityPosts';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import ViewTracker from '@/components/common/ViewTracker';
 import { Girl } from '@/types/girl';
 import { generateSlug } from '@/lib/utils/slug';
 import Header from '@/components/layout/Header';
 
+// Dynamic imports for heavy components - load after initial render
+const ReviewsSection = dynamic(() => import('@/components/girls/ReviewsSection'), {
+  loading: () => <div className="animate-pulse bg-secondary/20 h-48 rounded-lg" />,
+});
+const GirlCommunityPosts = dynamic(() => import('@/components/girls/GirlCommunityPosts'), {
+  loading: () => <div className="animate-pulse bg-secondary/20 h-32 rounded-lg" />,
+});
+const RelatedGirls = dynamic(() => import('@/components/girls/RelatedGirls'), {
+  loading: () => <div className="animate-pulse bg-secondary/20 h-48 rounded-lg" />,
+});
+
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gaigo1.net';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// ISR: Revalidate every 2 minutes for fresh data but still cached
+export const revalidate = 120;
 
 interface PageProps {
   params: Promise<{ slug: string }>;
