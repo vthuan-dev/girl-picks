@@ -147,6 +147,18 @@ jobs:
             
             pm2 save
             
+            echo "==> Cache Warmup (reduce cold start)"
+            sleep 5 # Wait for services to be ready
+            
+            # Warmup homepage and first pages
+            curl -s -o /dev/null http://localhost:3000/ || true
+            curl -s -o /dev/null http://localhost:3000/girls || true
+            curl -s -o /dev/null http://localhost:3000/girls?page=2 || true
+            
+            # Warmup API endpoints
+            curl -s -o /dev/null http://localhost:8000/api/girls?page=1&limit=20 || true
+            curl -s -o /dev/null http://localhost:8000/api/girls?page=2&limit=20 || true
+            
             echo "==> Ensuring Nginx and Firewall"
             # Nginx config update if needed (similar to previous script but simplified)
             if [ -d "$APP_DIR/nginx" ] && [ -f "$APP_DIR/nginx/gaigo1.net.conf" ]; then
