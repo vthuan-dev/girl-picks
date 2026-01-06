@@ -55,12 +55,13 @@ def export_cdn_sql():
                         vals.append("NULL")
                     elif isinstance(val, (int, float)):
                         vals.append(str(val))
-                    elif isinstance(val, (dict, list)): # Cho trường JSON images
-                        json_val = json.dumps(val, ensure_ascii=False).replace("'", "''")
+                    elif isinstance(val, (dict, list)): # Cho trường JSON (images, tags, services, districts, etc.)
+                        # Escape backslashes for MySQL and then escape single quotes
+                        json_val = json.dumps(val, ensure_ascii=True).replace("\\", "\\\\").replace("'", "''")
                         vals.append(f"'{json_val}'")
                     else:
-                        # Escape single quotes in strings
-                        str_val = str(val).replace("'", "''")
+                        # Escape backslashes and then escape single quotes in strings
+                        str_val = str(val).replace("\\", "\\\\").replace("'", "''")
                         vals.append(f"'{str_val}'")
                 
                 col_names = ", ".join([f"`{c}`" for c in columns])
