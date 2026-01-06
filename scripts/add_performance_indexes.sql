@@ -3,15 +3,12 @@
 
 USE girl_pick_db;
 
--- Drop indexes if they exist (ignore errors if not exist)
-DROP INDEX IF EXISTS girls_isActive_slug_idx ON girls;
-DROP INDEX IF EXISTS girls_pagination_idx ON girls;
-
 -- Index for slug + isActive queries (detail page)
+-- If index already exists, this will show an error but that's OK - just ignore it
 CREATE INDEX girls_isActive_slug_idx ON girls (isActive, slug);
 
--- Index for pagination ORDER BY: isFeatured DESC, ratingAverage DESC, lastActiveAt DESC
+-- Index for pagination ORDER BY
 CREATE INDEX girls_pagination_idx ON girls (isActive, isFeatured, ratingAverage, lastActiveAt);
 
 -- Verify indexes were created
-SHOW INDEX FROM girls WHERE Key_name LIKE 'girls_%';
+SHOW INDEX FROM girls;
