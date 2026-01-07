@@ -130,17 +130,16 @@ export default function ChatSexPageClient() {
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
       <div className="bg-gradient-to-br from-primary/10 via-background to-background border-b border-secondary/30">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-6 sm:py-8">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 pt-14 sm:pt-16 lg:pt-[72px] pb-6 sm:pb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <div className="flex items-center gap-3 mb-3">
-                <h1 className="text-3xl lg:text-4xl font-bold text-text bg-gradient-to-r from-primary to-primary-hover bg-clip-text text-transparent">
-                  Gái Chat Sex
-                </h1>
-                <span className="px-3 py-1.5 bg-green-500/20 text-green-400 rounded-full text-xs sm:text-sm font-semibold flex items-center gap-1.5 border border-green-500/30">
-                  <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                  Đang Online
-                </span>
+              <h1 className="text-3xl lg:text-4xl font-bold text-text bg-gradient-to-r from-primary to-primary-hover bg-clip-text text-transparent mb-3">
+                Gái Chat Sex
+              </h1>
+              <div className="bg-primary/10 border border-primary/20 rounded-lg px-3 py-2 sm:px-4 sm:py-2.5 mb-3">
+                <p className="text-xs sm:text-sm text-text line-clamp-1">
+                  Tìm cô gái phù hợp với nhu cầu của bạn - Sử dụng bộ lọc để tìm kiếm theo sở thích, khu vực và tiêu chí
+                </p>
               </div>
               <p className="text-text-muted text-sm sm:text-base">
                 {loading ? (

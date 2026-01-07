@@ -116,18 +116,36 @@ export const girlsApi = {
 
   // Get count by province
   getCountByProvince: async (): Promise<Array<{ province: string; count: number }>> => {
-    const response = await apiClient.get<any>('/girls/count/by-province');
-    const responseData = response.data;
-    
-    if (responseData.success && responseData.data) {
-      return responseData.data;
+    try {
+      const response = await apiClient.get<any>('/girls/count/by-province');
+      console.log('[girlsApi.getCountByProvince] Raw response:', response);
+      console.log('[girlsApi.getCountByProvince] Response.data:', response.data);
+      
+      const responseData = response.data;
+      
+      // Handle different response formats
+      if (responseData?.success && responseData?.data) {
+        console.log('[girlsApi.getCountByProvince] Using responseData.data:', responseData.data);
+        return responseData.data;
+      }
+      
+      if (Array.isArray(responseData)) {
+        console.log('[girlsApi.getCountByProvince] Using responseData as array:', responseData);
+        return responseData;
+      }
+      
+      // If responseData is the array directly (some APIs return it this way)
+      if (Array.isArray(response)) {
+        console.log('[girlsApi.getCountByProvince] Using response as array:', response);
+        return response;
+      }
+      
+      console.warn('[girlsApi.getCountByProvince] Unexpected response format, returning empty array');
+      return [];
+    } catch (error) {
+      console.error('[girlsApi.getCountByProvince] Error:', error);
+      return [];
     }
-    
-    if (Array.isArray(responseData)) {
-      return responseData;
-    }
-    
-    return [];
   },
 };
 

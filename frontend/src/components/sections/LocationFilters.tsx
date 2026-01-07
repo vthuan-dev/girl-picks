@@ -44,12 +44,24 @@ interface LocationFiltersProps {
 
 export default function LocationFilters({ selectedLocation, onLocationChange }: LocationFiltersProps) {
   // Fetch count by province
-  const { data: provinceCounts = [], isLoading } = useQuery(
+  const { data: provinceCounts = [], isLoading, error } = useQuery(
     ['girls', 'count-by-province'],
-    () => girlsApi.getCountByProvince(),
+    async () => {
+      const result = await girlsApi.getCountByProvince();
+      console.log('[LocationFilters] API Response:', result);
+      console.log('[LocationFilters] Response type:', Array.isArray(result) ? 'Array' : typeof result);
+      console.log('[LocationFilters] Response length:', Array.isArray(result) ? result.length : 'N/A');
+      if (Array.isArray(result) && result.length > 0) {
+        console.log('[LocationFilters] First item:', result[0]);
+      }
+      return result;
+    },
     {
       staleTime: 10 * 60 * 1000, // Cache for 10 minutes
       cacheTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
+      onError: (err) => {
+        console.error('[LocationFilters] Error fetching province counts:', err);
+      },
     }
   );
 

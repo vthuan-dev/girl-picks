@@ -958,13 +958,13 @@ export default function ReviewsSection({ girlId, totalReviews, averageRating }: 
                 <button
                   onClick={() => handleToggleLike(review.id)}
                   disabled={loadingLikes.has(review.id)}
-                  className="flex items-center gap-2 text-text-muted hover:text-primary transition-colors text-sm cursor-pointer group disabled:opacity-50"
+                  className="flex items-center gap-2.5 sm:gap-2 px-2 py-1.5 sm:px-0 sm:py-0 text-text-muted hover:text-primary transition-colors text-sm cursor-pointer group disabled:opacity-50"
                 >
                   {loadingLikes.has(review.id) ? (
-                    <span className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                    <span className="w-5 h-5 sm:w-4 sm:h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
                   ) : (
                     <svg
-                      className={`w-4 h-4 transition-all ${review.liked ? 'fill-current text-primary' : 'group-hover:fill-current'}`}
+                      className={`w-5 h-5 sm:w-4 sm:h-4 transition-all ${review.liked ? 'fill-current text-primary' : 'group-hover:fill-current'}`}
                       fill={review.liked ? 'currentColor' : 'none'}
                       stroke="currentColor"
                       viewBox="0 0 24 24"

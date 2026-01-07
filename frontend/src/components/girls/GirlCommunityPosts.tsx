@@ -87,8 +87,39 @@ export default function GirlCommunityPosts({ girlId, limit = 6 }: GirlCommunityP
     return (
       <div className="mt-4 sm:mt-6">
         <h2 className="text-lg sm:text-xl font-bold text-text mb-3">Bài viết cộng đồng</h2>
-        <div className="bg-background-light border border-secondary/30 rounded-lg p-4 text-center">
-          <p className="text-text-muted text-sm">Chưa có bài viết cộng đồng nào</p>
+        <div className="bg-background-light border border-secondary/30 rounded-lg p-4 sm:p-6 text-center">
+          <div className="flex flex-col items-center gap-3">
+            <svg
+              className="w-12 h-12 sm:w-16 sm:h-16 text-text-muted/50"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+            <div className="space-y-2">
+              <p className="text-text text-sm sm:text-base font-medium">
+                Chưa có bài viết về cô gái này
+              </p>
+              <p className="text-text-muted text-xs sm:text-sm max-w-md mx-auto">
+                Hãy đặt cô gái này và chia sẻ trải nghiệm của bạn với cộng đồng nhé!
+              </p>
+            </div>
+            <SmoothLink
+              href={`/community-posts/create?girlId=${girlId}`}
+              className="inline-flex items-center gap-2 px-4 py-2 mt-2 bg-primary text-white rounded-lg hover:bg-primary-hover transition-all text-sm font-medium"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Viết bài viết đầu tiên
+            </SmoothLink>
+          </div>
         </div>
       </div>
     );

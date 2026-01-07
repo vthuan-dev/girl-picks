@@ -12,6 +12,7 @@ import ViewTracker from '@/components/common/ViewTracker';
 import { Girl } from '@/types/girl';
 import { generateSlug } from '@/lib/utils/slug';
 import Header from '@/components/layout/Header';
+import GirlDetailClient from '@/components/pages/GirlDetailClient';
 
 // Dynamic imports for heavy components - load after initial render
 const ReviewsSection = dynamic(() => import('@/components/girls/ReviewsSection'), {
@@ -212,7 +213,7 @@ export default async function GirlDetailBySlugPage({ params }: PageProps) {
   };
 
   return (
-    <>
+    <GirlDetailClient>
       <Header />
       <ViewTracker type="girl" id={girl.id} />
 
@@ -222,7 +223,7 @@ export default async function GirlDetailBySlugPage({ params }: PageProps) {
       />
       <StructuredData type="BreadcrumbList" data={breadcrumbStructuredData} />
 
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-1 sm:py-6 lg:py-8 page-transition">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 pt-14 sm:pt-16 lg:pt-[72px] pb-1 sm:pb-6 lg:pb-8 page-transition">
         <Breadcrumbs items={breadcrumbs} />
 
         <div className="flex flex-col lg:grid lg:grid-cols-[2fr,1fr] gap-4 sm:gap-6 lg:gap-10">
@@ -273,7 +274,7 @@ export default async function GirlDetailBySlugPage({ params }: PageProps) {
           <RelatedGirls currentGirlId={girl.id} districtId={girl.districtId} />
         </div>
       </div>
-    </>
+    </GirlDetailClient>
   );
 }
 

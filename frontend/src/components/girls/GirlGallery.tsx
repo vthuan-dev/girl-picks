@@ -27,14 +27,28 @@ export default function GirlGallery({ id, images, name }: GirlGalleryProps) {
 
   const handleImageError = (index: number, imageUrl?: string | null) => {
     try {
+      // Check if this error was already handled
+      if (imageErrors.has(index)) {
+        return; // Already handled, skip
+      }
+
       const safeImageUrl = imageUrl || '';
       const originalImage = validImages?.[index] || safeImageUrl || 'unknown';
       const safeOriginalImage = typeof originalImage === 'string' ? originalImage : 'unknown';
 
-      console.error('[GirlGallery] Image load error at index:', index);
+      // Only log warning (not error) for failed images - this is expected behavior
+      // Use console.warn instead of console.error to reduce noise
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[GirlGallery] Image failed to load, using fallback:', {
+          index,
+          imageUrl: safeOriginalImage,
+          totalImages: validImages.length,
+        });
+      }
 
       setImageErrors(prev => new Set(prev).add(index));
     } catch (error) {
+      // Only log actual errors in error handling
       console.error('[GirlGallery] Error in handleImageError:', error, {
         index,
         imageUrl,

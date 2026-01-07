@@ -47,13 +47,20 @@ export default function SmoothLink({
           router.push(href);
         });
         
-        // Optional: handle transition events
-        transition.finished.catch(() => {
-          // Transition was interrupted or failed, that's okay
+        // Scroll to top after transition completes
+        transition.finished.then(() => {
+          window.scrollTo({ top: 0, behavior: 'instant' });
+        }).catch(() => {
+          // Transition was interrupted or failed, scroll anyway
+          window.scrollTo({ top: 0, behavior: 'instant' });
         });
       } else {
         // Fallback for browsers without View Transitions API
         router.push(href);
+        // Scroll to top after a short delay to ensure navigation started
+        setTimeout(() => {
+          window.scrollTo({ top: 0, behavior: 'instant' });
+        }, 100);
       }
     }
   };
