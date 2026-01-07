@@ -13,12 +13,14 @@ export class MoviesService {
   async findAll(params?: {
     status?: PostStatus;
     categoryId?: string;
+    search?: string;
     page?: number;
     limit?: number;
   }) {
     const {
       status = PostStatus.APPROVED,
       categoryId,
+      search,
       page = 1,
       limit = 24,
     } = params || {};
@@ -26,6 +28,14 @@ export class MoviesService {
     const where: any = { status };
     if (categoryId) {
       where.categoryId = categoryId;
+    }
+    if (search && search.trim().length > 0) {
+      const keyword = search.trim();
+      where.OR = [
+        { title: { contains: keyword, mode: 'insensitive' } },
+        { slug: { contains: keyword, mode: 'insensitive' } },
+        { description: { contains: keyword, mode: 'insensitive' } },
+      ];
     }
 
     const [data, total] = await Promise.all([

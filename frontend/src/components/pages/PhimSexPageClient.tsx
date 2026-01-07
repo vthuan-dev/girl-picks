@@ -24,6 +24,8 @@ export default function PhimSexPageClient() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [showAllCategories, setShowAllCategories] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [debouncedSearch, setDebouncedSearch] = useState<string>('');
   const [posts, setPosts] = useState<MoviePost[]>([]);
   const [loading, setLoading] = useState(true);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
@@ -47,9 +49,15 @@ export default function PhimSexPageClient() {
     fetchCategories();
   }, []);
 
+  // Debounce search term
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedSearch(searchTerm.trim()), 400);
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
+
   useEffect(() => {
     fetchPosts();
-  }, [currentPage, selectedCategory]);
+  }, [currentPage, selectedCategory, debouncedSearch]);
 
   const fetchPosts = async () => {
     setLoading(true);
@@ -59,6 +67,7 @@ export default function PhimSexPageClient() {
         page: currentPage,
         limit: itemsPerPage,
         categoryId: selectedCategory || undefined,
+        search: debouncedSearch || undefined,
       });
 
       // Map movies to movie format
@@ -142,6 +151,11 @@ export default function PhimSexPageClient() {
     setCurrentPage(1);
   }, [selectedCategory]);
 
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch]);
+
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gaigo1.net';
 
   return (
@@ -155,7 +169,7 @@ export default function PhimSexPageClient() {
           numberOfItems: total,
         }}
       />
-      <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 pt-14 sm:pt-16 lg:pt-[72px] pb-4 sm:pb-6">
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5 sm:mb-6">
           <div className="space-y-1">
@@ -166,6 +180,34 @@ export default function PhimSexPageClient() {
                 )}
               </p>
             </div>
+          <div className="w-full sm:w-80">
+            <div className="relative group">
+              <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-text-muted">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-5.2-5.2m1.4-3.8a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <input
+                type="search"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Tìm phim theo tiêu đề..."
+                className="w-full pl-10 pr-12 py-2.5 rounded-full bg-background-light/90 border border-secondary/50 focus:border-primary focus:ring-2 focus:ring-primary/30 text-sm text-text placeholder-text-muted shadow-sm transition-all group-hover:border-primary/60"
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm('')}
+                  className="absolute inset-y-0 right-2 flex items-center px-2 text-text-muted hover:text-text transition-colors"
+                  aria-label="Xóa tìm kiếm"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Categories horizontal scroll */}
