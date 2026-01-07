@@ -611,6 +611,8 @@ export class GirlsService {
         : [provinceCondition];
     }
 
+    // Optimized select - only get essential fields for listing page
+    // Removed heavy nested queries (_count) and unnecessary fields to improve performance
     const select = {
       id: true,
       name: true,
@@ -641,25 +643,17 @@ export class GirlsService {
       tags: true,
       services: true,
       lastActiveAt: true,
-      workingHours: true,
-      createdAt: true,
-      updatedAt: true,
+      // Removed: workingHours, createdAt, updatedAt (not needed for listing)
       user: {
         select: {
           id: true,
           fullName: true,
-          email: true,
+          // Removed: email (not needed for listing)
           phone: true,
           avatarUrl: true,
         },
       },
-      _count: {
-        select: {
-          posts: { where: { status: PostStatus.APPROVED } },
-          reviews: { where: { status: ReviewStatus.APPROVED } },
-          bookings: true,
-        },
-      },
+      // Removed _count to improve query performance - can be loaded separately if needed
     };
 
     const orderBy: Prisma.GirlOrderByWithRelationInput[] = [
@@ -693,7 +687,10 @@ export class GirlsService {
       // Get cached total or count from DB
       const cachedTotal = await this.cacheService.get<number>(totalCacheKey);
 
-      // Fetch paginated data
+      // Fetch paginated data with performance monitoring
+      // Note: OFFSET performance degrades with higher page numbers
+      // For better performance, consider cursor-based pagination in future
+      const startTime = Date.now();
       paginatedGirls = await this.prisma.girl.findMany({
         where,
         select,
@@ -701,6 +698,12 @@ export class GirlsService {
         take: limit,
         orderBy,
       });
+      const queryTime = Date.now() - startTime;
+      
+      // Log slow queries for monitoring (only in development or if > 1 second)
+      if (queryTime > 1000 || process.env.NODE_ENV === 'development') {
+        console.warn(`[GirlsService] Slow query: page=${page}, limit=${limit}, time=${queryTime}ms, skip=${(page - 1) * limit}`);
+      }
 
       // Only count if not cached
       if (cachedTotal === null || cachedTotal === undefined) {
@@ -748,10 +751,14 @@ export class GirlsService {
       },
     };
 
-    // Cache the result for 5 minutes (300 seconds)
-    // Cache longer for first page, shorter for filtered results
-    const ttl =
-      page === 1 && !province && !priceFilter && !ageFilter ? 600 : 300;
+    // Cache the result - longer cache for later pages to reduce DB load
+    // Later pages are more expensive to query (OFFSET performance issue), so cache longer
+    let ttl = 300; // Default 5 minutes
+    if (page === 1 && !province && !priceFilter && !ageFilter) {
+      ttl = 600; // 10 minutes for first page without filters
+    } else if (page > 5) {
+      ttl = 600; // 10 minutes for later pages (they're expensive to query due to OFFSET)
+    }
     await this.cacheService.set(cacheKey, result, ttl);
 
     return result;

@@ -236,7 +236,6 @@ model Girl {
   blockedDates    BlockedDate[]
 
   // Indexes for performance optimization
-  @@index([isActive, isFeatured, ratingAverage]) // For list queries with sorting
   @@index([province, isActive]) // For province filter
   @@index([verificationStatus, isActive]) // For verification filter
   @@index([lastActiveAt]) // For sorting by last active
@@ -247,7 +246,11 @@ model Girl {
   @@index([price]) // For price filter
   @@index([origin]) // For origin filter
   @@index([isActive, slug]) // For detail page queries by slug
-  @@index([isActive, isFeatured, ratingAverage, lastActiveAt]) // For pagination ORDER BY
+  // Optimized composite index for pagination ORDER BY (replaces isActive, isFeatured, ratingAverage)
+  // Order: isFeatured, ratingAverage, lastActiveAt (matches exact orderBy in service)
+  // Note: MySQL will use this index efficiently for DESC sorting
+  // This index covers: isFeatured, ratingAverage, lastActiveAt, isActive
+  @@index([isFeatured, ratingAverage, lastActiveAt, isActive])
   @@map("girls")
 }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useQuery } from 'react-query';
 import { girlsApi } from '../api/girls.api';
 import { Girl, GirlListParams } from '@/types/girl';
@@ -38,19 +38,39 @@ interface GirlListProps {
   selectedProvince?: string | null;
   searchQuery?: string;
   selectedTag?: string | null;
+  initialPage?: number;
+  onPageChange?: (page: number) => void;
   onTotalChange?: (total: number, isLoading: boolean) => void;
   onPageInfoChange?: (info: { total: number; page: number; limit: number }) => void;
 }
 
-export default function GirlList({ filters = {}, selectedProvince = null, searchQuery, selectedTag, onTotalChange, onPageInfoChange }: GirlListProps) {
+export default function GirlList({ filters = {}, selectedProvince = null, searchQuery, selectedTag, initialPage = 1, onPageChange, onTotalChange, onPageInfoChange }: GirlListProps) {
   const [params, setParams] = useState<GirlListParams>({
-    page: 1,
+    page: initialPage,
     limit: 20, // Match backend default
   });
+  const [pageInput, setPageInput] = useState<string>('');
+  const pageInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync with initialPage prop when it changes (from URL)
+  useEffect(() => {
+    if (initialPage && initialPage !== params.page) {
+      setParams(prev => ({ ...prev, page: initialPage }));
+    }
+  }, [initialPage]);
+
+  // Sync pageInput with current page
+  useEffect(() => {
+    setPageInput(params.page?.toString() || '1');
+  }, [params.page]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
-    setParams(prev => ({ ...prev, page: 1 }));
+    // Only reset if we're not already on page 1
+    if (params.page !== 1) {
+      setParams(prev => ({ ...prev, page: 1 }));
+      if (onPageChange) onPageChange(1);
+    }
   }, [filters.verified, filters.price, filters.age, filters.height, filters.weight, filters.origin, filters.location, selectedProvince, selectedTag]);
 
   // Scroll to top when page changes
@@ -61,48 +81,55 @@ export default function GirlList({ filters = {}, selectedProvince = null, search
   }, [params.page]);
 
   // Build query key for React Query caching
+  // Optimized: separate cache for each page to improve cache hit rate
   const queryKey = useMemo(() => [
     'girls',
     'list',
-    params.page,
-    params.limit,
-    filters.verified,
-    filters.price,
-    filters.age,
-    filters.height,
-    filters.weight,
-    filters.origin,
-    filters.location,
-    selectedProvince,
-    searchQuery,
-    selectedTag,
+    `page-${params.page}`,
+    `limit-${params.limit}`,
+    filters.verified ? 'verified' : 'all',
+    filters.price || 'all-price',
+    filters.age || 'all-age',
+    filters.height || 'all-height',
+    filters.weight || 'all-weight',
+    filters.origin || 'all-origin',
+    filters.location || 'all-location',
+    selectedProvince || 'all-province',
+    searchQuery || 'no-search',
+    selectedTag || 'no-tag',
   ], [params.page, params.limit, filters.verified, filters.price, filters.age, filters.height, filters.weight, filters.origin, filters.location, selectedProvince, searchQuery, selectedTag]);
 
   // Build filter params
-  const filterParams: GirlListParams = useMemo(() => ({
-    page: params.page || 1,
-    limit: params.limit || 20,
-    verified: filters.verified ? true : undefined,
-    priceFilter: filters.price || undefined,
-    ageFilter: filters.age || undefined,
-    heightFilter: filters.height || undefined,
-    weightFilter: filters.weight || undefined,
-    originFilter: filters.origin || undefined,
-    locationFilter: filters.location || undefined,
-    province: selectedProvince || undefined,
-    search: searchQuery || undefined,
-    tags: selectedTag ? [selectedTag] : undefined,
-  }), [params.page, params.limit, filters.verified, filters.price, filters.age, filters.height, filters.weight, filters.origin, filters.location, selectedProvince, searchQuery, selectedTag]);
+  const filterParams: GirlListParams = useMemo(() => {
+    const filterParams: GirlListParams = {
+      page: params.page || 1,
+      limit: params.limit || 20,
+      verified: filters.verified ? true : undefined,
+      priceFilter: filters.price || undefined,
+      ageFilter: filters.age || undefined,
+      heightFilter: filters.height || undefined,
+      weightFilter: filters.weight || undefined,
+      originFilter: filters.origin || undefined,
+      locationFilter: filters.location || undefined,
+      province: selectedProvince || undefined,
+      search: searchQuery || undefined,
+      tags: selectedTag ? [selectedTag] : undefined,
+    };
+    console.log('[GirlList] Filter params with province:', filterParams.province);
+    return filterParams;
+  }, [params.page, params.limit, filters.verified, filters.price, filters.age, filters.height, filters.weight, filters.origin, filters.location, selectedProvince, searchQuery, selectedTag]);
 
   // Use React Query to fetch and cache data
   const { data, isLoading, error, isFetching } = useQuery(
     queryKey,
     () => girlsApi.getGirls(filterParams),
     {
-      staleTime: 2 * 60 * 1000, // Cache for 2 minutes
-      cacheTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+      staleTime: 5 * 60 * 1000, // Cache for 5 minutes (increased for better performance)
+      cacheTime: 10 * 60 * 1000, // Keep in cache for 10 minutes (increased)
       keepPreviousData: true, // Keep previous data while fetching new data
       refetchOnWindowFocus: false, // Don't refetch on window focus
+      refetchOnMount: false, // Don't refetch on mount if data exists
+      // Optimize for pagination - cache each page separately
     }
   );
 
@@ -212,6 +239,45 @@ export default function GirlList({ filters = {}, selectedProvince = null, search
     };
   }, [data, params.limit, params.page]);
 
+  // Handle page input submit
+  const handlePageInputSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    
+    const pageNum = parseInt(pageInput, 10);
+    if (isNaN(pageNum) || pageNum < 1 || pageNum > pagination.totalPages) {
+      // Reset to current page if invalid
+      setPageInput(params.page?.toString() || '1');
+      return;
+    }
+
+    if (pageNum !== params.page) {
+      setParams({ ...params, page: pageNum });
+      if (onPageChange) onPageChange(pageNum);
+    }
+  };
+
+  // Handle page input change
+  const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Only allow numbers
+    if (value === '' || /^\d+$/.test(value)) {
+      setPageInput(value);
+    }
+  };
+
+  // Handle page input blur
+  const handlePageInputBlur = () => {
+    handlePageInputSubmit();
+  };
+
+  // Handle page input key press
+  const handlePageInputKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handlePageInputSubmit();
+      pageInputRef.current?.blur();
+    }
+  };
+
   const loading = isLoading || isFetching;
 
   // Show loading overlay when fetching new page
@@ -274,6 +340,7 @@ export default function GirlList({ filters = {}, selectedProvince = null, search
                 const newPage = (params.page || 1) - 1;
                 console.log('[GirlList] Previous page clicked, going to page:', newPage);
                 setParams({ ...params, page: newPage });
+                if (onPageChange) onPageChange(newPage);
               }}
               disabled={pagination.page === 1 || isFetching}
               className="px-4 py-2.5 text-sm font-medium text-white/70 hover:text-white hover:bg-[#2a2a2a] disabled:opacity-30 disabled:cursor-not-allowed transition-all border-r border-[#2a2a2a]"
@@ -290,6 +357,7 @@ export default function GirlList({ filters = {}, selectedProvince = null, search
                     onClick={() => {
                       console.log('[GirlList] Page 1 clicked');
                       setParams({ ...params, page: 1 });
+                      if (onPageChange) onPageChange(1);
                     }}
                     disabled={isFetching}
                     className="px-3.5 py-2.5 text-sm font-medium text-white/70 hover:text-white hover:bg-[#2a2a2a] transition-all border-r border-[#2a2a2a] disabled:opacity-50"
@@ -316,6 +384,7 @@ export default function GirlList({ filters = {}, selectedProvince = null, search
                     onClick={() => {
                       console.log('[GirlList] Page clicked:', page);
                       setParams({ ...params, page });
+                      if (onPageChange) onPageChange(page);
                     }}
                     disabled={isFetching || isActive}
                     className={`px-3.5 py-2.5 text-sm font-bold transition-all border-r border-[#2a2a2a] min-w-[44px] ${isActive
@@ -336,6 +405,7 @@ export default function GirlList({ filters = {}, selectedProvince = null, search
                     onClick={() => {
                       console.log('[GirlList] Last page clicked:', pagination.totalPages);
                       setParams({ ...params, page: pagination.totalPages });
+                      if (onPageChange) onPageChange(pagination.totalPages);
                     }}
                     disabled={isFetching}
                     className="px-3.5 py-2.5 text-sm font-medium text-white/70 hover:text-white hover:bg-[#2a2a2a] transition-all border-r border-[#2a2a2a] disabled:opacity-50"
@@ -352,12 +422,32 @@ export default function GirlList({ filters = {}, selectedProvince = null, search
                 const newPage = (params.page || 1) + 1;
                 console.log('[GirlList] Next page clicked, going to page:', newPage);
                 setParams({ ...params, page: newPage });
+                if (onPageChange) onPageChange(newPage);
               }}
               disabled={!pagination.hasNext || isFetching}
               className="px-4 py-2.5 text-sm font-medium text-white/70 hover:text-white hover:bg-[#2a2a2a] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
             >
               Next
             </button>
+
+            {/* Page Input */}
+            <div className="flex items-center gap-1 px-2 border-l border-[#2a2a2a]">
+              <span className="text-white/60 text-xs whitespace-nowrap">Trang</span>
+              <form onSubmit={handlePageInputSubmit} className="flex items-center">
+                <input
+                  ref={pageInputRef}
+                  type="text"
+                  value={pageInput}
+                  onChange={handlePageInputChange}
+                  onBlur={handlePageInputBlur}
+                  onKeyPress={handlePageInputKeyPress}
+                  className="w-12 px-2 py-1.5 text-sm text-white bg-[#2a2a2a] border border-[#3a3a3a] rounded focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-center"
+                  placeholder={params.page?.toString() || '1'}
+                  disabled={isFetching}
+                />
+              </form>
+              <span className="text-white/60 text-xs whitespace-nowrap">/ {pagination.totalPages}</span>
+            </div>
           </div>
         </div>
       )}

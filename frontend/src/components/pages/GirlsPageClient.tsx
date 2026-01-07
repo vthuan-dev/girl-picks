@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import GirlList from '@/modules/girls/components/GirlList';
 import LocationFilters from '@/components/sections/LocationFilters';
@@ -30,16 +30,35 @@ export default function GirlsPageClient() {
   const searchParamValue = searchParams?.get('search') || '';
   const provinceParamValue = searchParams?.get('province') || '';
   const tagParamValue = searchParams?.get('tag') || '';
+  const pageParamValue = searchParams?.get('page') || '1';
 
   useEffect(() => {
     setSearchQuery(searchParamValue);
 
     // Chuyển slug tỉnh thành tên tỉnh chuẩn (có dấu) cho API
     const province = provinceParamValue ? slugToProvince(provinceParamValue) || provinceParamValue : '';
+    console.log('[GirlsPageClient] Province param:', provinceParamValue, '-> Converted to:', province);
     setSelectedProvince(province);
 
     setSelectedTag(tagParamValue);
   }, [searchParamValue, provinceParamValue, tagParamValue]);
+
+  // Parse page from URL
+  const currentPage = parseInt(pageParamValue, 10) || 1;
+
+  // Memoize onPageChange to prevent infinite re-renders
+  const handlePageChange = useCallback((page: number) => {
+    // Update URL with page parameter
+    const urlParams = new URLSearchParams();
+    if (searchQuery) urlParams.set('search', searchQuery);
+    if (provinceParamValue) urlParams.set('province', provinceParamValue);
+    if (tagParamValue) urlParams.set('tag', tagParamValue);
+    if (page > 1) urlParams.set('page', page.toString());
+    
+    const queryString = urlParams.toString();
+    const newUrl = queryString ? `/girls?${queryString}` : '/girls';
+    router.push(newUrl, { scroll: false });
+  }, [searchQuery, provinceParamValue, tagParamValue, router]);
 
   const handleFilterChange = (newFilters: { price: string; age: string; height: string }) => {
     setFilters((prev) => ({
@@ -230,6 +249,8 @@ export default function GirlsPageClient() {
               selectedProvince={selectedProvince}
               searchQuery={searchQuery || undefined}
               selectedTag={selectedTag}
+              initialPage={currentPage}
+              onPageChange={handlePageChange}
               onTotalChange={(total, isLoading) => {
                 setTotal(total);
                 setIsLoadingTotal(isLoading);

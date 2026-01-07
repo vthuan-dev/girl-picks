@@ -169,6 +169,7 @@ export default function Header() {
             e.currentTarget.classList.add('sr-only');
           }
         }}
+        suppressHydrationWarning
       >
         Bỏ qua đến nội dung chính
       </a>
@@ -176,6 +177,7 @@ export default function Header() {
       <header
         ref={headerRef}
         className={`fixed top-0 left-0 right-0 z-50 w-full bg-background/98 backdrop-blur-xl border-b border-secondary/20 shadow-lg shadow-black/20 ${isMenuOpen ? 'shadow-2xl' : ''}`}
+        suppressHydrationWarning
       >
         <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8">
           {/* Main Header Bar */}

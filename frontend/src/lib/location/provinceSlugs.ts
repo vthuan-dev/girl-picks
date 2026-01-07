@@ -110,12 +110,27 @@ export function slugToProvince(slug: string): string | null {
   if (!slug) return null;
   const normalized = slug.toLowerCase().trim();
 
-  if (SLUG_ALIASES[normalized]) return SLUG_ALIASES[normalized];
+  if (SLUG_ALIASES[normalized]) {
+    const province = SLUG_ALIASES[normalized];
+    // For "Bà Rịa - Vũng Tàu", prefer "Bà Rịa Vũng Tàu" (without dash) if it exists in mapping
+    // This matches the database format better
+    if (province === 'Bà Rịa - Vũng Tàu' && PROVINCE_TO_SLUG['Bà Rịa Vũng Tàu']) {
+      return 'Bà Rịa Vũng Tàu';
+    }
+    return province;
+  }
 
   const directMatch = Object.entries(PROVINCE_TO_SLUG).find(
     ([, value]) => value.toLowerCase() === normalized
   );
-  if (directMatch) return directMatch[0];
+  if (directMatch) {
+    const province = directMatch[0];
+    // Prefer version without dash for "Bà Rịa Vũng Tàu"
+    if (province === 'Bà Rịa - Vũng Tàu' && PROVINCE_TO_SLUG['Bà Rịa Vũng Tàu']) {
+      return 'Bà Rịa Vũng Tàu';
+    }
+    return province;
+  }
 
   return null;
 }
