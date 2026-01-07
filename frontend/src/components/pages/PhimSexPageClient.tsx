@@ -22,6 +22,7 @@ interface MoviePost {
 
 export default function PhimSexPageClient() {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [showAllCategories, setShowAllCategories] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [posts, setPosts] = useState<MoviePost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -165,36 +166,27 @@ export default function PhimSexPageClient() {
                 )}
               </p>
             </div>
-          <div className="flex items-center gap-2 text-xs text-text-muted">
-            <span className="hidden sm:inline">Hiển thị</span>
-            <button
-              onClick={() => setSelectedCategory(null)}
-              className="px-3 py-1.5 bg-background-light border border-secondary/50 rounded-lg hover:border-primary hover:text-primary transition-all cursor-pointer"
-            >
-              Tất cả
-              </button>
-          </div>
         </div>
 
         {/* Categories horizontal scroll */}
         <div className="mb-5">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-sm font-semibold text-text">Danh mục</span>
-            <span className="text-xs text-text-muted">Kéo ngang để xem thêm</span>
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 no-scrollbar">
+          <div className="flex flex-wrap gap-2 pb-2">
             {categoriesLoading ? (
               <span className="text-text-muted text-sm">Đang tải...</span>
             ) : (
-              categories.slice(0, 20).map((category) => (
+              (showAllCategories ? categories : categories.slice(0, 12)).map((category) => (
                   <button
                     key={category.id}
                   onClick={() => setSelectedCategory(category.id === selectedCategory ? null : category.id)}
                     className={`
-                    px-3 py-1.5 rounded-full text-xs sm:text-sm border transition-all cursor-pointer whitespace-nowrap
+                    px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium border transition-all cursor-pointer whitespace-nowrap
+                    min-h-[36px] min-w-fit flex items-center justify-center
                     ${selectedCategory === category.id
-                      ? 'bg-primary text-white border-primary'
-                      : 'bg-background-light text-text border-secondary/40 hover:border-primary/60 hover:text-primary'
+                      ? 'bg-primary text-white border-primary shadow-md shadow-primary/20'
+                      : 'bg-background-light text-text border-secondary/40 hover:border-primary/60 hover:text-primary hover:bg-background'
                       }
                     `}
                   >
@@ -203,6 +195,16 @@ export default function PhimSexPageClient() {
               ))
             )}
           </div>
+          {!categoriesLoading && categories.length > 12 && (
+            <div className="mt-2">
+              <button
+                onClick={() => setShowAllCategories(!showAllCategories)}
+                className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-primary hover:text-primary-hover transition-colors"
+              >
+                {showAllCategories ? 'Thu gọn' : 'Xem thêm'}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Movies Grid */}
