@@ -127,7 +127,10 @@ export default function GirlGallery({ id, images, name }: GirlGalleryProps) {
             className="object-cover transition-opacity duration-300"
             sizes="(max-width: 768px) 100vw, (max-width: 1024px) 66vw, 50vw"
             priority
-            unoptimized={mainImage?.startsWith('http')}
+            fetchPriority="high"
+            // Bypass Next image optimization on VPS để không phải chờ proxy tải ảnh CDN
+            unoptimized={true}
+            decoding="async"
             onError={() => handleImageError(safeSelectedIndex, mainImage || '')}
           />
 
@@ -199,7 +202,9 @@ export default function GirlGallery({ id, images, name }: GirlGalleryProps) {
                     fill
                     className="object-cover"
                     sizes="96px"
-                    unoptimized={image?.startsWith('http')}
+                    // Bypass Next image optimization trên VPS
+                    unoptimized={true}
+                    decoding="async"
                     onError={() => handleImageError(index, image)}
                   />
                   {selectedIndex === index && (

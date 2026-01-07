@@ -17,6 +17,7 @@ interface GirlCardInternalProps extends GirlCardProps {
 
 export default function GirlCard({ girl, index = 0 }: GirlCardInternalProps) {
   const imageUrl = girl.avatar || girl.images?.[0] || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=600&fit=crop';
+  const isExternalImage = typeof imageUrl === 'string' && imageUrl.startsWith('http');
 
   // Use slug as the primary identifier for canonical URLs
   // This avoids the /girls/:id/:slug redirect loop in middleware
@@ -37,9 +38,12 @@ export default function GirlCard({ girl, index = 0 }: GirlCardInternalProps) {
             className="object-cover group-hover:scale-110 transition-transform duration-500"
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 20vw, 16vw"
             priority={isPriority}
+            fetchPriority={isPriority ? 'high' : 'low'}
             loading={isPriority ? 'eager' : 'lazy'}
-            placeholder="blur"
-            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAAUH/8QAIBAAAgEDBAMAAAAAAAAAAAAAAQIDAAQRBRIhMQYTQf/EABQBAQAAAAAAAAAAAAAAAAAAAAX/xAAZEQADAAMAAAAAAAAAAAAAAAAAAQIDEyH/2gAMAwEAAhEDEEAAAADVtT1aK2sZpQEJVCQMdmooeylG0f/Z"
+            // Bypass Next image optimization on VPS to tránh chờ proxy tải ảnh CDN
+            unoptimized={true}
+            decoding="async"
+            placeholder="empty"
           />
 
           {/* Gradient Overlay on Hover */}
