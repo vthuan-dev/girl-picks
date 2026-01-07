@@ -54,7 +54,7 @@ export default async function MovieDetailPage({ params }: PageProps) {
   const createdAt = movie.createdAt ? new Date(movie.createdAt) : null;
 
   return (
-    <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 py-5 sm:py-6 lg:py-8 space-y-6">
+    <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 pt-16 sm:pt-18 lg:pt-20 pb-8 sm:pb-10 space-y-6">
       {/* Increment view count on mount */}
       <MovieViewTracker movieId={movie.id} />
       {/* Breadcrumb */}
@@ -74,7 +74,7 @@ export default async function MovieDetailPage({ params }: PageProps) {
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-text leading-tight">
           {movie.title}
         </h1>
-        <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-text-muted">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-text-muted">
           {movie.category?.name && (
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary font-medium">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -109,9 +109,9 @@ export default async function MovieDetailPage({ params }: PageProps) {
         </div>
       </div>
 
-      {/* Video section - centered & slightly smaller for better clarity */}
-      <div className="bg-gradient-to-b from-background-light/80 to-background rounded-3xl border border-secondary/40 shadow-2xl shadow-black/40 px-2 py-4 sm:px-4 sm:py-6 flex justify-center">
-        <div className="w-full max-w-md sm:max-w-lg">
+      {/* Video + Info layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-[2fr,1fr] gap-5 items-start">
+        <div className="bg-background-light rounded-3xl border border-secondary/40 shadow-2xl shadow-black/30 p-3 sm:p-4">
           <div className="rounded-2xl overflow-hidden bg-black">
             <VideoPlayer
               videoUrl={movie.videoUrl}
@@ -120,22 +120,8 @@ export default async function MovieDetailPage({ params }: PageProps) {
             />
           </div>
         </div>
-      </div>
 
-      {/* Description & extra info */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        <div className="lg:col-span-2 space-y-4">
-          {movie.description && (
-            <div className="bg-background-light rounded-2xl border border-secondary/30 p-4 sm:p-5 shadow-sm shadow-black/10">
-              <h2 className="text-base sm:text-lg font-semibold text-text mb-2">Mô tả</h2>
-              <p className="text-sm sm:text-base text-text-muted leading-relaxed whitespace-pre-line">
-                {movie.description}
-              </p>
-            </div>
-          )}
-        </div>
-
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div className="bg-background-light rounded-2xl border border-secondary/30 p-4 sm:p-5 shadow-sm shadow-black/10 space-y-3 text-sm">
             <h3 className="text-sm font-semibold text-text mb-1">Thông tin phim</h3>
             {movie.duration && (
@@ -154,14 +140,33 @@ export default async function MovieDetailPage({ params }: PageProps) {
                 <span className="font-medium text-text">{movie.category.name}</span>
               </div>
             )}
+            {createdAt && (
+              <div className="flex items-center justify-between">
+                <span className="text-text-muted">Ngày đăng</span>
+                <span className="font-medium text-text">
+                  {format(createdAt, 'dd/MM/yyyy', { locale: vi })}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Description */}
+      {movie.description && (
+        <div className="bg-background-light rounded-2xl border border-secondary/30 p-4 sm:p-5 shadow-sm shadow-black/10">
+          <h2 className="text-base sm:text-lg font-semibold text-text mb-2">Mô tả</h2>
+          <p className="text-sm sm:text-base text-text-muted leading-relaxed whitespace-pre-line">
+            {movie.description}
+          </p>
+        </div>
+      )}
 
       {/* Reviews */}
       <MovieReviewSection movieId={movie.id} movieTitle={movie.title} />
     </div>
   );
 }
+
 
 
