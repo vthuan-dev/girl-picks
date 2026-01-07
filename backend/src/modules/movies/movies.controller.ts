@@ -37,17 +37,20 @@ export class MoviesController {
   @ApiOperation({ summary: 'Get list of movies (public)' })
   @ApiQuery({ name: 'status', required: false, enum: PostStatus })
   @ApiQuery({ name: 'categoryId', required: false, type: String })
+  @ApiQuery({ name: 'search', required: false, type: String })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   findAll(
     @Query('status') status?: PostStatus,
     @Query('categoryId') categoryId?: string,
+    @Query('search') search?: string,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page?: number,
     @Query('limit', new DefaultValuePipe(24), ParseIntPipe) limit?: number,
   ) {
     return this.moviesService.findAll({
       status: status || PostStatus.APPROVED,
       categoryId,
+      search,
       page,
       limit,
     });

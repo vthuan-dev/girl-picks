@@ -39,8 +39,8 @@ export default function MovieCard({ movie }: MovieCardProps) {
 
           {/* Play Button Overlay */}
           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
-            <div className="w-16 h-16 bg-primary/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-xl">
-              <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+            <div className="w-14 h-14 bg-black/55 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg border border-white/15">
+              <svg className="w-7 h-7 text-white ml-0.5 drop-shadow-sm" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z" />
               </svg>
             </div>
@@ -69,9 +69,9 @@ export default function MovieCard({ movie }: MovieCardProps) {
         </div>
 
         {/* Card Footer - Information */}
-        <div className="p-3 sm:p-4 bg-background-light">
+        <div className="p-2.5 sm:p-3 bg-background-light">
           {/* Title */}
-          <h3 className="text-sm sm:text-base font-bold text-text group-hover:text-primary transition-colors line-clamp-2 mb-2 min-h-[3rem]">
+          <h3 className="text-sm sm:text-base font-bold text-text group-hover:text-primary transition-colors line-clamp-2 mb-1.5 min-h-[2.6rem]">
             {movie.title}
           </h3>
 

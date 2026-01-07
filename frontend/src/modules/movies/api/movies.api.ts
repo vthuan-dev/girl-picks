@@ -27,12 +27,14 @@ export const moviesApi = {
   getAll: async (params?: {
     status?: 'PENDING' | 'APPROVED' | 'REJECTED';
     categoryId?: string;
+    search?: string;
     page?: number;
     limit?: number;
   }): Promise<PaginatedResponse<Movie>> => {
     const searchParams = new URLSearchParams();
     if (params?.status) searchParams.append('status', params.status);
     if (params?.categoryId) searchParams.append('categoryId', params.categoryId);
+    if (params?.search) searchParams.append('search', params.search.trim());
     searchParams.append('page', (params?.page || 1).toString());
     searchParams.append('limit', (params?.limit || 24).toString());
 
